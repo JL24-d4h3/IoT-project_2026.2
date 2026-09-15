@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una tarjeta guardada, en modo lectura (§40).
+
+     Enseña la marca y los ultimos cuatro digitos, nunca el numero completo ni
+     el codigo de seguridad: no estan guardados en ningun sitio (RC-011,
+     RT-038), asi que no hay nada que enseñar aunque se quisiera. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/form_row_height"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:layout_width="@dimen/icon_md"
+        android:layout_height="@dimen/icon_md"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_credit_card"
+        app:tint="@color/colorTextSecondary" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tarjeta_nombre"
+            style="@style/TextAppearance.App.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="Visa ****4242" />
+
+        <TextView
+            android:id="@+id/tarjeta_titular"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="Camila Mendoza" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tarjeta_vence"
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        tools:text="vence 09/28" />
+
+</LinearLayout>

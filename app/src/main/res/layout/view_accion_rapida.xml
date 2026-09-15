@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Un acceso rápido de la portada del administrador (§43).
+
+    El icono va arriba y el rótulo debajo, centrados, porque van en una rejilla
+    de dos columnas: en fila, un rótulo como "Datos del hotel" empujaría al
+    icono y las cinco piezas quedarían de anchos distintos.
+
+    El rótulo reserva dos líneas aunque necesite una. Es lo que hace que las
+    cinco piezas midan lo mismo: "Datos del hotel" ocupa dos y "Reportes" una, y
+    sin reservarlas la tercera fila de la rejilla saldría más baja que las otras
+    dos y la rejilla parecería mal montada.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageView
+        android:id="@+id/accion_rapida_icono"
+        android:layout_width="@dimen/icon_md"
+        android:layout_height="@dimen/icon_md"
+        android:importantForAccessibility="no"
+        app:tint="@color/colorPrimary"
+        tools:src="@drawable/ic_person_group" />
+
+    <TextView
+        android:id="@+id/accion_rapida_titulo"
+        style="@style/TextAppearance.App.BodySecondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:gravity="center"
+        android:maxLines="2"
+        android:minLines="2"
+        tools:text="Clientes" />
+
+</merge>

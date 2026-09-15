@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Punto del seguimiento del taxi.
+
+    Se tiñe desde código con el color del estado que representa, por eso el
+    relleno declarado es solo el valor de partida.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/colorPrimary" />
+</shape>

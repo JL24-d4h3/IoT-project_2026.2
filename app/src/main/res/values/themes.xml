@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tema de la aplicacion. Mapea la paleta de colors.xml sobre los roles de
+    Material 3, de modo que los widgets que no tengan estilo explicito en
+    styles.xml caigan igualmente en el sistema visual.
+
+    Base Material 3 y no plataforma: sin esto, el primer MaterialCardView,
+    MaterialButton o Chip lanzaria "The style on this component requires your
+    app theme to be Theme.MaterialComponents", y AppCompatActivity ni arranca.
+
+    Sobre el ambar: NO se enlaza a colorTertiary a proposito. Si Material lo
+    tomara por su cuenta lo usaria en componentes donde el ambar esta prohibido
+    (es exclusivo de ratings). Se referencia por nombre, @color/colorAccent,
+    solo desde RatingBadgeView.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.Project" parent="Theme.Material3.Light.NoActionBar">
+
+        <!-- ==================== MARCA ==================== -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
+        <item name="colorPrimaryInverse">@color/colorPrimaryContainer</item>
+
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorOnSecondary">@color/colorOnSecondary</item>
+        <item name="colorSecondaryContainer">@color/colorSecondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/colorOnSecondaryContainer</item>
+
+        <!-- Terciario = primario, para que ningun matiz ajeno se cuele -->
+        <item name="colorTertiary">@color/colorPrimary</item>
+        <item name="colorOnTertiary">@color/colorOnPrimary</item>
+        <item name="colorTertiaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/colorOnPrimaryContainer</item>
+
+        <!-- ==================== NEUTROS ==================== -->
+        <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="colorOnBackground">@color/colorTextPrimary</item>
+
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorOnSurface">@color/colorTextPrimary</item>
+        <item name="colorSurfaceVariant">@color/colorSurfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/colorTextSecondary</item>
+        <item name="colorSurfaceInverse">@color/colorTextPrimary</item>
+        <item name="colorOnSurfaceInverse">@color/colorSurface</item>
+
+        <item name="colorOutline">@color/colorBorder</item>
+        <item name="colorOutlineVariant">@color/colorBorder</item>
+
+        <!-- Contenedores de superficie de M3, alineados con la escala de neutros -->
+        <item name="colorSurfaceBright">@color/colorSurface</item>
+        <item name="colorSurfaceDim">@color/colorBackground</item>
+        <item name="colorSurfaceContainerLowest">@color/colorSurface</item>
+        <item name="colorSurfaceContainerLow">@color/colorBackground</item>
+        <item name="colorSurfaceContainer">@color/colorSurfaceVariant</item>
+        <item name="colorSurfaceContainerHigh">@color/colorSurfaceVariant</item>
+        <item name="colorSurfaceContainerHighest">@color/colorSurfaceVariant</item>
+
+        <!-- ==================== SEMANTICOS ==================== -->
+        <item name="colorError">@color/colorError</item>
+        <item name="colorOnError">@color/colorOnError</item>
+        <item name="colorErrorContainer">@color/colorErrorContainer</item>
+        <item name="colorOnErrorContainer">@color/colorOnErrorContainer</item>
+
+        <!-- ==================== TIPOGRAFIA ==================== -->
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:textColorHint">@color/colorTextSecondary</item>
+        <item name="android:textColorTertiary">@color/colorTextSecondary</item>
+
+        <!-- ==================== RADIOS (§6.4) ==================== -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.App.Chip</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.App.Chip</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.App.Control</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.App.Card</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.App.Sheet</item>
+
+        <!-- ==================== ESTILOS POR DEFECTO ====================
+             Asi ningun widget aparece sin el sistema visual aplicado. -->
+        <item name="materialCardViewStyle">@style/Widget.App.Card</item>
+        <item name="materialButtonStyle">@style/Widget.App.Button.Primary</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.App.Button.Secondary</item>
+        <item name="borderlessButtonStyle">@style/Widget.App.Button.Text</item>
+        <item name="chipStyle">@style/Widget.App.Chip.Filter</item>
+        <item name="textInputStyle">@style/Widget.App.TextInput</item>
+        <item name="toolbarStyle">@style/Widget.App.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.App.BottomNav</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.App.BottomSheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.Dialog</item>
+
+        <!-- ==================== VENTANA ====================
+             targetSdk 36: en API 35+ el modo borde a borde es obligatorio y
+             statusBarColor se ignora. Los insets se aplican en codigo
+             (utils/Insets.java), no aqui. Se declaran igual para API 34. -->
+        <item name="android:windowBackground">@color/colorBackground</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@color/colorSurface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="q">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+        <item name="android:windowActivityTransitions" tools:targetApi="l">true</item>
+
+    </style>
+
+    <!-- ==================== OVERLAYS ==================== -->
+
+    <style name="ThemeOverlay.App.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.App.BottomSheet</item>
+        <item name="android:navigationBarColor">@color/colorSurface</item>
+    </style>
+
+    <style name="Widget.App.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/colorSurface</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.App.Sheet</item>
+    </style>
+
+    <style name="ThemeOverlay.App.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.App.Card</item>
+        <item name="android:backgroundTint">@color/colorSurface</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.App.Button.Text</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.App.Button.Text</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.App.H2</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.App.Body</item>
+    </style>
+
+</resources>

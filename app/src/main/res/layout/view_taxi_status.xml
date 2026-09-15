@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <!-- El estado actual, en palabras y con color. La linea de tiempo sola
+         obliga a buscar cual de los cinco puntos esta encendido; esto lo dice
+         antes de que el ojo llegue al trazado. -->
+    <TextView
+        android:id="@+id/status_badge"
+        style="@style/TextAppearance.App.Label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_badge_primary"
+        android:paddingStart="@dimen/space_md"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingEnd="@dimen/space_md"
+        android:paddingBottom="@dimen/space_sm"
+        android:textColor="@color/colorOnPrimaryContainer"
+        tools:text="En camino" />
+
+    <TextView
+        android:id="@+id/status_note"
+        style="@style/TextAppearance.App.BodySecondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        tools:text="Julio va en camino al punto de recojo." />
+
+    <LinearLayout
+        android:id="@+id/status_timeline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_base"
+        android:orientation="vertical" />
+
+</merge>

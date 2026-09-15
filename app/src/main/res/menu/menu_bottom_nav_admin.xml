@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Barra inferior del Administrador de hotel (§43, §44).
+
+    Cinco secciones, que es el máximo que admite una barra inferior sin que los
+    rótulos se recorten. Son las cinco que el administrador abre a diario:
+    el estado del hotel, sus reservas, sus habitaciones, sus servicios y su
+    propia cuenta.
+
+    Todo lo demás —datos del hotel, clientes, cargos, mensajes, reportes— vive
+    en las acciones rápidas de la portada. §44 avisa de no amontonar las
+    opciones en una sola pantalla; la salida no es una barra más larga, es que
+    el panel sea el índice de lo que no cabe.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/adminHomeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_panel" />
+
+    <item
+        android:id="@+id/adminReservasFragment"
+        android:icon="@drawable/ic_receipt"
+        android:title="@string/nav_reservas_admin" />
+
+    <item
+        android:id="@+id/adminHabitacionesFragment"
+        android:icon="@drawable/ic_service_business"
+        android:title="@string/nav_habitaciones" />
+
+    <item
+        android:id="@+id/adminServiciosFragment"
+        android:icon="@drawable/ic_service_reception"
+        android:title="@string/nav_servicios" />
+
+    <item
+        android:id="@+id/adminPerfilFragment"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_perfil" />
+
+</menu>

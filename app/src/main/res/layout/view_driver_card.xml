@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="com.google.android.material.card.MaterialCardView">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- La fotografía y el círculo de iniciales ocupan el mismo hueco:
+                 solo se enseña uno de los dos. -->
+            <FrameLayout
+                android:layout_width="@dimen/avatar_lg"
+                android:layout_height="@dimen/avatar_lg">
+
+                <TextView
+                    android:id="@+id/driver_initials"
+                    style="@style/TextAppearance.App.H2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_circulo_primario"
+                    android:gravity="center"
+                    android:textColor="@color/colorOnPrimaryContainer"
+                    tools:text="JM" />
+
+                <ImageView
+                    android:id="@+id/driver_photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/cd_foto_conductor"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_base"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/driver_name"
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Julio Mendoza Ayala" />
+
+                <TextView
+                    android:id="@+id/driver_role"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/taxi_conductor_asignado" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <org.iot.project.ui.components.RatingBadgeView
+                        android:id="@+id/driver_rating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="9.1" />
+
+                    <TextView
+                        android:id="@+id/driver_services"
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        tools:text="148 servicios" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <org.iot.project.ui.components.VehicleCardView
+            android:id="@+id/driver_vehicle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_base"
+            android:background="@drawable/bg_chip_neutral"
+            android:padding="@dimen/space_md" />
+    </LinearLayout>
+
+</merge>

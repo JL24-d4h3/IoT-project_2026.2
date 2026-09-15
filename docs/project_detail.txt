@@ -1,0 +1,1656 @@
+SISTEMA DE GESTIÓN DE RESERVAS DE ALOJAMIENTO EN HOTELES
+
+Desarrollaremos una **aplicación móvil nativa Android para la gestión de reservas de alojamiento en hoteles**, correspondiente al proyecto del curso **1TEL05 – Servicios y Aplicaciones para IoT**.
+
+El sistema debe seguir estrictamente los requerimientos funcionales, técnicos, arquitectónicos y de diseño indicados a continuación.
+
+La aplicación debe estar orientada principalmente a la gestión de reservas de hoteles, pero también debe integrar un sistema de taxis para transporte al aeropuerto.
+
+---
+
+# 1. OBJETIVO GENERAL
+
+Desarrollar un sistema que permita gestionar reservas de alojamiento en hoteles mediante una aplicación móvil, permitiendo la interacción entre:
+
+* Clientes.
+* Administradores de hoteles.
+* Conductores de taxi.
+* Superadmin.
+
+El sistema estará compuesto por:
+
+1. **Aplicación móvil Android principal**, utilizada por clientes, administradores de hoteles, conductores de taxi y Superadmin según sus respectivos roles.
+2. **Aplicación web independiente para conductores de taxi**, utilizada para su registro y administración.
+3. **REST API** que permita la comunicación entre la aplicación móvil y el sistema web de taxis.
+
+La aplicación debe permitir gestionar:
+
+* Usuarios.
+* Hoteles.
+* Habitaciones.
+* Servicios.
+* Reservas.
+* Pagos simulados.
+* Calificaciones.
+* Comentarios.
+* Chat cliente-hotel.
+* Servicios de taxi.
+* Cargos adicionales.
+* Notificaciones.
+* Reportes.
+* Logs.
+
+---
+
+# 2. REFERENCIA DE DISEÑO: BOOKING
+
+La aplicación móvil debe tomar como **principal referencia visual y de experiencia de usuario la aplicación móvil de Booking.com**, ya que esta fue utilizada como referencia para el diseño del proyecto.
+
+La referencia debe utilizarse principalmente para:
+
+* Organización de la información.
+* Flujo de búsqueda.
+* Presentación de hoteles.
+* Cards.
+* Fotografías.
+* Filtros.
+* Selección de fechas.
+* Presentación de precios.
+* Flujo de reserva.
+* Gestión de reservas.
+* Navegación.
+* Claridad de las acciones.
+
+## IMPORTANTE
+
+La aplicación **NO debe ser una copia de Booking**.
+
+No utilizar:
+
+* Logotipo de Booking.
+* Nombre de Booking como parte de la aplicación.
+* Textos propietarios.
+* Imágenes propietarias.
+* Identidad visual idéntica.
+* Colores o elementos de marca de manera que parezca una aplicación oficial de Booking.
+
+Se debe desarrollar una **identidad visual propia**, pero utilizando principios de UX/UI similares a una aplicación moderna de reservas como Booking.
+
+La prioridad es conseguir una experiencia:
+
+**simple + visual + rápida + intuitiva + orientada a reservas.**
+
+---
+
+# 3. TECNOLOGÍA OBLIGATORIA
+
+La aplicación móvil debe desarrollarse como:
+
+* Android nativo.
+* Java.
+* XML para las interfaces.
+* Android mínimo API 34 / Android 14.
+* Android Studio.
+
+## NO utilizar
+
+* Kotlin.
+* Jetpack Compose.
+* Flutter.
+* React Native.
+* Tecnologías híbridas.
+
+La interfaz debe construirse utilizando XML y componentes Android/Material compatibles.
+
+Se puede utilizar:
+
+* Activities.
+* Fragments.
+* RecyclerView.
+* ViewModel.
+* LiveData.
+* Navigation Component.
+* Material Components.
+
+siempre que aporten a una arquitectura limpia y mantenible.
+
+---
+
+# 4. ARQUITECTURA GENERAL
+
+El sistema tendrá dos aplicaciones principales:
+
+## Aplicación móvil
+
+Gestiona:
+
+* Clientes.
+* Administradores de hoteles.
+* Conductores.
+* Superadmin.
+* Hoteles.
+* Habitaciones.
+* Servicios.
+* Reservas.
+* Pagos.
+* Calificaciones.
+* Chat.
+* Taxis.
+* Notificaciones.
+
+## Aplicación web de taxis
+
+Gestiona principalmente:
+
+* Registro de conductores.
+* Información personal.
+* Información del vehículo.
+* Fotografías.
+* Solicitudes de aprobación.
+* Estado del conductor.
+
+La comunicación entre ambas aplicaciones debe realizarse mediante:
+
+**REST API.**
+
+La aplicación móvil **NO debe conectarse directamente a la base de datos de la aplicación web de taxis**.
+
+---
+
+# 5. PERSISTENCIA
+
+La aplicación principal debe utilizar una base de datos **NoSQL**.
+
+La estructura debe permitir almacenar:
+
+* Usuarios.
+* Hoteles.
+* Habitaciones.
+* Servicios.
+* Relaciones hotel-servicio.
+* Reservas.
+* Pagos.
+* Calificaciones.
+* Comentarios.
+* Chats.
+* Taxis.
+* Solicitudes.
+* Notificaciones.
+* Logs.
+
+La implementación debe mantenerse desacoplada de la interfaz.
+
+Durante la primera etapa pueden utilizarse datos simulados.
+
+Los datos simulados deben estar separados de Activities y Fragments para poder reemplazarlos posteriormente por la base de datos real.
+
+---
+
+# 6. ROLES DEL SISTEMA
+
+Existen cuatro roles principales:
+
+## 6.1 Cliente
+
+Puede:
+
+* Registrarse.
+* Consultar hoteles.
+* Buscar hoteles.
+* Filtrar hoteles.
+* Consultar habitaciones.
+* Consultar servicios.
+* Realizar reservas.
+* Realizar pagos.
+* Consultar sus reservas.
+* Cancelar reservas cuando corresponda.
+* Comunicarse con el hotel durante una reserva activa.
+* Recibir notificaciones.
+* Solicitar taxi al aeropuerto.
+* Consultar información del conductor.
+* Consultar vehículo.
+* Consultar ubicación.
+* Calificar hoteles.
+* Calificar conductores.
+* Consultar historial.
+
+---
+
+## 6.2 Administrador de hotel
+
+El administrador de hotel **NO funciona como cliente**.
+
+Su función es administrar exclusivamente el hotel que tiene asignado.
+
+Puede:
+
+* Administrar información del hotel.
+* Administrar fotografías.
+* Administrar habitaciones.
+* Administrar servicios.
+* Consultar clientes.
+* Gestionar cargos adicionales.
+* Consultar ingresos por servicios adicionales.
+* Gestionar mensajes de clientes.
+* Consultar estado de taxis.
+* Recibir alertas de checkout.
+
+---
+
+## 6.3 Conductor de taxi
+
+Puede:
+
+* Registrarse mediante la aplicación web.
+* Registrar información personal.
+* Registrar vehículo.
+* Subir fotografías.
+* Esperar aprobación del Superadmin.
+* Consultar solicitudes disponibles.
+* Aceptar solicitudes.
+* Consultar información del servicio.
+* Actualizar su estado.
+* Compartir periódicamente su ubicación durante un servicio activo.
+* Escanear el QR del cliente.
+* Finalizar el servicio.
+* Recibir calificaciones.
+
+---
+
+## 6.4 Superadmin
+
+El Superadmin administra el sistema.
+
+Puede:
+
+* Gestionar usuarios.
+* Activar usuarios.
+* Desactivar usuarios.
+* Aprobar conductores.
+* Rechazar conductores.
+* Gestionar hoteles.
+* Gestionar administradores de hoteles.
+* Consultar reportes de ventas.
+* Consultar logs.
+
+El Superadmin **NO funciona como cliente ni como administrador de hotel**.
+
+---
+
+# 7. PANTALLA PRINCIPAL DEL CLIENTE
+
+La pantalla principal debe estar inspirada en la lógica de una aplicación de reservas como Booking.
+
+Debe incluir:
+
+* Header.
+* Registro/inicio de sesión.
+* Acceso al perfil.
+* Buscador de hoteles.
+* Acceso a reservas.
+* Acceso a taxis.
+* Listado o recomendaciones de hoteles.
+
+El buscador debe ser uno de los elementos más importantes visualmente.
+
+Debe permitir:
+
+* Destino.
+* Fecha de entrada.
+* Fecha de salida.
+* Número de huéspedes.
+* Tipo de habitación.
+
+El flujo principal debe ser:
+
+**Destino → Fechas → Huéspedes → Buscar → Hotel → Habitación → Reserva**
+
+---
+
+# 8. LISTADO DE HOTELES
+
+Los hoteles deben mostrarse mediante **Cards**.
+
+Cada card debe incluir:
+
+* Fotografía principal.
+* Nombre.
+* Ubicación.
+* Calificación de 1 a 10.
+* Cantidad de comentarios.
+* Precio inicial.
+* Información relevante de disponibilidad.
+
+Debe utilizarse RecyclerView.
+
+Las fotografías deben tener un papel importante en la presentación.
+
+---
+
+# 9. BÚSQUEDA Y FILTROS
+
+El usuario debe poder buscar hoteles mediante:
+
+* Destino.
+* Fechas.
+* Ocupación.
+* Tipo de habitación.
+
+También se deben considerar filtros para servicios mediante tags.
+
+Ejemplo:
+
+**Servicios**
+
+`[Wi-Fi] [Piscina] [Gimnasio] [Desayuno] [Estacionamiento]`
+
+Si el usuario selecciona determinados servicios, el sistema debe mostrar hoteles que cumplan con esos criterios.
+
+---
+
+# 10. CALIFICACIONES
+
+Las calificaciones deben utilizar una escala de:
+
+**1 a 10**
+
+No utilizar exclusivamente estrellas de 1 a 5.
+
+Se recomienda utilizar:
+
+* Slider.
+* Selector numérico.
+* Componente visual equivalente.
+
+Debe mostrar:
+
+* Calificación promedio.
+* Cantidad de comentarios.
+
+Esta escala debe utilizarse para:
+
+* Hoteles.
+* Conductores de taxi.
+
+---
+
+# 11. DETALLE DEL HOTEL
+
+La pantalla de detalle del hotel debe incluir:
+
+1. Galería de fotografías.
+2. Nombre.
+3. Ubicación.
+4. Calificación.
+5. Cantidad de comentarios.
+6. Lugares históricos cercanos.
+7. Habitaciones.
+8. Servicios incluidos.
+9. Servicios adicionales.
+10. Precio.
+11. Condiciones.
+12. Monto mínimo para taxi gratuito al aeropuerto.
+13. Precio total.
+14. Botón de reserva.
+
+La información debe estar organizada de manera clara, visual y similar a una aplicación moderna de reservas.
+
+---
+
+# 12. HABITACIONES
+
+Cada habitación debe poder registrar:
+
+* Tipo.
+* Capacidad.
+* Tamaño.
+* Piso.
+* Número de habitación.
+
+La disponibilidad debe depender de las fechas seleccionadas.
+
+Se debe evitar que dos clientes puedan reservar la misma habitación para fechas superpuestas.
+
+La interfaz puede utilizar un popup/modal para seleccionar habitaciones.
+
+Debe indicar claramente:
+
+* Disponible.
+* No disponible.
+
+---
+
+# 13. SERVICIOS DEL HOTEL MEDIANTE TAGS
+
+Los servicios del hotel deben funcionar mediante un **catálogo de tags predefinidos por el sistema**.
+
+El administrador NO debe escribir manualmente el nombre de cada servicio.
+
+Debe seleccionar servicios existentes.
+
+Ejemplos de tags:
+
+* Wi-Fi.
+* Piscina.
+* Gimnasio.
+* Estacionamiento.
+* Restaurante.
+* Bar.
+* Desayuno.
+* Servicio a la habitación.
+* Recepción 24 horas.
+* Aire acondicionado.
+* Spa.
+* Sauna.
+* Lavandería.
+* Traslado al aeropuerto.
+* Servicio de taxi.
+* Mascotas permitidas.
+* Accesibilidad.
+* Servicio de limpieza.
+* Centro de negocios.
+* Salas de reuniones.
+
+El catálogo debe poder ampliarse posteriormente.
+
+---
+
+# 14. SELECCIÓN DE TAGS AL REGISTRAR EL HOTEL
+
+Cuando el administrador configure los servicios del hotel debe visualizar los tags disponibles.
+
+Ejemplo:
+
+**Selecciona los servicios que ofrece tu hotel**
+
+`[✓ Wi-Fi] [✓ Piscina] [ ] Gimnasio`
+
+`[✓ Desayuno] [ ] Spa] [✓ Estacionamiento]`
+
+Los tags seleccionados deben tener un estado visual diferente.
+
+Se recomienda utilizar:
+
+* Material Chips.
+* FilterChips.
+* Chips seleccionables.
+* RecyclerView cuando existan muchos servicios.
+
+El proceso debe ser rápido y visual.
+
+---
+
+# 15. SERVICIOS INCLUIDOS Y SERVICIOS ADICIONALES
+
+Los servicios deben dividirse en:
+
+## Servicios incluidos
+
+Son servicios incluidos en la reserva.
+
+Ejemplo:
+
+* Wi-Fi.
+* Piscina.
+* Desayuno.
+
+No requieren un precio adicional.
+
+## Servicios adicionales
+
+Son servicios que tienen un costo adicional.
+
+Ejemplo:
+
+* Lavandería.
+* Traslado al aeropuerto.
+* Servicio a la habitación.
+
+Estos deben permitir definir un precio.
+
+---
+
+# 16. FLUJO DE REGISTRO DE SERVICIOS
+
+El flujo debe ser:
+
+**Registrar hotel → Servicios → Seleccionar tags → Clasificar → Definir precio si corresponde → Guardar**
+
+Ejemplo:
+
+### Servicios incluidos
+
+* Wi-Fi.
+* Piscina.
+* Desayuno.
+
+### Servicios adicionales
+
+* Lavandería — S/ 20.
+* Traslado al aeropuerto — S/ 50.
+
+El precio solamente debe solicitarse para servicios adicionales.
+
+---
+
+# 17. CATÁLOGO GLOBAL DE SERVICIOS
+
+Cada servicio del sistema debe existir como un elemento del catálogo global.
+
+Cada servicio debe tener como mínimo:
+
+* `serviceId`
+* `name`
+* `description`
+* `icon/image`
+* `active`
+
+El administrador del hotel selecciona servicios existentes.
+
+No debe crear manualmente un nuevo servicio desde la configuración del hotel.
+
+Esto permite:
+
+* Evitar duplicados.
+* Estandarizar nombres.
+* Facilitar filtros.
+* Reutilizar servicios.
+* Mantener consistencia.
+
+---
+
+# 18. RELACIÓN HOTEL-SERVICIO
+
+El precio y la clasificación del servicio deben pertenecer a la relación entre hotel y servicio.
+
+Modelo conceptual:
+
+### Servicio
+
+* ID.
+* Nombre.
+* Descripción.
+* Icono/imagen.
+* Estado.
+
+### HotelServicio
+
+* `hotelId`
+* `serviceId`
+* `included`
+* `price`
+
+Ejemplo:
+
+**Servicio global:**
+
+Piscina.
+
+**Hotel A:**
+
+Piscina → Incluida.
+
+**Hotel B:**
+
+Piscina → Adicional → S/ 25.
+
+El mismo tag puede ser utilizado por múltiples hoteles.
+
+---
+
+# 19. VISUALIZACIÓN DE SERVICIOS
+
+En el detalle del hotel mostrar:
+
+### Servicios incluidos
+
+`Wi-Fi` `Piscina` `Gimnasio` `Desayuno`
+
+### Servicios adicionales
+
+`Lavandería — S/ 20`
+
+`Traslado al aeropuerto — S/ 50`
+
+Los servicios deben visualizarse mediante:
+
+* Tags.
+* Chips.
+* Cards pequeñas.
+
+Debe mantenerse una interfaz limpia.
+
+---
+
+# 20. FILTROS POR SERVICIOS
+
+El catálogo de servicios también debe utilizarse durante la búsqueda.
+
+Ejemplo:
+
+**Filtros**
+
+`[Wi-Fi] [Piscina] [Gimnasio] [Desayuno]`
+
+Si el cliente selecciona:
+
+**Piscina + Gimnasio + Wi-Fi**
+
+mostrar hoteles que tengan dichos servicios asociados.
+
+Por lo tanto, los mismos tags sirven para:
+
+**Registrar hoteles → Mostrar servicios → Filtrar hoteles**
+
+---
+
+# 21. REGLAS DEL SISTEMA DE SERVICIOS
+
+Cumplir obligatoriamente:
+
+1. Los servicios pertenecen a un catálogo global.
+2. Cada servicio tiene un ID único.
+3. Los hoteles seleccionan servicios existentes.
+4. No se deben duplicar servicios dentro de un mismo hotel.
+5. Los servicios pueden ser incluidos o adicionales.
+6. Los servicios adicionales deben tener precio.
+7. Los servicios incluidos no necesitan precio adicional.
+8. El precio pertenece a la relación hotel-servicio.
+9. Un mismo servicio puede utilizarse en múltiples hoteles.
+10. Los tags deben utilizarse también como filtros.
+11. El administrador no debe escribir manualmente el nombre del servicio.
+12. La selección debe ser visual mediante chips/tags.
+
+---
+
+# 22. RESERVAS
+
+El cliente puede realizar reservas en diferentes hoteles.
+
+Sin embargo:
+
+**No se permiten reservas con fechas superpuestas para el mismo cliente.**
+
+La aplicación debe validar esta condición antes de confirmar una reserva.
+
+Una reserva debe contener:
+
+* Hotel.
+* Habitación.
+* Fecha de entrada.
+* Fecha de salida.
+* Número de huéspedes.
+* Precio.
+* Estado.
+* Servicios adicionales.
+* Información de pago.
+
+---
+
+# 23. PANTALLA DE RESERVAS
+
+Separar:
+
+* Reservas actuales.
+* Historial.
+
+## Reserva actual
+
+Mostrar:
+
+* Hotel.
+* Fechas.
+* Habitación.
+* Precio.
+* Estado.
+* Servicios.
+* Opción de cancelar cuando corresponda.
+* Acceso al chat.
+
+## Historial
+
+Mostrar:
+
+* Hotel.
+* Fechas.
+* Habitaciones.
+* Precio.
+* Servicios adicionales.
+* Cargos adicionales.
+* Calificación.
+* Comentario.
+
+---
+
+# 24. CHAT CLIENTE-HOTEL
+
+Implementar una interfaz de chat similar a aplicaciones de mensajería modernas.
+
+El chat solo debe estar disponible cuando exista una:
+
+**reserva activa.**
+
+El cliente puede enviar mensajes.
+
+El administrador del hotel puede responder.
+
+Debe incluir:
+
+* Lista de mensajes.
+* Campo de texto.
+* Botón enviar.
+* Información del cliente.
+* Popup con información del cliente.
+
+No permitir conversaciones fuera de una reserva activa.
+
+---
+
+# 25. CHECKOUT
+
+El último día de la reserva debe aparecer un popup de checkout.
+
+Debe mostrar:
+
+* Precio del alojamiento.
+* Servicios adicionales.
+* Cargos por daños.
+* Total.
+* Calificación.
+* Comentario.
+* Opción de taxi gratuito al aeropuerto si se cumple el monto mínimo definido por el hotel.
+
+---
+
+# 26. PAGOS
+
+El pago es simulado.
+
+Permitir:
+
+* Utilizar tarjeta registrada.
+* Registrar nueva tarjeta.
+* Guardar tarjeta como recurrente.
+
+Flujo:
+
+**Checkout → Pago → Confirmación → Pantalla de taxis**
+
+---
+
+# 27. TAXIS
+
+El sistema debe permitir solicitar taxis al aeropuerto.
+
+El cliente debe seleccionar:
+
+* Ida.
+* Ida y vuelta.
+
+Ingresar:
+
+* Punto de recogida.
+* Destino.
+* Fecha.
+* Hora cuando corresponda.
+* Número de pasajeros.
+
+---
+
+# 28. TAXI SELECCIONADO
+
+Mostrar:
+
+* Nombre del conductor.
+* Fotografía.
+* Información permitida.
+* Vehículo.
+* Placa.
+* Calificación 1–10.
+* Ubicación.
+* Mapa.
+* Estado.
+
+El cliente debe poder visualizar un QR asociado al servicio.
+
+El QR debe aparecer automáticamente cuando el conductor llegue al punto de recogida.
+
+---
+
+# 29. ESTADOS DEL TAXI
+
+Utilizar exactamente:
+
+**SOLICITADO → ASIGNADO → EN CAMINO → EN TRASLADO → FINALIZADO**
+
+Al aceptar:
+
+**SOLICITADO → ASIGNADO**
+
+Después:
+
+**ASIGNADO → EN CAMINO → EN TRASLADO**
+
+La finalización se realiza mediante:
+
+**Escaneo del QR del cliente**
+
+Resultado:
+
+**FINALIZADO**
+
+---
+
+# 30. VISTA DEL CONDUCTOR
+
+La pantalla principal del conductor debe incluir:
+
+* Perfil.
+* Ubicación actual.
+* Estado actual.
+* Solicitudes cercanas.
+
+Las solicitudes deben poder filtrarse por:
+
+* Punto de recogida.
+* Destino.
+* Distancia.
+* Número de pasajeros.
+* Precio.
+
+Cada solicitud debe mostrarse como una card.
+
+Al seleccionar una:
+
+mostrar popup con:
+
+* Punto de recogida.
+* Destino.
+* Distancia.
+* Pasajeros.
+* Precio.
+* Información del servicio.
+* Botón aceptar.
+
+Al aceptar:
+
+**la solicitud deja de estar disponible para otros conductores.**
+
+---
+
+# 31. CONDUCTOR DURANTE EL SERVICIO
+
+Cuando el conductor tenga un servicio activo:
+
+NO mostrar la lista de solicitudes.
+
+Mostrar únicamente:
+
+* Header.
+* Información del servicio.
+* Punto de recogida.
+* Destino.
+* Distancia.
+* Precio.
+* Estado.
+* QR.
+* Cancelar.
+
+Al cancelar:
+
+volver a la pantalla principal y mostrar nuevamente solicitudes disponibles.
+
+---
+
+# 32. FINALIZACIÓN DEL TAXI
+
+Al escanear el QR:
+
+mostrar pantalla de servicio finalizado con:
+
+* Información del servicio.
+* Conductor.
+* Vehículo.
+* Precio.
+* Estado.
+
+Después permitir regresar a las solicitudes.
+
+El cliente podrá calificar al conductor de:
+
+**1 a 10.**
+
+---
+
+# 33. REGISTRO DEL HOTEL
+
+El hotel debe contener:
+
+## Información general
+
+* Nombre.
+* Ubicación.
+* Información relevante.
+
+## Lugares cercanos
+
+* Lugares históricos.
+
+## Fotografías
+
+Mínimo:
+
+**4 fotografías.**
+
+## Habitaciones
+
+* Tipo.
+* Capacidad.
+* Tamaño.
+
+## Servicios
+
+Seleccionados mediante el sistema de tags predefinidos.
+
+---
+
+# 34. ADMINISTRACIÓN DEL HOTEL
+
+Separar en:
+
+## Información del hotel
+
+Permitir modificar:
+
+* Información.
+* Ubicación.
+* Lugares cercanos.
+* Fotografías.
+* Habitaciones.
+* Servicios.
+
+## Clientes
+
+Consultar clientes asociados a reservas.
+
+Filtros:
+
+* Nombre.
+* Habitaciones.
+* Fechas.
+* Estado del taxi.
+* Precio total.
+
+---
+
+# 35. CARGOS ADICIONALES
+
+El administrador puede agregar cargos adicionales.
+
+Cada cargo debe contener:
+
+* Monto.
+* Motivo.
+* Observación.
+
+El cliente recibe una notificación.
+
+---
+
+# 36. INGRESOS POR SERVICIOS ADICIONALES
+
+El administrador puede consultar los ingresos generados por servicios adicionales.
+
+Orden:
+
+**menor a mayor ingreso.**
+
+---
+
+# 37. ALERTAS DE CHECKOUT
+
+El administrador recibe una alerta cuando un cliente llega al checkout.
+
+Debe poder:
+
+* Filtrar alertas.
+* Consultar información.
+* Revisar cargos.
+* Gestionar checkout.
+
+---
+
+# 38. PERFIL
+
+## Cliente
+
+Mostrar:
+
+* Nombres.
+* Apellidos.
+* Tipo de documento.
+* Número de documento.
+* Fecha de nacimiento.
+* Email.
+* Teléfono.
+* Dirección.
+* Fotografía.
+* Tarjetas registradas.
+
+## Conductor
+
+Mostrar:
+
+* Nombres.
+* Apellidos.
+* Tipo de documento.
+* Número de documento.
+* Fecha de nacimiento.
+* Email.
+* Teléfono.
+* Dirección.
+* Fotografía.
+* Placa.
+* Fotografía del vehículo.
+
+---
+
+# 39. NOTIFICACIONES
+
+Implementar notificaciones para:
+
+* Nueva reserva.
+* Cambios de reserva.
+* Cargos adicionales.
+* Checkout.
+* Estado del taxi.
+* Asignación del conductor.
+* Finalización del taxi.
+
+---
+
+# 40. APLICACIÓN WEB DE TAXIS
+
+La aplicación web permite:
+
+* Registro de conductores.
+* Datos personales.
+* Datos del vehículo.
+* Fotografías.
+* Solicitud de aprobación.
+
+El Superadmin puede:
+
+* Revisar.
+* Aprobar.
+* Rechazar.
+* Activar.
+* Desactivar.
+
+---
+
+# 41. REST API DE TAXIS
+
+La aplicación móvil se comunica con la aplicación web mediante REST API.
+
+La API debe proporcionar:
+
+* Conductores disponibles.
+* Conductor asignado.
+* Estado del servicio.
+* Ubicación.
+* Información del vehículo.
+* Calificación.
+
+La aplicación móvil nunca debe acceder directamente a la base de datos de taxis.
+
+Si la API está caída:
+
+* Informar al usuario.
+* No bloquear la aplicación.
+* Mantener funcionando las funciones de hoteles y reservas.
+
+---
+
+# 42. UBICACIÓN DEL CONDUCTOR
+
+Durante un servicio activo, el conductor debe enviar periódicamente su ubicación.
+
+La aplicación móvil debe poder mostrar la ubicación del conductor al cliente.
+
+La actualización de ubicación solo debe ser necesaria durante servicios activos.
+
+---
+
+# 43. SUPERADMIN
+
+## Gestión de usuarios
+
+Mostrar:
+
+* Fotografía.
+* Username.
+* Email.
+* Rol.
+* Estado.
+* Estado de aprobación.
+
+Funciones:
+
+* Activar.
+* Desactivar.
+* Aprobar.
+* Rechazar.
+* Ver perfil.
+* Editar.
+* Buscar username.
+* Filtrar por rol.
+
+---
+
+# 44. REPORTES DE VENTAS
+
+El Superadmin debe poder consultar:
+
+* Total de reservas.
+* Costos.
+* Filtro por fecha.
+
+Por hotel:
+
+* Nombre.
+* Ubicación.
+* Total de reservas.
+* Costos.
+* Detalle de cada reserva.
+* Costo de cada reserva.
+
+---
+
+# 45. LOGS DEL SISTEMA
+
+Registrar eventos relevantes como:
+
+* Inicio de sesión.
+* Registro.
+* Activación/desactivación.
+* Reservas.
+* Cancelaciones.
+* Pagos.
+* Cargos adicionales.
+* Cambios de estado del taxi.
+* Aprobaciones.
+* Acciones administrativas.
+
+---
+
+# 46. NAVEGACIÓN
+
+La navegación debe ser intuitiva y consistente.
+
+Para el cliente se recomienda:
+
+* Inicio.
+* Buscar.
+* Reservas.
+* Taxis.
+* Perfil.
+
+El flujo principal debe requerir pocos pasos.
+
+Utilizar cuando corresponda:
+
+* Bottom Navigation.
+* Cards.
+* RecyclerView.
+* Tabs.
+* Dialogs.
+* Popups.
+* Chips.
+* Filtros.
+* Botones de acción.
+
+No saturar las pantallas.
+
+---
+
+# 47. COMPONENTES REUTILIZABLES
+
+Crear componentes reutilizables para:
+
+* Cards de hoteles.
+* Cards de habitaciones.
+* Cards de servicios.
+* Cards de reservas.
+* Cards de taxis.
+* Cards de solicitudes.
+* Rating 1–10.
+* Chips de servicios.
+* Filtros.
+* Botones.
+* Dialogs.
+* Notificaciones.
+* Mensajes.
+
+Mantener consistencia en:
+
+* Márgenes.
+* Espaciado.
+* Tipografía.
+* Iconos.
+* Tamaños.
+* Imágenes.
+* Estados.
+
+---
+
+# 48. RECYCLERVIEW
+
+Utilizar RecyclerView para:
+
+* Hoteles.
+* Habitaciones.
+* Servicios.
+* Reservas.
+* Clientes.
+* Solicitudes de taxi.
+* Mensajes.
+* Usuarios.
+* Reportes.
+* Notificaciones.
+* Tags de servicios cuando sea necesario.
+
+No crear listas manualmente mediante múltiples TextViews.
+
+---
+
+# 49. DATOS MOCK
+
+Durante la primera etapa utilizar datos simulados.
+
+Los mocks deben estar separados de:
+
+* Activities.
+* Fragments.
+* Adaptadores.
+
+Crear modelos Java y repositorios.
+
+La arquitectura debe permitir sustituir posteriormente los mocks por:
+
+* Base de datos NoSQL.
+* Firebase si corresponde.
+* REST API.
+
+---
+
+# 50. SEGURIDAD
+
+Implementar:
+
+* Contraseñas nunca almacenadas en texto plano.
+* Control de acceso basado en roles.
+* Validación de formularios.
+* Protección de operaciones.
+* Cliente limitado a su propia información.
+* Cliente limitado a sus propias reservas.
+* Cliente limitado a sus propios chats.
+* Cliente limitado a sus propios pagos.
+* Cliente limitado a sus propios servicios de taxi.
+* Logs de eventos relevantes.
+
+---
+
+# 51. DISEÑO DE INTERFAZ
+
+La interfaz debe ser:
+
+* Moderna.
+* Limpia.
+* Intuitiva.
+* Visual.
+* Consistente.
+* Orientada a reservas.
+
+Utilizar como referencia de UX:
+
+**Booking**
+
+pero manteniendo una identidad propia.
+
+Dar prioridad visual a:
+
+* Fotografías.
+* Hoteles.
+* Precios.
+* Fechas.
+* Disponibilidad.
+* Servicios.
+* Acciones principales.
+
+---
+
+# 52. ARQUITECTURA DEL CÓDIGO
+
+Organizar como mínimo:
+
+```text
+models
+activities
+fragments
+adapters
+repositories
+services
+api
+utils
+```
+
+Puede agregarse cualquier estructura adicional necesaria.
+
+El código debe ser:
+
+* Modular.
+* Legible.
+* Reutilizable.
+* Escalable.
+* Mantenible.
+
+Evitar colocar toda la lógica dentro de Activities.
+
+---
+
+# 53. VALIDACIONES IMPORTANTES
+
+Implementar como mínimo:
+
+### Usuarios
+
+* Campos obligatorios.
+* Email válido.
+* Contraseña segura.
+
+### Hotel
+
+* Mínimo 4 fotografías.
+* Información obligatoria.
+* Al menos una habitación.
+* Servicios correctamente clasificados.
+
+### Habitaciones
+
+* Capacidad válida.
+* Tamaño válido.
+* Disponibilidad.
+
+### Reservas
+
+* Fechas válidas.
+* Fecha de salida posterior a entrada.
+* No permitir reservas superpuestas.
+* Habitación disponible.
+
+### Servicios
+
+* No duplicar servicios.
+* Servicio adicional requiere precio.
+* Servicio incluido no requiere precio.
+* Utilizar solamente tags existentes.
+
+### Taxi
+
+* Solicitud válida.
+* Número de pasajeros.
+* Estado correcto.
+* Conductor disponible.
+
+---
+
+# 54. FASES DE IMPLEMENTACIÓN
+
+## FASE 1 — INTERFAZ
+
+Implementar:
+
+* Pantallas.
+* Navegación.
+* Componentes.
+* Cards.
+* RecyclerViews.
+* Tags.
+* Filtros.
+* Mock data.
+
+Priorizar la experiencia visual inspirada en Booking.
+
+---
+
+## FASE 2 — FUNCIONALIDAD LOCAL
+
+Implementar:
+
+* Formularios.
+* Validaciones.
+* Navegación.
+* Estados.
+* Reservas simuladas.
+* Notificaciones.
+* Selección de servicios mediante tags.
+
+---
+
+## FASE 3 — PERSISTENCIA
+
+Implementar:
+
+* Autenticación.
+* Base de datos NoSQL.
+* Usuarios.
+* Hoteles.
+* Habitaciones.
+* Catálogo global de servicios.
+* Relaciones hotel-servicio.
+* Reservas.
+
+---
+
+## FASE 4 — TAXI
+
+Implementar:
+
+* REST API.
+* Conductores.
+* Solicitudes.
+* Asignación.
+* Estados.
+* Ubicación.
+* QR.
+
+---
+
+## FASE 5 — FUNCIONALIDADES AVANZADAS
+
+Implementar:
+
+* Chat.
+* Pagos simulados.
+* Cargos adicionales.
+* Calificaciones.
+* Reportes.
+* Logs.
+* Notificaciones.
+
+---
+
+# 55. FLUJO COMPLETO DEL CLIENTE
+
+El flujo principal esperado es:
+
+**Abrir aplicación**
+
+↓
+
+**Buscar destino**
+
+↓
+
+**Seleccionar fechas**
+
+↓
+
+**Seleccionar huéspedes**
+
+↓
+
+**Aplicar filtros**
+
+↓
+
+**Seleccionar hotel**
+
+↓
+
+**Consultar información**
+
+↓
+
+**Seleccionar habitación**
+
+↓
+
+**Consultar servicios**
+
+↓
+
+**Seleccionar servicios adicionales si corresponde**
+
+↓
+
+**Confirmar reserva**
+
+↓
+
+**Pago**
+
+↓
+
+**Reserva confirmada**
+
+↓
+
+**Gestionar reserva**
+
+↓
+
+**Chat con hotel durante estancia**
+
+↓
+
+**Checkout**
+
+↓
+
+**Cargos adicionales**
+
+↓
+
+**Calificación y comentario**
+
+↓
+
+**Pago final**
+
+↓
+
+**Solicitar taxi al aeropuerto**
+
+↓
+
+**Asignación del conductor**
+
+↓
+
+**Seguimiento del conductor**
+
+↓
+
+**QR**
+
+↓
+
+**Servicio de taxi**
+
+↓
+
+**Finalización**
+
+↓
+
+**Calificación del conductor**
+
+---
+
+# 56. REGLAS IMPORTANTES Y OBLIGATORIAS
+
+Cumplir obligatoriamente:
+
+1. Java, no Kotlin.
+2. XML, no Jetpack Compose.
+3. Android 14 / API 34 como mínimo.
+4. Aplicación móvil nativa.
+5. Persistencia NoSQL.
+6. REST API para taxis.
+7. Nunca conectar directamente la aplicación móvil con la BD de taxis.
+8. RecyclerView para listas.
+9. Rating de 1–10.
+10. Administradores de hotel NO son clientes.
+11. Superadmin administra el sistema y usuarios, además de reportes y funciones administrativas correspondientes.
+12. No permitir reservas superpuestas.
+13. Chat únicamente durante reservas activas.
+14. Mínimo 4 fotografías por hotel.
+15. Separar servicios incluidos y adicionales.
+16. Los servicios deben utilizar tags predefinidos.
+17. El administrador no debe escribir manualmente nombres de servicios.
+18. Un servicio puede pertenecer a múltiples hoteles.
+19. Un servicio puede ser incluido en un hotel y adicional en otro.
+20. El precio del servicio adicional pertenece a la relación hotel-servicio.
+21. Los tags deben utilizarse también como filtros de búsqueda.
+22. El taxi debe seguir exactamente los estados definidos.
+23. El QR debe utilizarse para finalizar el servicio.
+24. La ubicación del conductor debe actualizarse periódicamente durante un servicio activo.
+25. Una falla de la API de taxis no debe impedir las reservas de hoteles.
+26. Las contraseñas nunca deben almacenarse en texto plano.
+27. Las operaciones deben estar restringidas según el rol.
+28. La aplicación debe tener una identidad visual propia.
+29. Booking debe utilizarse únicamente como referencia de UX/UI.
+30. No copiar la identidad visual de Booking.
+31. La interfaz debe ser limpia, moderna, intuitiva y orientada a reservas.
+32. Los componentes visuales deben ser reutilizables.
+33. La lógica de negocio debe mantenerse separada de las Activities.
+34. Los datos mock deben estar separados de la interfaz.
+35. La arquitectura debe permitir reemplazar los mocks por las fuentes de datos reales.
+
+---
+
+# 57. RESULTADO FINAL ESPERADO
+
+El resultado debe ser una aplicación móvil Android nativa, funcional, moderna y escalable para gestionar reservas de alojamiento y servicios de taxi.
+
+Debe combinar:
+
+**Requerimientos del proyecto + Java/XML + Android 14 + NoSQL + REST API + diseño inspirado en Booking + sistema de tags de servicios + gestión de hoteles + reservas + pagos + chat + taxis + reportes + seguridad.**
+
+La aplicación debe sentirse como una aplicación moderna de reservas de alojamiento, pero debe conservar una **identidad visual propia**.
+
+El sistema debe permitir que:
+
+* Los clientes encuentren y reserven hoteles fácilmente.
+* Los administradores gestionen sus hoteles de manera sencilla.
+* Los servicios puedan configurarse rápidamente mediante tags predefinidos.
+* Los servicios puedan utilizarse como filtros.
+* Los conductores gestionen servicios de taxi.
+* El Superadmin controle usuarios y operaciones administrativas.
+* Toda la información esté organizada y separada según el rol.
+
+La prioridad general del proyecto es:
+
+**USABILIDAD + CLARIDAD + SEGURIDAD + ESCALABILIDAD + CONSISTENCIA VISUAL + CUMPLIMIENTO DE LOS REQUERIMIENTOS DEL PROYECTO.**

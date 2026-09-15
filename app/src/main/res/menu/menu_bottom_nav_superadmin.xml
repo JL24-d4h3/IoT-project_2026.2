@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Barra inferior del Superadministrador (§47).
+
+    Una sola seccion por ahora, asi que la barra no se muestra. Usuarios,
+    hoteles, conductores y reportes se agregan aqui.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/superadminPanelFragment"
+        android:icon="@drawable/ic_person_group"
+        android:title="@string/nav_panel" />
+
+</menu>

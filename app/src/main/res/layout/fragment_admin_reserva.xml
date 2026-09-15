@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Detalle de una reserva, vista del administrador (§44).
+
+    Va de lo general a lo concreto: quién es el huésped, cuándo llega y se va,
+    qué consumió, y al final cuánto suma. El orden importa porque la pregunta
+    que trae aquí al administrador casi siempre es "¿quién es y cuándo se va?",
+    y el importe se consulta después.
+
+    El total cierra la pantalla y no la abre: es el resultado de todo lo de
+    arriba, y ponerlo primero obligaría a bajar para entender de dónde sale.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/admin_reserva_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/admin_reserva_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_base"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ El huésped ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/admin_reserva_huesped"
+                                style="@style/TextAppearance.App.H2"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                tools:text="Ana Beltrán Ruiz" />
+
+                            <org.iot.project.ui.components.BookingStatusBadgeView
+                                android:id="@+id/admin_reserva_estado"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_sm" />
+                        </LinearLayout>
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_contacto"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_documento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ La estadía ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_reserva_estadia" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_habitacion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_entrada"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_salida"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_huespedes"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Consumos ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_reserva_consumos" />
+
+                        <TextView
+                            android:id="@+id/admin_reserva_consumos_nota"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:text="@string/admin_reserva_consumos_nota" />
+
+                        <TextView
+                            android:id="@+id/admin_reserva_servicios"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            tools:text="Desayuno, Traslado al aeropuerto" />
+
+                        <org.iot.project.ui.components.ChargeListView
+                            android:id="@+id/admin_reserva_cargos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <TextView
+                            android:id="@+id/admin_reserva_sin_cargos"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/admin_reserva_sin_cargos"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Cobro ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_reserva_cobro" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_reserva_fila_tarjeta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <!--
+                            RF-050 y RT-010: el cobro es simulado y la interfaz
+                            tiene que decirlo. Va aquí, junto a la tarjeta, y no
+                            en una nota al pie, porque es justo donde alguien
+                            podría creer que se está moviendo dinero de verdad.
+                        -->
+                        <TextView
+                            android:id="@+id/admin_reserva_tarjeta_nota"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:text="@string/admin_reserva_cobro_simulado" />
+
+                        <org.iot.project.ui.components.PriceBreakdownView
+                            android:id="@+id/admin_reserva_desglose"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_base" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Acciones ============ -->
+                <!--
+                    Las cuatro acciones son excluyentes por estado y el fragmento
+                    enseña como mucho dos a la vez: cobrar el total va después del
+                    checkout, cargar un consumo durante la estadía, escribir al
+                    huésped mientras la conversación siga viva y cancelar solo
+                    antes de que llegue. Por eso comparten estilo primario sin
+                    competir: nunca se ven juntas.
+                -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/admin_reserva_cobrar"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:visibility="gone"
+                    tools:text="Cobrar S/ 480"
+                    tools:visibility="visible" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/admin_reserva_cargo"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:text="@string/admin_reserva_registrar_cargo" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/admin_reserva_chat"
+                    style="@style/Widget.App.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/admin_reserva_escribir" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/admin_reserva_cancelar"
+                    style="@style/Widget.App.Button.Destructive"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/admin_reserva_cancelar"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/admin_reserva_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_base"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/admin_reserva_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

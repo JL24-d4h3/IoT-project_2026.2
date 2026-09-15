@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/stepper_label"
+            style="@style/TextAppearance.App.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Adultos" />
+
+        <TextView
+            android:id="@+id/stepper_hint"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:text="13 años o más"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <!-- Los dos botones miden el objetivo táctil mínimo (§56): un control de
+         cuenta que se falla al pulsar obliga a repetir, y eso se nota. -->
+    <ImageButton
+        android:id="@+id/stepper_menos"
+        android:layout_width="@dimen/touch_target_min"
+        android:layout_height="@dimen/touch_target_min"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_reducir"
+        android:padding="@dimen/space_md"
+        android:src="@drawable/ic_remove"
+        app:tint="@color/colorPrimary" />
+
+    <TextView
+        android:id="@+id/stepper_valor"
+        style="@style/TextAppearance.App.H3"
+        android:layout_width="@dimen/stepper_value_width"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        tools:text="2" />
+
+    <ImageButton
+        android:id="@+id/stepper_mas"
+        android:layout_width="@dimen/touch_target_min"
+        android:layout_height="@dimen/touch_target_min"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_aumentar"
+        android:padding="@dimen/space_md"
+        android:src="@drawable/ic_add"
+        app:tint="@color/colorPrimary" />
+
+</merge>

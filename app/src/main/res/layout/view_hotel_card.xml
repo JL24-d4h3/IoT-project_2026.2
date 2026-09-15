@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="com.google.android.material.card.MaterialCardView">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- La fotografía y el favorito van juntos: el corazón tiene que
+             quedar sobre la imagen, no debajo. -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/hotel_card_image_height">
+
+            <ImageView
+                android:id="@+id/hotel_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/cd_imagen_hotel"
+                android:scaleType="centerCrop"
+                tools:src="@tools:sample/backgrounds/scenic" />
+
+            <ImageButton
+                android:id="@+id/hotel_favorite"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="@dimen/space_sm"
+                android:background="@drawable/bg_favorite_circle"
+                android:contentDescription="@string/cd_favorito"
+                android:padding="@dimen/space_sm"
+                android:src="@drawable/ic_heart"
+                app:tint="@color/colorSurface" />
+
+            <!-- Distintivo de disponibilidad: solo aparece cuando la búsqueda
+                 trajo fechas y la habitación está libre. -->
+            <TextView
+                android:id="@+id/hotel_availability"
+                style="@style/TextAppearance.App.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_margin="@dimen/space_sm"
+                android:background="@drawable/bg_badge_success"
+                android:paddingStart="@dimen/space_sm"
+                android:paddingTop="@dimen/space_xs"
+                android:paddingEnd="@dimen/space_sm"
+                android:paddingBottom="@dimen/space_xs"
+                android:text="@string/hotel_disponible"
+                android:textColor="@color/colorOnSuccessContainer"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:gravity="top"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/hotel_name"
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    tools:text="Casa del Mar" />
+
+                <org.iot.project.ui.components.RatingBadgeView
+                    android:id="@+id/hotel_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_sm"
+                    tools:text="9.2" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_xs"
+                    android:layout_height="@dimen/icon_xs"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_location"
+                    app:tint="@color/colorTextSecondary" />
+
+                <TextView
+                    android:id="@+id/hotel_location"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_xs"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Miraflores, Lima · a 1.5 km del centro" />
+            </LinearLayout>
+
+            <!-- Fila de servicios: se llena con los primeros del hotel. Si el
+                 hotel no tiene ninguno, la fila entera desaparece. -->
+            <LinearLayout
+                android:id="@+id/hotel_services"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/hotel_price"
+                style="@style/TextAppearance.App.NumericEmphasis"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                tools:text="Desde S/ 480 por noche" />
+        </LinearLayout>
+    </LinearLayout>
+
+</merge>

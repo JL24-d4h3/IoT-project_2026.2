@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Contador de mensajes sin leer (RF-068).
+
+    Es el unico distintivo de la aplicacion con relleno solido, y lo es a
+    proposito: los demas —el estado de una reserva, la etiqueta de "alojado
+    ahora"— describen algo que ya se sabe leyendo la fila, y este es lo unico
+    que pide una accion. Sobre la tarjeta blanca, el teal lleno es lo que se ve
+    primero al abrir la bandeja.
+
+    El texto va en colorOnPrimary y no en colorPrimary: el teal sobre su propio
+    contenedor claro no llega al contraste que exige §56, y este par si.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/colorPrimary" />
+    <corners android:radius="@dimen/radius_circle" />
+</shape>

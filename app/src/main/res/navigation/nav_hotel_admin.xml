@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Grafo del rol Administrador de hotel (§42 a §45).
+
+    §44 pide "navegación clara" y avisa de no meterlo todo en una sola pantalla.
+    La barra inferior lleva las cinco secciones que el administrador toca a
+    diario —panel, reservas, habitaciones, servicios y su propio perfil— y el
+    resto (datos del hotel, clientes, cargos, mensajes, reportes) se alcanza
+    desde las acciones rápidas de la portada, que es justo lo que §43 pide que
+    la portada tenga. Así la portada no es un adorno: es el índice.
+
+    Son trece destinos y por eso las secciones de la barra importan: con la
+    barra llena, lo que no está en ella tiene que estar a un toque desde el
+    panel, y lo está.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_hotel_admin"
+    app:startDestination="@id/adminHomeFragment">
+
+    <!-- ==================== Barra inferior ==================== -->
+
+    <fragment
+        android:id="@+id/adminHomeFragment"
+        android:name="org.iot.project.ui.admin.home.AdminHomeFragment"
+        android:label="@string/nav_panel"
+        tools:layout="@layout/fragment_admin_home" />
+
+    <fragment
+        android:id="@+id/adminReservasFragment"
+        android:name="org.iot.project.ui.admin.reservas.ReservasAdminFragment"
+        android:label="@string/nav_reservas_admin"
+        tools:layout="@layout/fragment_admin_reservas" />
+
+    <fragment
+        android:id="@+id/adminHabitacionesFragment"
+        android:name="org.iot.project.ui.admin.habitaciones.HabitacionesFragment"
+        android:label="@string/nav_habitaciones"
+        tools:layout="@layout/fragment_admin_habitaciones" />
+
+    <fragment
+        android:id="@+id/adminServiciosFragment"
+        android:name="org.iot.project.ui.admin.servicios.ServiciosFragment"
+        android:label="@string/nav_servicios"
+        tools:layout="@layout/fragment_admin_servicios" />
+
+    <fragment
+        android:id="@+id/adminPerfilFragment"
+        android:name="org.iot.project.ui.admin.perfil.AdminPerfilFragment"
+        android:label="@string/nav_perfil"
+        tools:layout="@layout/fragment_admin_perfil" />
+
+    <!-- ==================== Desde las acciones rápidas ==================== -->
+
+    <fragment
+        android:id="@+id/adminHotelFragment"
+        android:name="org.iot.project.ui.admin.hotel.HotelDatosFragment"
+        android:label="@string/nav_hotel_datos"
+        tools:layout="@layout/fragment_admin_hotel_datos" />
+
+    <fragment
+        android:id="@+id/adminClientesFragment"
+        android:name="org.iot.project.ui.admin.clientes.ClientesFragment"
+        android:label="@string/nav_clientes"
+        tools:layout="@layout/fragment_admin_clientes" />
+
+    <fragment
+        android:id="@+id/adminCargosFragment"
+        android:name="org.iot.project.ui.admin.cargos.CargosFragment"
+        android:label="@string/nav_cargos"
+        tools:layout="@layout/fragment_admin_cargos" />
+
+    <fragment
+        android:id="@+id/adminReportesFragment"
+        android:name="org.iot.project.ui.admin.reportes.ReportesFragment"
+        android:label="@string/nav_reportes"
+        tools:layout="@layout/fragment_admin_reportes" />
+
+    <fragment
+        android:id="@+id/adminMensajesFragment"
+        android:name="org.iot.project.ui.admin.mensajes.MensajesFragment"
+        android:label="@string/nav_mensajes"
+        tools:layout="@layout/fragment_admin_mensajes" />
+
+    <fragment
+        android:id="@+id/adminChatFragment"
+        android:name="org.iot.project.ui.admin.mensajes.AdminChatFragment"
+        android:label="@string/titulo_chat"
+        tools:layout="@layout/fragment_chat">
+
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminReservaDetalleFragment"
+        android:name="org.iot.project.ui.admin.reservas.ReservaAdminFragment"
+        android:label="@string/nav_reserva_detalle"
+        tools:layout="@layout/fragment_admin_reserva">
+
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+</navigation>

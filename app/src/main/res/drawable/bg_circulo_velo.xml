@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Círculo oscuro para un botón que va encima de una fotografía.
+
+    El icono va en blanco y necesita un fondo propio: debajo puede haber un
+    cielo claro o una fachada de noche, y un blanco sin respaldo desaparece en
+    la mitad de las imágenes (§56). El velo resuelve el contraste sin depender
+    de lo que se haya subido.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/colorScrimStrong" />
+</shape>

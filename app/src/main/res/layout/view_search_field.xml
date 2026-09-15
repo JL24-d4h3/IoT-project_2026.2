@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageView
+        android:id="@+id/search_icon"
+        android:layout_width="@dimen/icon_sm"
+        android:layout_height="@dimen/icon_sm"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_search"
+        app:tint="@color/colorTextSecondary" />
+
+    <EditText
+        android:id="@+id/search_input"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="@dimen/space_sm"
+        android:layout_weight="1"
+        android:background="@null"
+        android:gravity="center_vertical"
+        android:imeOptions="actionSearch"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:maxLines="1"
+        android:textColor="@color/colorTextPrimary"
+        android:textColorHint="@color/colorTextSecondary"
+        tools:hint="Ciudad, distrito o alojamiento" />
+
+    <!-- El botón de borrar solo se ve cuando hay algo escrito: un aspa sobre un
+         campo vacío no tiene nada que borrar. -->
+    <ImageButton
+        android:id="@+id/search_clear"
+        android:layout_width="@dimen/touch_target_min"
+        android:layout_height="@dimen/touch_target_min"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_limpiar_busqueda"
+        android:padding="@dimen/space_md"
+        android:src="@drawable/ic_close"
+        android:visibility="gone"
+        app:tint="@color/colorTextSecondary"
+        tools:visibility="visible" />
+
+</merge>

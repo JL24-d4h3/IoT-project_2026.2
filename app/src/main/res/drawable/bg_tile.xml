@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fondo de un acceso rápido de la portada del administrador (§43).
+
+    Repite a mano lo que hace Widget.App.Card —superficie, esquinas y borde—
+    porque un accento rápido es un LinearLayout y no un MaterialCardView: dentro
+    lleva el icono y el rótulo, y envolverlo en una card solo para heredar el
+    fondo obligaría a colgar el toque del envoltorio en vez de la pieza.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <solid android:color="@color/colorSurface" />
+
+    <corners android:radius="@dimen/radius_card" />
+
+    <stroke
+        android:width="@dimen/border_width"
+        android:color="@color/colorBorder" />
+</shape>

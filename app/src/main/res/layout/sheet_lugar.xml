@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Registrar un lugar de interés cercano al hotel (§42, RF-011).
+
+    Tres campos y no uno: en la ficha del cliente el lugar se lee como
+    "Museo · 1.2 km" (ver item_nearby_place), así que el tipo y la distancia no
+    son adorno, son la mitad de lo que se enseña. Pedirlos aquí es lo que
+    permite que allí aparezcan.
+
+    La distancia se escribe a mano porque el hotel la conoce y la aplicación no
+    tiene de dónde calcularla: el mapa del taxi es un esquema sin geometría
+    real, y deducir kilómetros de él sería inventarlos.
+-->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/sheet_top_padding"
+        android:paddingBottom="@dimen/space_lg">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <TextView
+                android:id="@+id/lugar_titulo"
+                style="@style/TextAppearance.App.H2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/admin_hotel_lugar_titulo" />
+
+            <ImageButton
+                android:id="@+id/lugar_cerrar"
+                android:layout_width="@dimen/touch_target_min"
+                android:layout_height="@dimen/touch_target_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_cerrar"
+                android:padding="@dimen/space_md"
+                android:src="@drawable/ic_close"
+                app:tint="@color/colorTextPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/lugar_nombre_campo"
+                style="@style/Widget.App.TextInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:hint="@string/admin_hotel_lugar_nombre">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/lugar_nombre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords"
+                    android:maxLength="60"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/lugar_tipo_campo"
+                style="@style/Widget.App.TextInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:hint="@string/admin_hotel_lugar_tipo"
+                app:helperText="@string/admin_hotel_lugar_tipo_ayuda">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/lugar_tipo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLength="40"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/lugar_distancia_campo"
+                style="@style/Widget.App.TextInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:hint="@string/admin_hotel_lugar_distancia"
+                app:suffixText="@string/admin_hotel_lugar_km">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/lugar_distancia"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLength="6"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/lugar_guardar"
+                style="@style/Widget.App.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_lg"
+                android:text="@string/admin_hotel_lugar_guardar" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

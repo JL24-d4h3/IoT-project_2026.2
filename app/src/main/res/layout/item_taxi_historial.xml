@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un servicio de taxi dentro del historial (§38).
+
+     Existe para que la tarjeta herede el estilo de las demas cards: los
+     articulos de una lista se crean en tiempo de ejecucion, y crearlos con
+     "new TaxiRequestCardView(contexto)" los dejaria sin borde ni radio, porque
+     el estilo se aplica al inflar y no al construir. -->
+<org.iot.project.ui.components.TaxiRequestCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.App.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />

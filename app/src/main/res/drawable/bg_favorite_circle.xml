@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Círculo oscuro tras el corazón. Sin él, el icono desaparece sobre las
+    fotografías claras, que son la mayoría.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/colorScrim" />
+</shape>

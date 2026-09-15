@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una opcion de pago. El id lo asigna el fragmento en tiempo de ejecucion
+     (generateViewId) porque las tarjetas del usuario son datos, no recursos.
+     Sin style explicito: el tema Material3 ya define radioButtonStyle. -->
+<com.google.android.material.radiobutton.MaterialRadioButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/touch_target_min"
+    android:paddingTop="@dimen/space_xs"
+    android:paddingBottom="@dimen/space_xs"
+    tools:text="Visa ****4242 · vence 09/28" />

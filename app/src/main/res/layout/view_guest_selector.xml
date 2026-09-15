@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <org.iot.project.ui.components.StepperView
+        android:id="@+id/guests_adultos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_target_min"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingBottom="@dimen/space_sm" />
+
+    <View style="@style/Widget.App.Divider" />
+
+    <org.iot.project.ui.components.StepperView
+        android:id="@+id/guests_ninos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_target_min"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingBottom="@dimen/space_sm" />
+
+    <View style="@style/Widget.App.Divider" />
+
+    <org.iot.project.ui.components.StepperView
+        android:id="@+id/guests_habitaciones"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_target_min"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingBottom="@dimen/space_sm" />
+
+</merge>

@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Datos del hotel, vista del administrador (§42, RF-010 a RF-013).
+
+    Tres bloques, en el orden en que se tocan: primero lo que el huésped lee
+    —nombre, ubicación y descripción—, después las fotografías, que son lo que
+    más se cambia, y al final los lugares cercanos.
+
+    El formulario de los datos del hotel vive en una hoja y aquí se leen. Un
+    formulario incrustado obligaría a decidir qué hacer con lo que el
+    administrador haya escrito a medias cuando llegue un cambio de fuera —una
+    fotografía añadida, por ejemplo—, y cualquier respuesta es mala: o se le
+    borra lo escrito o la pantalla enseña un borrador que ya no coincide con el
+    hotel. La hoja no tiene ese problema porque se abre, se rellena y se
+    guarda sin que nada más la toque.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/admin_hotel_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/admin_hotel_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_base"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Cómo se presenta el hotel ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/admin_hotel_nombre"
+                                style="@style/TextAppearance.App.H2"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                tools:text="Costa Verde" />
+
+                            <org.iot.project.ui.components.RatingBadgeView
+                                android:id="@+id/admin_hotel_rating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_sm" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/admin_hotel_ciudad"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            tools:text="Miraflores · Lima" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_hotel_fila_direccion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_hotel_fila_ubicacion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:id="@+id/admin_hotel_descripcion"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            tools:text="Habitaciones frente al malecón, a diez minutos del centro." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_hotel_editar"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_base"
+                            android:text="@string/admin_hotel_editar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Fotografías ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingTop="@dimen/space_base"
+                        android:paddingBottom="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="@dimen/space_base"
+                            android:paddingEnd="@dimen/space_base"
+                            android:text="@string/admin_hotel_fotos" />
+
+                        <TextView
+                            android:id="@+id/admin_hotel_fotos_estado"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:paddingStart="@dimen/space_base"
+                            android:paddingEnd="@dimen/space_base"
+                            tools:text="6 fotografías · mínimo 4" />
+
+                        <!--
+                            La tira se sale del relleno de la tarjeta a
+                            propósito: una lista que se desplaza tiene que
+                            poder enseñar que sigue, y con el margen puesto la
+                            última miniatura quedaría cortada por el borde de
+                            la tarjeta en vez de por el de la pantalla, que es
+                            lo que se lee como "hay más".
+                        -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/admin_hotel_fotos_lista"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:clipToPadding="false"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/space_base"
+                            android:paddingEnd="@dimen/space_base"
+                            android:scrollbars="none"
+                            tools:listitem="@layout/item_foto_hotel" />
+
+                        <TextView
+                            android:id="@+id/admin_hotel_sin_fotos"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:paddingStart="@dimen/space_base"
+                            android:paddingEnd="@dimen/space_base"
+                            android:text="@string/admin_hotel_sin_fotos"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/admin_hotel_foto_campo"
+                            style="@style/Widget.App.TextInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_base"
+                            android:layout_marginStart="@dimen/space_base"
+                            android:layout_marginEnd="@dimen/space_base"
+                            android:hint="@string/admin_hotel_foto_url"
+                            app:helperText="@string/admin_hotel_foto_ayuda">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/admin_hotel_foto"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textUri"
+                                android:maxLines="1" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_hotel_foto_agregar"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:layout_marginStart="@dimen/space_base"
+                            android:layout_marginEnd="@dimen/space_base"
+                            android:text="@string/admin_hotel_foto_agregar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Lugares cercanos ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_hotel_lugares" />
+
+                        <TextView
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:text="@string/admin_hotel_lugares_nota" />
+
+                        <LinearLayout
+                            android:id="@+id/admin_hotel_lugares_lista"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/admin_hotel_sin_lugares"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/admin_hotel_sin_lugares"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_hotel_lugar_agregar"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_base"
+                            android:text="@string/admin_hotel_lugar_agregar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/admin_hotel_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_base"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/admin_hotel_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

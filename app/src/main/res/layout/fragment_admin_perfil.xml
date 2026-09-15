@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Perfil del administrador de hotel.
+
+    Es el mismo molde que el perfil del cliente (§40) con una diferencia que lo
+    justifica: aquí la identidad no es solo quién eres, es **de qué hotel
+    respondes**. Por eso la segunda tarjeta no son preferencias sino el hotel
+    administrado, con su calificación y su número de habitaciones, y con la
+    puerta a editarlo.
+
+    Como el del cliente, es una pantalla de consulta: no hay campos editables
+    porque no hay a dónde mandar los cambios desde aquí. Lo que sí hace es
+    llevar a donde se cambia cada cosa.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/admin_perfil_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/admin_perfil_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_md"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Quién eres ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/admin_perfil_iniciales"
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="@dimen/avatar_lg"
+                        android:layout_height="@dimen/avatar_lg"
+                        android:background="@drawable/bg_circulo_primario"
+                        android:gravity="center"
+                        android:textColor="@color/colorOnPrimaryContainer"
+                        tools:text="MR" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_base"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/admin_perfil_nombre"
+                            style="@style/TextAppearance.App.H2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="Martín Rojas Delgado" />
+
+                        <TextView
+                            android:id="@+id/admin_perfil_correo_cabecera"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="m.rojas@casadelmar.pe" />
+
+                        <!-- El rol, en una etiqueta. No es decoración: es la
+                             respuesta a "¿con qué cuenta entré?", que es lo
+                             primero que se pregunta quien tiene dos cuentas.
+                             El texto lo pone la pantalla desde Role, para que
+                             no pueda decir algo distinto del rol real. -->
+                        <TextView
+                            android:id="@+id/admin_perfil_rol"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:background="@drawable/bg_chip_neutral"
+                            android:paddingStart="@dimen/space_sm"
+                            android:paddingTop="@dimen/space_xs"
+                            android:paddingEnd="@dimen/space_sm"
+                            android:paddingBottom="@dimen/space_xs"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            tools:text="Administrador de hotel" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ============ El hotel que administras ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_perfil_hotel" />
+
+                        <!-- Mientras llega el hotel: la tarjeta no cambia de
+                             alto, así que no hay salto al aparecer el dato. -->
+                        <org.iot.project.ui.components.LoadingSkeletonView
+                            android:id="@+id/admin_perfil_hotel_esqueleto"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/admin_perfil_hotel_error"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/admin_perfil_hotel_error"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <LinearLayout
+                            android:id="@+id/admin_perfil_hotel_datos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/admin_perfil_hotel_nombre"
+                                    style="@style/TextAppearance.App.H3"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    tools:text="Casa del Mar" />
+
+                                <org.iot.project.ui.components.RatingBadgeView
+                                    android:id="@+id/admin_perfil_hotel_rating"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/space_sm" />
+                            </LinearLayout>
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_perfil_fila_ciudad"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_perfil_fila_direccion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_perfil_fila_habitaciones"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/admin_perfil_editar_hotel"
+                                style="@style/Widget.App.Button.Secondary"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/button_height"
+                                android:layout_marginTop="@dimen/space_base"
+                                android:text="@string/admin_perfil_editar_hotel" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Tus datos ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/space_md"
+                            android:text="@string/perfil_datos" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_perfil_fila_documento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_perfil_fila_telefono"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/admin_perfil_fila_correo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Sesión ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/perfil_sesion" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_perfil_cerrar_sesion"
+                            style="@style/Widget.App.Button.Destructive"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/perfil_cerrar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/admin_perfil_version"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xl"
+                    android:gravity="center"
+                    tools:text="Versión 1.0" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/admin_perfil_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/admin_perfil_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

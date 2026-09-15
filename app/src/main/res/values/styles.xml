@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Estilos de widget. Cada componente de la interfaz se construye sobre uno de
+    estos, de modo que un boton o una card se vean igual en las cuatro areas de
+    la aplicacion (§5.3, §78: "botones con estilo distinto en cada pantalla" es
+    un error a evitar).
+
+    Las variantes heredan por nombre: Widget.App.Card.Interactive hereda de
+    Widget.App.Card.
+-->
+<resources>
+
+    <!-- ==================== BOTONES ==================== -->
+
+    <style name="Widget.App.Button.Primary" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/colorPrimary</item>
+        <item name="android:textColor">@color/colorOnPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.Button</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:minWidth">@dimen/touch_target_min</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="iconPadding">@dimen/space_sm</item>
+        <item name="iconSize">@dimen/icon_sm</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:paddingStart">@dimen/space_xl</item>
+        <item name="android:paddingEnd">@dimen/space_xl</item>
+    </style>
+
+    <style name="Widget.App.Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/colorBorder</item>
+        <item name="strokeWidth">@dimen/border_width</item>
+        <item name="android:textColor">@color/colorPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.Button</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="iconSize">@dimen/icon_sm</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:paddingStart">@dimen/space_xl</item>
+        <item name="android:paddingEnd">@dimen/space_xl</item>
+    </style>
+
+    <style name="Widget.App.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/colorPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.Button</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="iconSize">@dimen/icon_sm</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
+    <!-- Para acciones irreversibles: cancelar reserva, eliminar -->
+    <style name="Widget.App.Button.Destructive" parent="Widget.App.Button.Secondary">
+        <item name="strokeColor">@color/colorError</item>
+        <item name="android:textColor">@color/colorError</item>
+    </style>
+
+    <!-- Boton pequeno, para acciones dentro de una card -->
+    <style name="Widget.App.Button.Primary.Small" parent="Widget.App.Button.Primary">
+        <item name="android:minHeight">@dimen/button_height_sm</item>
+        <item name="android:paddingStart">@dimen/space_base</item>
+        <item name="android:paddingEnd">@dimen/space_base</item>
+    </style>
+
+    <!-- ==================== CARDS ====================
+         Se separan con borde de 1dp y sin sombra: la jerarquia la hace el
+         espaciado y el peso tipografico (§6.4). -->
+
+    <style name="Widget.App.Card" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/colorSurface</item>
+        <item name="cardCornerRadius">@dimen/radius_card</item>
+        <item name="cardElevation">@dimen/elevation_flat</item>
+        <item name="strokeColor">@color/colorBorder</item>
+        <item name="strokeWidth">@dimen/border_width</item>
+        <item name="cardPreventCornerOverlap">true</item>
+        <item name="contentPadding">0dp</item>
+    </style>
+
+    <!-- Card que responde al toque -->
+    <style name="Widget.App.Card.Interactive" parent="Widget.App.Card">
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Bloque secundario dentro de una pantalla, sin borde -->
+    <style name="Widget.App.Card.Flat" parent="Widget.App.Card">
+        <item name="strokeWidth">0dp</item>
+        <item name="cardBackgroundColor">@color/colorSurfaceVariant</item>
+    </style>
+
+    <!--
+        Acceso rápido de la portada del administrador (§43).
+
+        Es la versión para LinearLayout de Widget.App.Card.Interactive: mismo
+        fondo, mismo borde y misma respuesta al toque, pero sobre una pieza que
+        lleva dentro su propio icono y su rótulo.
+    -->
+    <!-- parent="" explicito: si no, aapt busca un estilo "Widget.App" que no existe -->
+    <style name="Widget.App.Tile" parent="">
+        <item name="android:background">@drawable/bg_tile</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:padding">@dimen/space_base</item>
+        <item name="android:minHeight">@dimen/touch_target_min</item>
+    </style>
+
+    <!-- ==================== CHIPS ==================== -->
+
+    <style name="Widget.App.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/color_chip_filter_background</item>
+        <item name="android:textColor">@color/color_chip_filter_text</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.BodySecondary</item>
+        <item name="chipStrokeColor">@color/colorBorder</item>
+        <item name="chipStrokeWidth">@dimen/border_width</item>
+        <item name="chipCornerRadius">@dimen/radius_chip</item>
+        <item name="chipMinHeight">36dp</item>
+        <item name="checkedIconVisible">true</item>
+        <item name="chipIconSize">@dimen/icon_xs</item>
+    </style>
+
+    <!-- Chip de servicio: solo informa, no se pulsa -->
+    <style name="Widget.App.Chip.Assist" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">@color/colorSurfaceVariant</item>
+        <item name="android:textColor">@color/colorTextPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.Caption</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">@dimen/radius_chip</item>
+        <item name="chipMinHeight">32dp</item>
+        <item name="chipIconSize">@dimen/icon_xs</item>
+        <item name="android:clickable">false</item>
+        <item name="android:checkable">false</item>
+    </style>
+
+    <!-- Chip de accion: se pulsa y no guarda estado (Filtros, Ordenar).
+         No sirve ninguno de los otros dos: el de filtro es conmutable y el de
+         asistencia es inerte. Se distingue del fondo por el borde, no por el
+         relleno, para que no compita con los chips de filtro que tiene al
+         lado en la barra de resultados. -->
+    <style name="Widget.App.Chip.Action" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">@color/colorSurface</item>
+        <item name="android:textColor">@color/colorTextPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.BodySecondary</item>
+        <item name="chipStrokeColor">@color/colorBorder</item>
+        <item name="chipStrokeWidth">@dimen/border_width</item>
+        <item name="chipCornerRadius">@dimen/radius_chip</item>
+        <item name="chipMinHeight">36dp</item>
+        <item name="chipIconSize">@dimen/icon_xs</item>
+        <item name="android:checkable">false</item>
+    </style>
+
+    <!-- ==================== ENTRADA DE TEXTO ==================== -->
+
+    <style name="Widget.App.TextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">@dimen/radius_control</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_control</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_control</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_control</item>
+        <item name="boxStrokeColor">@color/colorPrimary</item>
+        <item name="boxStrokeWidth">@dimen/border_width</item>
+        <item name="hintTextColor">@color/colorTextSecondary</item>
+        <item name="android:textColorHint">@color/colorTextSecondary</item>
+        <item name="errorTextColor">@color/colorError</item>
+        <item name="boxBackgroundColor">@color/colorSurface</item>
+    </style>
+
+    <!-- ==================== NAVEGACION ==================== -->
+
+    <style name="Widget.App.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/colorSurface</item>
+        <item name="titleTextAppearance">@style/TextAppearance.App.H2</item>
+        <item name="android:elevation">@dimen/elevation_flat</item>
+        <item name="navigationIconTint">@color/colorTextPrimary</item>
+    </style>
+
+    <style name="Widget.App.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">@color/colorSurface</item>
+        <item name="itemIconTint">@color/selector_bottom_nav</item>
+        <item name="itemTextColor">@color/selector_bottom_nav</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.App.BottomNav.Indicator</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="elevation">@dimen/elevation_flat</item>
+    </style>
+
+    <style name="Widget.App.BottomNav.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/colorPrimaryContainer</item>
+        <item name="android:width">64dp</item>
+        <item name="android:height">32dp</item>
+    </style>
+
+    <!-- ==================== VARIOS ==================== -->
+
+    <!-- parent="" explicito: si no, aapt busca un estilo "Widget.App" que no existe -->
+    <style name="Widget.App.Divider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/divider_thickness</item>
+        <item name="android:background">@color/colorDivider</item>
+    </style>
+
+    <!-- Imagen que corona una card: redondea solo arriba -->
+    <style name="Widget.App.Image.CardTop" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:background">@color/colorSurfaceVariant</item>
+    </style>
+
+</resources>

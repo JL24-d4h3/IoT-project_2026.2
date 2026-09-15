@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Los identificadores coinciden a proposito con los destinos del grafo de
+    navegacion: asi la barra sabe que item marcar para cada pantalla.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_inicio" />
+
+    <item
+        android:id="@+id/searchFragment"
+        android:icon="@drawable/ic_search"
+        android:title="@string/nav_buscar" />
+
+    <item
+        android:id="@+id/bookingsFragment"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/nav_reservas" />
+
+    <item
+        android:id="@+id/taxiFragment"
+        android:icon="@drawable/ic_taxi"
+        android:title="@string/nav_taxi" />
+
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_perfil" />
+
+</menu>

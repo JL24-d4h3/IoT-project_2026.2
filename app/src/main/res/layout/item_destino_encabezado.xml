@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Encabezado de seccion de la lista de destinos (§14). Separado del item
+     porque no se pulsa ni se enfoca: es una etiqueta, y tratarlo como una
+     fila mas lo haria anunciable al lector de pantalla como algo elegible. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/destino_titulo"
+    style="@style/TextAppearance.App.Caption"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingTop="@dimen/space_lg"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingBottom="@dimen/space_sm"
+    tools:text="Búsquedas recientes" />

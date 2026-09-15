@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Taxi al aeropuerto (§35 a §39).
+
+     Una sola pantalla con tres bloques que se encienden por separado: el
+     servicio en curso, el estado sin servicio y el historial. No son caras que
+     se excluyan —un cliente puede tener un traslado en curso y cinco
+     anteriores— asi que apagar uno no puede apagar los otros.
+
+     El modulo de taxi es secundario frente al hotelero (§35): por eso la
+     pantalla se lee de arriba abajo como una ficha mas, sin cabecera propia ni
+     color distinto. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/taxi_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_md"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Sin servicio en curso ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/taxi_bloque_libre"
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_lg">
+
+                        <ImageView
+                            android:layout_width="@dimen/icon_md"
+                            android:layout_height="@dimen/icon_md"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_taxi"
+                            app:tint="@color/colorPrimary" />
+
+                        <TextView
+                            android:id="@+id/taxi_libre_titulo"
+                            style="@style/TextAppearance.App.H2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:gravity="center"
+                            tools:text="Sin traslados" />
+
+                        <TextView
+                            android:id="@+id/taxi_libre_mensaje"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:gravity="center"
+                            tools:text="Cuando pidas un traslado aparecerá aquí." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/taxi_pedir"
+                            style="@style/Widget.App.Button.Primary"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_lg"
+                            android:text="@string/taxi_pedir" />
+
+                        <!-- Solo cuando no hay ninguna reserva: sin reserva no
+                             se puede pedir nada, asi que ofrecer el boton seria
+                             ofrecer un callejon sin salida. -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/taxi_ir_reservas"
+                            style="@style/Widget.App.Button.Text"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/taxi_ir_reservas"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Servicio en curso ============ -->
+                <LinearLayout
+                    android:id="@+id/taxi_bloque_activo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/taxi_activo_titulo" />
+
+                    <!-- Estado del servicio (§38): linea de tiempo, no un
+                         texto suelto. Va en su propia tarjeta porque es lo
+                         primero que el cliente mira al abrir la pantalla. -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_base">
+
+                            <org.iot.project.ui.components.TaxiStatusView
+                                android:id="@+id/taxi_estado"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <!-- El QR del cliente (RF-101). Aparece solo desde
+                                 EN CAMINO: antes de que el conductor llegue no
+                                 hay nada que enseñarle. -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/taxi_qr"
+                                style="@style/Widget.App.Button.Primary"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/button_height"
+                                android:layout_marginTop="@dimen/space_base"
+                                android:text="@string/taxi_mostrar_qr"
+                                app:icon="@drawable/ic_qr_code" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Seguimiento (RF-099). Se oculta entero cuando el viaje
+                         ya arranco: dentro del taxi, un plano con el coche
+                         encima del punto de recojo no informa de nada. -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/taxi_tarjeta_mapa"
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_base">
+
+                            <org.iot.project.ui.components.TrackingMapView
+                                android:id="@+id/taxi_mapa"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/map_height" />
+
+                            <TextView
+                                android:id="@+id/taxi_mapa_distancia"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md"
+                                tools:text="A 1,2 km del punto de recojo" />
+
+                            <TextView
+                                android:id="@+id/taxi_mapa_actualizado"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                tools:text="Última ubicación: hace 3 min" />
+
+                            <TextView
+                                android:id="@+id/taxi_mapa_aviso"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                android:text="@string/taxi_ubicacion_vieja"
+                                android:textColor="@color/colorOnWarningContainer"
+                                android:visibility="gone"
+                                tools:visibility="visible" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Conductor y vehiculo (§37, RF-094 a RF-096). Solo
+                         aparecen cuando hay alguien asignado: una tarjeta de
+                         conductor vacia no es un dato, es un hueco. -->
+                    <LinearLayout
+                        android:id="@+id/taxi_bloque_conductor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/space_sm"
+                            android:text="@string/taxi_conductor_asignado" />
+
+                        <org.iot.project.ui.components.DriverCardView
+                            android:id="@+id/taxi_conductor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.VehicleCardView
+                            android:id="@+id/taxi_vehiculo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+                    </LinearLayout>
+
+                    <!-- Datos del viaje -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_base">
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/taxi_fila_recojo"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/taxi_fila_destino"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/taxi_fila_cuando"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/taxi_fila_pasajeros"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/taxi_fila_precio"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <TextView
+                                android:id="@+id/taxi_ida_vuelta"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md"
+                                android:drawablePadding="@dimen/space_sm"
+                                android:text="@string/taxi_ida_vuelta_nota"
+                                android:visibility="gone"
+                                app:drawableStartCompat="@drawable/ic_info"
+                                app:drawableTint="@color/colorTextSecondary"
+                                tools:visibility="visible" />
+
+                            <TextView
+                                android:id="@+id/taxi_incluido"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md"
+                                android:drawablePadding="@dimen/space_sm"
+                                android:text="@string/taxi_incluido_en_reserva"
+                                android:textColor="@color/colorOnSuccessContainer"
+                                android:visibility="gone"
+                                app:drawableStartCompat="@drawable/ic_check"
+                                app:drawableTint="@color/colorSuccess"
+                                tools:visibility="visible" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- ============ Historial ============ -->
+                <LinearLayout
+                    android:id="@+id/taxi_seccion_historial"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/taxi_historial" />
+
+                    <!-- Los servicios cerrados se añaden en tiempo de
+                         ejecucion: son una lista y su numero depende del
+                         cliente, no del diseño. -->
+                    <LinearLayout
+                        android:id="@+id/taxi_historial"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="vertical" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- ============ Formulario de solicitud (§36) ============ -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/taxi_formulario"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_md"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <TextView
+                    style="@style/TextAppearance.App.H2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/taxi_reserva_etiqueta" />
+
+                <TextView
+                    android:id="@+id/taxi_form_sin_reserva"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/taxi_sin_reserva"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <LinearLayout
+                    android:id="@+id/taxi_reservas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/taxi_campo_recogida"
+                    style="@style/Widget.App.TextInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:hint="@string/taxi_recogida"
+                    app:placeholderText="@string/taxi_recogida_pista">
+
+                    <!-- Sin hint propio: el del TextInputLayout ya ocupa ese
+                         mismo hueco, y los dos textos se dibujarian uno encima
+                         del otro. La pista va como placeholder, que es lo que
+                         Material tiene para esto. -->
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/taxi_recogida"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapSentences"
+                        android:maxLines="2"
+                        tools:text="Av. Malecón Cisneros 1240, Miraflores" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/taxi_campo_destino"
+                    style="@style/Widget.App.TextInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:hint="@string/taxi_destino"
+                    app:placeholderText="@string/taxi_destino_pista">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/taxi_destino"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="textCapSentences"
+                        android:maxLines="2"
+                        tools:text="Aeropuerto Jorge Chávez" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Fecha y hora, cada una en su mitad: son dos datos cortos y
+                     apilarlos alarga el formulario sin motivo. -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/taxi_fila_fecha"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/form_row_height"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/taxi_fecha" />
+
+                            <TextView
+                                android:id="@+id/taxi_valor_fecha"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/colorTextSecondary"
+                                tools:text="vie 20 set" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="@dimen/icon_sm"
+                            android:layout_height="@dimen/icon_sm"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_calendar"
+                            app:tint="@color/colorTextSecondary" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/taxi_fila_hora"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/form_row_height"
+                        android:layout_marginStart="@dimen/space_base"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/taxi_hora" />
+
+                            <TextView
+                                android:id="@+id/taxi_valor_hora"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/colorTextSecondary"
+                                tools:text="09:30" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="@dimen/icon_sm"
+                            android:layout_height="@dimen/icon_sm"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_time"
+                            app:tint="@color/colorTextSecondary" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <org.iot.project.ui.components.StepperView
+                    android:id="@+id/taxi_pasajeros"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/taxi_ida_vuelta_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:text="@string/taxi_ida_vuelta" />
+
+                <TextView
+                    android:id="@+id/taxi_form_error"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:accessibilityLiveRegion="polite"
+                    android:textColor="@color/colorError"
+                    android:visibility="gone"
+                    tools:text="No hay conductores disponibles."
+                    tools:visibility="visible" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/taxi_confirmar"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:text="@string/taxi_confirmar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/taxi_cancelar"
+                    style="@style/Widget.App.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/hoja_cancelar" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/taxi_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/taxi_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

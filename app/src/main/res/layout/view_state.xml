@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageView
+        android:id="@+id/state_icon"
+        android:layout_width="@dimen/empty_state_icon"
+        android:layout_height="@dimen/empty_state_icon"
+        android:importantForAccessibility="no"
+        app:tint="@color/colorTextDisabled"
+        tools:src="@drawable/ic_search_off" />
+
+    <TextView
+        android:id="@+id/state_title"
+        style="@style/TextAppearance.App.H3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:gravity="center"
+        tools:text="Sin resultados" />
+
+    <TextView
+        android:id="@+id/state_message"
+        style="@style/TextAppearance.App.BodySecondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:gravity="center"
+        tools:text="Prueba con otro destino o quita algún filtro." />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/state_action"
+        style="@style/Widget.App.Button.Secondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xl"
+        android:visibility="gone"
+        tools:text="Reintentar"
+        tools:visibility="visible" />
+
+</merge>

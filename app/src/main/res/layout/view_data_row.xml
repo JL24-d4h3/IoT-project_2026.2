@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una fila de dato: etiqueta a la izquierda, valor a la derecha.
+
+     La etiqueta no se recorta y el valor sí: la primera es fija y corta
+     ("Documento"), el segundo puede ser largo ("Av. Malecón Cisneros 1240,
+     departamento 302") y es el que conviene que baje de linea. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <TextView
+        android:id="@+id/dato_etiqueta"
+        style="@style/TextAppearance.App.BodySecondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/space_base"
+        android:maxLines="2"
+        tools:text="Documento" />
+
+    <TextView
+        android:id="@+id/dato_valor"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="end"
+        tools:text="DNI 45872310" />
+
+</merge>

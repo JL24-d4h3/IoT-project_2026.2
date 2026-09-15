@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageView
+        android:id="@+id/chip_icon"
+        android:layout_width="@dimen/icon_xs"
+        android:layout_height="@dimen/icon_xs"
+        android:layout_gravity="center_vertical"
+        android:importantForAccessibility="no"
+        tools:src="@drawable/ic_service_wifi" />
+
+    <TextView
+        android:id="@+id/chip_text"
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_xs"
+        android:maxLines="1"
+        tools:text="Wi-Fi" />
+
+    <TextView
+        android:id="@+id/chip_price"
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_xs"
+        android:textColor="@color/colorTextSecondary"
+        android:visibility="gone"
+        tools:text="+ S/ 35"
+        tools:visibility="visible" />
+
+</merge>
