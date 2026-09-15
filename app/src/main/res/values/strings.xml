@@ -1,0 +1,716 @@
+<resources>
+
+    <string name="app_name">Estadía</string>
+
+    <!-- ==================== NAVEGACION ==================== -->
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_buscar">Buscar</string>
+    <string name="nav_reservas">Reservas</string>
+    <string name="nav_taxi">Taxi</string>
+    <string name="nav_perfil">Perfil</string>
+
+    <!-- Barra inferior y titulos de los otros tres roles (§73, §79). -->
+    <string name="nav_panel">Panel</string>
+    <string name="nav_habitaciones">Habitaciones</string>
+    <string name="nav_servicios">Servicios</string>
+    <string name="nav_clientes">Clientes</string>
+    <string name="nav_avisos">Avisos</string>
+    <string name="nav_solicitudes">Solicitudes</string>
+    <string name="nav_historial">Historial</string>
+    <string name="nav_usuarios">Usuarios</string>
+    <string name="nav_hoteles">Hoteles</string>
+    <string name="nav_conductores">Conductores</string>
+    <string name="nav_reportes">Reportes</string>
+    <string name="nav_auditoria">Auditoría</string>
+
+    <!-- Secciones propias del administrador de hotel (§44). -->
+    <string name="nav_reservas_admin">Reservas</string>
+    <string name="nav_cargos">Cobros</string>
+    <string name="nav_mensajes">Mensajes</string>
+    <string name="nav_hotel_datos">Datos del hotel</string>
+    <string name="nav_reserva_detalle">Reserva</string>
+
+    <!-- ==================== ACCESO (§74) ==================== -->
+    <string name="acceso_titulo">Entra a tu cuenta</string>
+    <string name="acceso_mensaje">Alojamientos, reservas y traslados al aeropuerto, en un solo sitio.</string>
+    <string name="acceso_correo">Correo electrónico</string>
+    <string name="acceso_contrasena">Contraseña</string>
+    <string name="acceso_entrar">Iniciar sesión</string>
+    <string name="acceso_entrando">Entrando…</string>
+    <string name="acceso_olvide">Olvidé mi contraseña</string>
+    <string name="acceso_sin_cuenta">¿Todavía no tienes cuenta?</string>
+    <string name="acceso_crear_cuenta">Crear una cuenta</string>
+
+    <!-- El formulario no comprueba la contraseña: sin backend no hay nada que
+         comprobar. Decirlo es mas honesto que simular un fallo de credenciales. -->
+    <string name="acceso_nota_demo">Esta entrega es solo la interfaz: todavía no hay autenticación real, así que la contraseña no se comprueba.</string>
+
+    <string name="acceso_demo_titulo">Entrar con una cuenta de ejemplo</string>
+    <string name="acceso_demo_nota">Rellena el formulario por ti. Aun así pasa por las mismas comprobaciones: si la cuenta estuviera deshabilitada, no entraría.</string>
+
+    <string name="acceso_error_correo_vacio">Escribe tu correo electrónico.</string>
+    <string name="acceso_error_correo_invalido">Ese correo no parece válido. Revísalo.</string>
+    <string name="acceso_error_contrasena_vacia">Escribe tu contraseña.</string>
+
+    <!-- ==================== REGISTRO (RF-001, RF-002) ==================== -->
+    <string name="registro_titulo">Crea tu cuenta</string>
+    <string name="registro_mensaje">Solo te tomará un minuto. Con la cuenta creada ya puedes reservar.</string>
+    <string name="registro_nombres">Nombres</string>
+    <string name="registro_apellidos">Apellidos</string>
+    <string name="registro_correo">Correo electrónico</string>
+    <string name="registro_telefono_opcional">Teléfono (opcional)</string>
+    <string name="registro_contrasena">Contraseña</string>
+    <string name="registro_contrasena_repetir">Repite la contraseña</string>
+    <string name="registro_crear">Crear cuenta</string>
+    <string name="registro_creando">Creando tu cuenta…</string>
+    <string name="registro_ya_tengo">¿Ya tienes cuenta?</string>
+    <string name="registro_iniciar">Inicia sesión</string>
+    <string name="registro_error_nombres">Escribe tu nombre.</string>
+    <string name="registro_error_apellidos">Escribe tus apellidos.</string>
+    <string name="registro_error_contrasena_corta">Usa al menos 8 caracteres.</string>
+    <string name="registro_error_contrasena_no_coincide">Las dos contraseñas tienen que ser iguales.</string>
+    <string name="registro_listo_titulo">Tu cuenta está lista</string>
+    <string name="registro_listo_mensaje">Ya puedes entrar con %1$s. No hace falta que nadie apruebe tu cuenta.</string>
+
+    <!-- ==================== RECUPERAR CONTRASEÑA ==================== -->
+    <string name="recuperar_titulo">Recupera tu contraseña</string>
+    <string name="recuperar_mensaje">Escribe el correo con el que te registraste y te enviamos un enlace para crear una contraseña nueva.</string>
+    <string name="recuperar_enviar">Enviar enlace</string>
+    <string name="recuperar_enviando">Enviando…</string>
+    <string name="recuperar_listo_titulo">Revisa tu correo</string>
+    <!-- La respuesta es la misma exista o no la cuenta: si dijera cual de los dos
+         casos es, este formulario serviria para averiguar quien esta registrado. -->
+    <string name="recuperar_listo_mensaje">Si %1$s tiene una cuenta, te llegará un enlace para restablecer la contraseña.</string>
+    <string name="recuperar_volver">Volver al inicio de sesión</string>
+
+    <!-- ==================== SESION ==================== -->
+    <string name="sesion_cerrar">Cerrar sesión</string>
+    <string name="sesion_cerrar_titulo">¿Cerrar sesión?</string>
+    <string name="sesion_cerrar_mensaje">Volverás a la pantalla de acceso.</string>
+
+    <!-- ==================== ACCIONES ==================== -->
+    <string name="accion_reintentar">Reintentar</string>
+    <string name="accion_buscar">Buscar</string>
+    <string name="accion_ver_mas">Ver más</string>
+    <string name="accion_ver_todas">Ver todas</string>
+    <string name="accion_continuar">Continuar</string>
+    <string name="accion_volver">Volver</string>
+    <string name="accion_cancelar">Cancelar</string>
+    <string name="accion_confirmar">Confirmar</string>
+    <string name="accion_guardar">Guardar</string>
+    <string name="accion_cerrar">Cerrar</string>
+    <string name="accion_aplicar">Aplicar</string>
+    <string name="accion_limpiar">Limpiar</string>
+    <string name="accion_limpiar_filtros">Limpiar filtros</string>
+
+    <!-- ==================== ESTADOS DE UI (§50) ==================== -->
+    <string name="estado_error_titulo">No pudimos cargar la información</string>
+    <string name="estado_error_descripcion">Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="estado_vacio_titulo">Sin resultados</string>
+    <string name="estado_vacio_mensaje">Prueba con otro destino o quita algún filtro.</string>
+    <string name="estado_error_mensaje">Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="estado_sin_conexion">Sin conexión a internet</string>
+    <string name="estado_sin_conexion_descripcion">Puedes seguir viendo tus reservas guardadas.</string>
+    <string name="cargando">Cargando…</string>
+
+    <!-- Marcador temporal mientras se construye cada pantalla. Desaparece
+         cuando la pantalla real esta lista. -->
+    <string name="marcador_en_construccion">Pantalla en construcción</string>
+
+    <!-- ==================== ACCESIBILIDAD ==================== -->
+    <string name="cd_imagen_hotel">Fotografía del hotel</string>
+    <string name="cd_volver">Volver atrás</string>
+    <string name="cd_favorito">Guardar en favoritos</string>
+    <string name="cd_quitar_favorito">Quitar de favoritos</string>
+
+    <!-- ==================== INICIO ==================== -->
+    <string name="titulo_detalle_hotel">Hotel</string>
+    <string name="titulo_notificaciones">Notificaciones</string>
+
+    <string name="inicio_subtitulo">¿A dónde viajas esta vez?</string>
+    <string name="inicio_buscar_pista">Busca por ciudad, distrito o hotel</string>
+    <string name="inicio_recomendados">Recomendados para ti</string>
+    <string name="inicio_saludo">Hola, %1$s</string>
+    <string name="inicio_saludo_generico">Hola</string>
+    <string name="cd_notificaciones">Notificaciones</string>
+
+    <string name="cd_imagen_habitacion">Fotografía de la habitación</string>
+    <string name="cd_avatar_autor">Fotografía de quien escribió la reseña</string>
+    <string name="habitacion_por_noche">por noche</string>
+    <string name="habitacion_piso">piso %1$d</string>
+    <string name="habitacion_no_disponible">Ocupada</string>
+    <string name="accion_elegir">Elegir</string>
+    <string name="galeria_contador">%1$d / %2$d</string>
+    <string name="hotel_disponible">Disponible</string>
+    <string name="servicio_precio_extra">+ %1$s</string>
+    <string name="hotel_precio_desde">Desde %1$s por noche</string>
+    <string name="hotel_sin_resenas">Sin reseñas todavía</string>
+    <string name="hotel_resenas">%1$d reseñas</string>
+
+    <!-- Ficha del hotel -->
+    <string name="detalle_descripcion_titulo">Sobre el alojamiento</string>
+    <string name="detalle_servicios_titulo">Servicios</string>
+    <string name="detalle_servicios_vacio">Este alojamiento todavía no publicó sus servicios.</string>
+    <string name="detalle_cerca_titulo">Qué hay cerca</string>
+    <string name="detalle_habitaciones_titulo">Habitaciones</string>
+    <string name="detalle_habitaciones_vacio_titulo">Sin habitaciones libres</string>
+    <string name="detalle_habitaciones_vacio">No queda ninguna habitación disponible para esta noche.</string>
+    <string name="detalle_resenas_titulo">Opiniones de huéspedes</string>
+    <string name="detalle_resenas_vacio">Todavía nadie escribió una opinión sobre este alojamiento.</string>
+    <string name="detalle_distancia">%1$s · %2$s km</string>
+    <string name="detalle_ubicacion">%1$s, %2$s · %3$s</string>
+    <string name="detalle_sin_descripcion">Este alojamiento todavía no publicó una descripción.</string>
+
+    <!-- Notificaciones -->
+    <string name="notificaciones_vacio_titulo">Sin novedades</string>
+    <string name="notificaciones_vacio">Aquí aparecerán los avisos de tus reservas, pagos y traslados.</string>
+
+    <!-- Reserva -->
+    <string name="titulo_reservar">Reservar</string>
+    <string name="reserva_fechas_titulo">Fechas</string>
+    <string name="reserva_entrada">Entrada</string>
+    <string name="reserva_salida">Salida</string>
+    <string name="reserva_elegir_fecha">Elegir</string>
+    <string name="reserva_sin_noches">Elige las fechas</string>
+    <string name="reserva_habitacion">%1$s · %2$s</string>
+    <string name="reserva_huespedes_titulo">Huéspedes</string>
+    <string name="reserva_adultos">Adultos</string>
+    <string name="reserva_capacidad_max">Máximo %1$d personas</string>
+    <string name="reserva_desglose_titulo">Resumen de pago</string>
+    <string name="reserva_linea_noches">%1$d noches × %2$s</string>
+    <string name="reserva_linea_noche">1 noche × %1$s</string>
+    <string name="reserva_total">Total</string>
+    <string name="reserva_total_nota">El pago se realiza en el siguiente paso. Puedes cancelar sin costo mientras la reserva esté pendiente o confirmada.</string>
+    <string name="reserva_confirmar">Confirmar reserva</string>
+    <string name="reserva_creada_titulo">Reserva creada</string>
+    <string name="reserva_creada_mensaje">%1$s · %2$s\n%3$s</string>
+    <string name="reserva_creada_aviso">Queda pendiente de pago. La habitación se libera si no se paga.</string>
+    <string name="accion_pagar_ahora">Pagar ahora</string>
+    <string name="accion_ver_reservas">Ver mis reservas</string>
+    <string name="cd_agregar_huesped">Agregar un huésped</string>
+    <string name="cd_quitar_huesped">Quitar un huésped</string>
+
+    <!-- Mis reservas -->
+    <string name="reserva_codigo">Código</string>
+    <string name="reserva_estadia">Estadía</string>
+    <string name="reserva_hotel_desconocido">Alojamiento no disponible</string>
+    <string name="reservas_en_curso">En curso</string>
+    <string name="reservas_proximas">Próximas</string>
+    <string name="reservas_historial">Historial</string>
+    <string name="reservas_vacio_titulo">Todavía no tienes reservas</string>
+    <string name="reservas_vacio">Cuando reserves un alojamiento aparecerá aquí, con su código y sus fechas.</string>
+
+    <!-- Detalle de reserva -->
+    <string name="titulo_detalle_reserva">Tu reserva</string>
+    <string name="detalle_reserva_codigo">%1$s · %2$s</string>
+    <string name="detalle_estadia">Estadía</string>
+    <string name="detalle_cargos">Cargos de la estadía</string>
+    <string name="detalle_pago">Pago</string>
+    <string name="detalle_tu_valoracion">Tu valoración</string>
+    <string name="detalle_linea_alojamiento">%1$d noches × %2$s</string>
+    <string name="detalle_linea_alojamiento_una">1 noche × %1$s</string>
+    <string name="detalle_linea_servicios">Servicios adicionales</string>
+    <string name="detalle_linea_cargos">Cargos de la estadía</string>
+    <string name="detalle_pagado_con">Pagado con %1$s</string>
+    <string name="detalle_huespedes">%1$d huéspedes</string>
+    <string name="detalle_huesped">1 huésped</string>
+    <string name="accion_cancelar_reserva">Cancelar reserva</string>
+    <string name="accion_pagar">Pagar</string>
+    <string name="accion_hablar_hotel">Hablar con el alojamiento</string>
+    <string name="accion_valorar">Valorar estadía</string>
+    <string name="accion_checkout">Hacer checkout</string>
+    <string name="accion_pedir_taxi">Pedir taxi</string>
+    <string name="confirmar_cancelar_titulo">¿Cancelar la reserva?</string>
+    <string name="confirmar_cancelar_mensaje">Se libera la habitación y no se puede deshacer.</string>
+    <string name="cancelada_aviso">Reserva cancelada. La habitación ya está libre.</string>
+
+    <!-- Pago -->
+    <string name="titulo_pago">Pagar</string>
+    <string name="pago_metodo_titulo">¿Cómo quieres pagar?</string>
+    <string name="pago_metodo_tarjeta">%1$s · vence %2$s</string>
+    <string name="pago_metodo_recepcion">Pagar en recepción</string>
+    <string name="pago_simulado_aviso">El cobro es simulado: no se pide ningún dato de tarjeta y no se guarda ninguno.</string>
+    <string name="pago_confirmar">Pagar %1$s</string>
+    <string name="pago_confirmado_titulo">Pago registrado</string>
+    <string name="pago_confirmado_mensaje">%1$s quedó confirmada. Te esperamos el %2$s.</string>
+    <string name="accion_ver_reserva">Ver mi reserva</string>
+    <string name="pago_sin_metodos">No tienes tarjetas guardadas. Puedes pagar en recepción.</string>
+
+    <!-- Chat con el alojamiento (RF-062 a RF-068) -->
+    <string name="titulo_chat">Mensajes</string>
+    <string name="chat_escribe">Escribe un mensaje…</string>
+    <string name="cd_enviar_mensaje">Enviar mensaje</string>
+    <string name="chat_vacio_titulo">Todavía no hay mensajes</string>
+    <string name="chat_vacio">Escribe para coordinar tu llegada, pedir un servicio o preguntar lo que necesites.</string>
+
+    <!-- Checkout (RF-056) -->
+    <string name="titulo_checkout">Checkout</string>
+    <string name="checkout_titulo">Cerrar la estadía</string>
+    <string name="checkout_mensaje">Revisa el consumo antes de confirmar. Al hacer checkout se cierra el acceso al chat de esta reserva.</string>
+    <string name="checkout_sin_cargos">No hay consumos cargados a esta estadía.</string>
+    <string name="checkout_confirmar">Confirmar salida</string>
+    <string name="checkout_listo_titulo">Estadía cerrada</string>
+    <string name="checkout_listo_mensaje">Cerramos tu estadía en %1$s. ¡Gracias por alojarte con nosotros!</string>
+    <string name="checkout_nota">El pago de los consumos se regulariza en recepción al salir.</string>
+
+    <!-- Valoración (RF-080, §22) -->
+    <string name="titulo_valorar">Valorar estadía</string>
+    <string name="valorar_titulo">¿Cómo estuvo tu estadía?</string>
+    <string name="valorar_mensaje">Tu calificación ayuda a otros huéspedes a elegir.</string>
+    <string name="valorar_pregunta">Tu calificación</string>
+    <string name="valorar_comentario">Cuéntanos cómo te fue (opcional)</string>
+    <string name="valorar_enviar">Enviar valoración</string>
+    <string name="valorar_listo_titulo">¡Gracias por tu opinión!</string>
+    <string name="valorar_listo_mensaje">Tu valoración ya aparece en la ficha del alojamiento.</string>
+    <string name="valorar_escala">1 a 10</string>
+
+    <!-- ==================== PANEL DEL ADMINISTRADOR (§43) ==================== -->
+    <string name="titulo_panel_admin">Panel</string>
+    <string name="admin_panel_hotel">Tu hotel</string>
+    <string name="admin_panel_habitaciones">%1$d habitaciones</string>
+    <string name="admin_panel_reservas">Reservas</string>
+    <string name="admin_panel_por_cerrar">Por cerrar</string>
+    <string name="admin_panel_ingresos">Ingresos por servicios</string>
+    <string name="admin_panel_siguiente">La gestión de habitaciones, servicios, clientes y avisos de checkout llega en la siguiente entrega.</string>
+
+    <!-- Portada del administrador (§43): el tablero del día -->
+    <string name="admin_home_ubicacion">%1$s, %2$s · %3$s</string>
+    <string name="admin_home_stat_activas">Reservas activas</string>
+    <string name="admin_home_stat_salidas">Checkouts hoy</string>
+    <string name="admin_home_stat_ingresos">Servicios adicionales</string>
+    <string name="admin_estadias_titulo">Estadías en curso</string>
+    <string name="admin_estadias_nota">Ordenadas por fecha de salida: las que hay que atender primero van arriba.</string>
+    <string name="admin_estadias_vacio">No hay huéspedes alojados ahora mismo. Cuando entre una reserva activa aparecerá aquí, con su fecha de salida.</string>
+    <string name="admin_estadia_habitacion">Hab. %1$s · %2$s</string>
+    <string name="admin_estadia_sale_hoy">Sale hoy</string>
+    <string name="cd_cuenta_admin">Tu cuenta y tu rol</string>
+
+    <!--
+        El índice de la portada. Los rótulos de las cinco piezas se toman de las
+        etiquetas del grafo (@string/nav_*): la pieza dice el nombre con el que
+        la pantalla de destino se anuncia a sí misma, que es lo que el
+        administrador verá al llegar.
+    -->
+    <string name="admin_acciones_titulo">Acciones rápidas</string>
+    <string name="admin_home_ver_reporte">Ver reporte</string>
+    <string name="admin_home_ver_mensajes">Ver todos</string>
+    <string name="admin_home_mensajes_al_dia">No tienes mensajes sin responder.</string>
+
+    <!-- ==================== DATOS DEL HOTEL (§42, RF-010 a RF-013) ============ -->
+    <string name="admin_hotel_editar">Editar datos del hotel</string>
+    <string name="admin_hotel_editar_titulo">Datos del hotel</string>
+    <string name="admin_hotel_nombre">Nombre del hotel</string>
+    <string name="admin_hotel_descripcion">Descripción</string>
+    <string name="admin_hotel_descripcion_ayuda">Lo que el huésped lee en la ficha del hotel.</string>
+    <string name="admin_hotel_direccion">Dirección</string>
+    <string name="admin_hotel_latitud">Latitud</string>
+    <string name="admin_hotel_longitud">Longitud</string>
+    <string name="admin_hotel_ubicacion">Ubicación en el mapa</string>
+    <string name="admin_hotel_coordenadas">%1$s, %2$s</string>
+    <string name="admin_hotel_sin_descripcion">Sin descripción. Añádela para que el huésped sepa qué ofrece el hotel.</string>
+    <string name="admin_hotel_nombre_obligatorio">El hotel necesita un nombre.</string>
+    <string name="admin_hotel_direccion_obligatoria">Indica la dirección del hotel.</string>
+    <string name="admin_hotel_ubicacion_obligatoria">Indica la latitud y la longitud del hotel.</string>
+    <string name="admin_hotel_coordenada_invalida">Escribe solo números, por ejemplo -12.1219.</string>
+    <string name="admin_hotel_coordenada_rango">La latitud va de -90 a 90 y la longitud de -180 a 180.</string>
+    <string name="admin_hotel_guardado">Datos del hotel actualizados.</string>
+
+    <string name="admin_hotel_fotos">Fotografías</string>
+    <string name="admin_hotel_fotos_estado">%1$s · mínimo %2$d</string>
+    <string name="admin_hotel_fotos_justas">Estás en el mínimo: agrega otra antes de quitar una.</string>
+    <string name="admin_hotel_sin_fotos">Todavía no hay ninguna fotografía. El hotel no puede publicarse sin al menos cuatro.</string>
+    <string name="admin_hotel_foto_url">Enlace de la fotografía</string>
+    <string name="admin_hotel_foto_ayuda">La dirección de la imagen, empezando por https://</string>
+    <string name="admin_hotel_foto_agregar">Agregar fotografía</string>
+    <string name="admin_hotel_foto_obligatoria">Escribe el enlace de la fotografía.</string>
+    <string name="admin_hotel_foto_agregada">Fotografía agregada.</string>
+    <string name="admin_hotel_foto_quitada">Fotografía quitada.</string>
+    <string name="cd_quitar_foto">Quitar esta fotografía</string>
+
+    <string name="admin_hotel_lugares">Lugares cercanos</string>
+    <string name="admin_hotel_lugares_nota">Aparecen en la ficha del hotel para que el huésped sepa qué tiene alrededor.</string>
+    <string name="admin_hotel_sin_lugares">Sin lugares registrados.</string>
+    <string name="admin_hotel_lugar_agregar">Agregar lugar</string>
+    <string name="admin_hotel_lugar_titulo">Nuevo lugar cercano</string>
+    <string name="admin_hotel_lugar_nombre">Nombre del lugar</string>
+    <string name="admin_hotel_lugar_tipo">Tipo de lugar</string>
+    <string name="admin_hotel_lugar_tipo_ayuda">Centro histórico, museo, parque, playa…</string>
+    <string name="admin_hotel_lugar_distancia">Distancia</string>
+    <string name="admin_hotel_lugar_km">km</string>
+    <string name="admin_hotel_lugar_guardar">Registrar lugar</string>
+    <string name="admin_hotel_lugar_nombre_obligatorio">Indica el nombre del lugar.</string>
+    <string name="admin_hotel_lugar_tipo_obligatorio">Indica de qué tipo es el lugar.</string>
+    <string name="admin_hotel_lugar_distancia_obligatoria">Indica a cuántos kilómetros está.</string>
+    <string name="admin_hotel_lugar_distancia_cero">La distancia debe ser mayor que cero.</string>
+    <string name="admin_hotel_lugar_distancia_invalida">Escribe solo números, por ejemplo 1.2.</string>
+
+    <!-- ==================== PERFIL DEL ADMINISTRADOR ==================== -->
+    <string name="admin_perfil_hotel">Hotel que administras</string>
+    <string name="admin_perfil_hotel_error">No pudimos cargar los datos de tu hotel.</string>
+    <string name="admin_perfil_ciudad">Ciudad</string>
+    <string name="admin_perfil_direccion">Dirección</string>
+    <string name="admin_perfil_habitaciones">Habitaciones</string>
+    <string name="admin_perfil_editar_hotel">Editar datos del hotel</string>
+
+    <!-- ==================== SERVICIOS DEL HOTEL (§45) ==================== -->
+    <string name="admin_servicios_intro">Estos son los servicios de tu hotel. Los incluidos no se cobran al huésped; los adicionales sí, y el precio lo pones tú.</string>
+    <string name="admin_servicios_incluidos">Incluidos</string>
+    <string name="admin_servicios_incluidos_nota">Van en el precio de la habitación.</string>
+    <string name="admin_servicios_incluidos_vacio">Ningún servicio va incluido todavía. Toca un servicio para marcarlo como incluido.</string>
+    <string name="admin_servicios_adicionales">Adicionales</string>
+    <string name="admin_servicios_adicionales_nota">Se cobran aparte, con el precio que fijes aquí.</string>
+    <string name="admin_servicios_adicionales_vacio">Ningún servicio se cobra aparte por ahora.</string>
+    <string name="admin_servicios_agregar">Agregar servicio</string>
+    <string name="admin_servicios_completo">Ya ofreces todos los servicios del catálogo.</string>
+    <string name="admin_servicio_chip_adicional">%1$s · %2$s</string>
+
+    <string name="admin_servicio_catalogo">Elige del catálogo</string>
+    <string name="admin_servicio_catalogo_nota">Solo puedes ofrecer servicios que ya existan en la aplicación.</string>
+    <string name="admin_servicio_forma">Cómo se ofrece</string>
+    <string name="admin_servicio_incluido">Incluido</string>
+    <string name="admin_servicio_adicional">Con costo adicional</string>
+    <string name="admin_servicio_precio">Precio por uso</string>
+    <string name="admin_servicio_moneda">S/</string>
+    <string name="admin_servicio_guardar">Guardar</string>
+    <string name="admin_servicio_quitar">Quitar del hotel</string>
+    <string name="admin_servicio_quitar_titulo">¿Quitar %1$s del hotel?</string>
+    <string name="admin_servicio_quitar_mensaje">Dejará de ofrecerse y de aparecer en la ficha del hotel. Las reservas que ya lo incluyen no cambian.</string>
+    <string name="admin_servicio_falta_elegir">Elige un servicio del catálogo.</string>
+    <string name="admin_servicio_precio_obligatorio">Indica cuánto se cobra por este servicio.</string>
+    <string name="admin_servicio_precio_cero">Un servicio adicional se cobra: el precio tiene que ser mayor que cero.</string>
+    <string name="admin_servicio_precio_invalido">Escribe solo números, por ejemplo 35 o 35.50.</string>
+
+    <!-- ==================== HABITACIONES DEL HOTEL (§42) ==================== -->
+    <string name="admin_habitaciones_resumen">%1$s · %2$s</string>
+    <string name="admin_habitaciones_vacio_titulo">Todavía no hay habitaciones</string>
+    <string name="admin_habitaciones_vacio">Registra la primera para que pueda aparecer en las búsquedas.</string>
+    <string name="admin_habitaciones_agregar">Registrar habitación</string>
+    <string name="cd_agregar_habitacion">Registrar una habitación</string>
+    <string name="cd_editar_habitacion">Editar esta habitación</string>
+    <string name="admin_habitacion_retirada">Retirada</string>
+    <string name="admin_habitacion_a_la_venta">A la venta</string>
+
+    <string name="admin_habitacion_nueva">Nueva habitación</string>
+    <string name="admin_habitacion_editar">Habitación %1$s</string>
+    <string name="admin_habitacion_numero">Número o nombre</string>
+    <string name="admin_habitacion_numero_obligatorio">Indica con qué número o nombre se identifica esta habitación.</string>
+    <string name="admin_habitacion_tipo">Tipo de habitación</string>
+    <string name="admin_habitacion_tipo_ayuda">Como aparecerá en la ficha del hotel. Empieza por el tipo —Doble, Triple, Suite— para que la búsqueda lo reconozca.</string>
+    <string name="admin_habitacion_tipo_obligatorio">Indica el tipo de habitación.</string>
+    <string name="admin_habitacion_adultos">Adultos</string>
+    <string name="admin_habitacion_adultos_invalido">Una habitación aloja al menos un adulto.</string>
+    <string name="admin_habitacion_ninos">Niños</string>
+    <string name="admin_habitacion_ninos_invalido">La capacidad de niños no puede ser negativa.</string>
+    <string name="admin_habitacion_area">Área</string>
+    <string name="admin_habitacion_area_sufijo">m²</string>
+    <string name="admin_habitacion_area_obligatoria">Indica el área de la habitación.</string>
+    <string name="admin_habitacion_area_cero">El área debe ser mayor que cero.</string>
+    <string name="admin_habitacion_area_invalida">Escribe solo números, por ejemplo 32 o 32.5.</string>
+    <string name="admin_habitacion_piso">Piso</string>
+    <string name="admin_habitacion_piso_invalido">El piso no puede ser negativo. Déjalo en blanco si es planta baja.</string>
+    <string name="admin_habitacion_precio">Precio por noche</string>
+    <string name="admin_habitacion_precio_obligatorio">Indica cuánto cuesta la noche.</string>
+    <string name="admin_habitacion_precio_cero">El precio por noche debe ser mayor que cero.</string>
+    <string name="admin_habitacion_precio_invalido">Escribe solo números, por ejemplo 320 o 320.50.</string>
+    <string name="admin_habitacion_sin_hotel">Esta cuenta no tiene un hotel asignado.</string>
+
+    <!-- ==================== RESERVAS DEL HOTEL (§44) ==================== -->
+    <string name="admin_reservas_vacio_titulo">Todavía no hay reservas</string>
+    <string name="admin_reservas_vacio">Cuando alguien reserve una de tus habitaciones aparecerá aquí, con su fecha de llegada.</string>
+    <string name="admin_reserva_linea">%1$s · Hab. %2$s</string>
+    <string name="admin_reserva_linea_tipo">%1$s · %2$s</string>
+
+    <!-- ==================== DETALLE DE RESERVA (§44) ==================== -->
+    <string name="admin_reserva_estadia">La estadía</string>
+    <string name="admin_reserva_consumos">Consumos</string>
+    <string name="admin_reserva_consumos_nota">Lo que el huésped pidió durante la estadía. Los servicios incluidos no se cobran.</string>
+    <string name="admin_reserva_sin_cargos">Sin consumos registrados.</string>
+    <string name="admin_reserva_cobro">Cobro</string>
+    <string name="admin_reserva_cobro_simulado">El cobro es simulado: no se mueve dinero real ni se guarda el número de la tarjeta.</string>
+    <string name="admin_reserva_registrar_cargo">Registrar cobro adicional</string>
+    <string name="admin_reserva_escribir">Escribir al huésped</string>
+    <string name="admin_reserva_cancelar">Cancelar reserva</string>
+    <string name="admin_reserva_cancelar_titulo">¿Cancelar la reserva %1$s?</string>
+    <string name="admin_reserva_cancelar_mensaje">Se avisará al huésped y la habitación volverá a estar a la venta. No se puede deshacer.</string>
+    <string name="admin_reserva_cancelar_confirmar">Sí, cancelar</string>
+    <string name="admin_reserva_cancelada">Reserva cancelada. La habitación vuelve a estar a la venta.</string>
+    <string name="admin_reserva_fila_contacto">Correo</string>
+    <string name="admin_reserva_fila_documento">Documento</string>
+    <string name="admin_reserva_fila_habitacion">Habitación</string>
+    <string name="admin_reserva_fila_entrada">Llegada</string>
+    <string name="admin_reserva_fila_salida">Salida</string>
+    <string name="admin_reserva_fila_huespedes">Huéspedes</string>
+    <string name="admin_reserva_fila_tarjeta">Tarjeta registrada</string>
+    <string name="admin_reserva_sin_tarjeta">El huésped no registró ninguna tarjeta. El cobro se hace en recepción.</string>
+    <string name="admin_reserva_sin_servicios">Ninguno</string>
+    <string name="admin_reserva_no_encontrada">No encontramos esta reserva en tu hotel.</string>
+    <string name="admin_reserva_cobrar">Cobrar %1$s a la tarjeta</string>
+    <string name="admin_reserva_cobrado">Cobrado a la tarjeta registrada.</string>
+    <string name="admin_reserva_cobrar_titulo">¿Cobrar %1$s?</string>
+    <string name="admin_reserva_cobrar_mensaje">Se cobrará el total a la tarjeta que el huésped registró al reservar. El cobro es simulado.</string>
+    <string name="admin_reserva_cobrar_confirmar">Sí, cobrar</string>
+    <string name="admin_reserva_cobrado_hecho">Cobro realizado. Se avisó al huésped.</string>
+    <string name="admin_reserva_servicio_retirado">Servicio retirado</string>
+    <string name="reserva_huesped_no_disponible">Cuenta no disponible</string>
+    <string name="lista_separador">", "</string>
+
+    <!-- ==================== CLIENTES DEL HOTEL (§44) ==================== -->
+    <string name="admin_clientes_vacio_titulo">Todavía no hay huéspedes</string>
+    <string name="admin_clientes_vacio">Cuando alguien se aloje en tu hotel aparecerá aquí, con lo que dejó en él.</string>
+    <string name="admin_clientes_alojado">Alojado ahora</string>
+    <string name="admin_clientes_ultima">%1$s · última el %2$s</string>
+    <string name="admin_clientes_contacto">%1$s · %2$s</string>
+    <string name="admin_clientes_sin_contacto">Sin datos de contacto</string>
+
+    <!-- ==================== LISTA DE COBROS DEL HOTEL (§44, RF-051 a RF-054) ==== -->
+    <string name="admin_cargos_vacio_titulo">Todavía no hay cobros</string>
+    <string name="admin_cargos_vacio">Los consumos y cargos que registres en una estadía aparecerán aquí, agrupados por reserva.</string>
+    <string name="admin_cargos_total">Cobros adicionales</string>
+
+    <!-- ============ MENSAJES DEL HOTEL (§44, RF-062 a RF-068) ============ -->
+    <string name="admin_mensajes_vacio_titulo">No hay conversaciones abiertas</string>
+    <string name="admin_mensajes_vacio">Aquí aparecen los mensajes de los huéspedes que están alojados. El chat se cierra al hacer el checkout.</string>
+    <string name="admin_mensajes_sin_mensajes">Todavía no han escrito</string>
+    <!-- La previa lleva el lado del que viene: la del hotel se leería como del huésped. -->
+    <string name="admin_mensajes_propio">Tú: %1$s</string>
+    <!-- El lado del hotel: el vacío del cliente habla de "tu llegada" y aquí no. -->
+    <string name="admin_chat_vacio">Escribe para confirmar la llegada, ofrecer un servicio o responder lo que necesite.</string>
+
+    <!-- ============ REPORTES DEL HOTEL (§45, RF-055 a RF-061) ============ -->
+    <string name="admin_reportes_diario">Diario</string>
+    <string name="admin_reportes_mensual">Mensual</string>
+    <string name="admin_reportes_anual">Anual</string>
+    <string name="admin_reportes_ventas_titulo">Reservas y ventas</string>
+    <!-- Deja dicho qué reservas cuentan: una pendiente que no aparece se leería como un fallo. -->
+    <string name="admin_reportes_criterio">Cuentan las reservas confirmadas, activas y finalizadas. Las pendientes todavía no son una venta y las canceladas nunca lo fueron.</string>
+    <string name="admin_reportes_servicios_titulo">Ingresos por servicios adicionales</string>
+    <!-- RF-061 pide el orden ascendente, que es el contrario del que se espera en un ranking. -->
+    <string name="admin_reportes_servicios_nota">De menor a mayor monto, como pide el reporte. Solo los servicios adicionales: uno incluido no genera ingreso.</string>
+    <string name="admin_reportes_servicios_vacio">Todavía no se ha cobrado ningún servicio adicional en tu hotel.</string>
+    <string name="admin_reportes_vacio_titulo">Todavía no hay ventas que reportar</string>
+    <string name="admin_reportes_vacio">Cuando tu hotel registre reservas, aquí verás cuánto entra por día, por mes y por año.</string>
+    <!-- Une las dos cifras de una fila de reporte: "6 reservas · 18 noches", "SPA · 3 veces". -->
+    <string name="admin_reportes_linea">%1$s · %2$s</string>
+
+    <!-- ==================== COBRO ADICIONAL (RF-051, RF-052) ==================== -->
+    <string name="cargo_titulo">Registrar cobro adicional</string>
+    <string name="cargo_monto">Monto</string>
+    <string name="cargo_monto_obligatorio">Indica cuánto se cobra.</string>
+    <string name="cargo_monto_cero">El monto debe ser mayor que cero.</string>
+    <string name="cargo_monto_invalido">Escribe solo números, por ejemplo 45 o 45.50.</string>
+    <string name="cargo_motivo">Motivo</string>
+    <string name="cargo_motivo_ayuda">Lo que verá el huésped en su recibo.</string>
+    <string name="cargo_motivo_obligatorio">Indica el motivo del cobro.</string>
+    <string name="cargo_observacion">Observación</string>
+    <string name="cargo_observacion_obligatoria">Añade una observación: queda en el registro del hotel.</string>
+    <string name="cargo_guardar">Registrar cobro</string>
+
+    <!-- ==================== CONDUCTOR (§46) ==================== -->
+    <string name="titulo_inicio_conductor">Mis servicios</string>
+    <string name="driver_home_vehiculo">Tu vehículo</string>
+    <string name="driver_home_vehiculo_detalle">%1$s · %2$s %3$s</string>
+    <string name="driver_home_vehiculo_placa">Placa %1$s</string>
+    <string name="driver_home_rating">Calificación</string>
+    <string name="driver_home_calificaciones">%1$d calificaciones</string>
+    <string name="driver_home_disponibles">Solicitudes disponibles</string>
+    <string name="driver_home_activos">En curso</string>
+    <string name="driver_home_completados">Completados</string>
+    <string name="driver_home_siguiente">Aceptar solicitudes, compartir tu ubicación y validar el QR del cliente llegan en la siguiente entrega.</string>
+
+    <!-- ==================== PANEL DEL SUPERADMIN (§47) ==================== -->
+    <string name="titulo_panel_superadmin">Panel</string>
+    <string name="superadmin_usuarios">Usuarios</string>
+    <string name="superadmin_hoteles">Hoteles</string>
+    <string name="superadmin_conductores">Conductores</string>
+    <string name="superadmin_por_aprobar">Por aprobar</string>
+    <string name="superadmin_bitacora">Últimos movimientos</string>
+    <string name="superadmin_siguiente">La gestión de usuarios, hoteles y reportes llega en la siguiente entrega.</string>
+
+    <!-- ==================== BUSQUEDA (§13 a §19) ==================== -->
+    <string name="buscar_destino_etiqueta">Destino</string>
+    <string name="buscar_destino_pista">¿A dónde vas?</string>
+    <string name="buscar_fechas_etiqueta">Fechas</string>
+    <string name="buscar_entrada">Entrada</string>
+    <string name="buscar_salida">Salida</string>
+    <string name="buscar_fechas_pista">Elige tus fechas</string>
+    <string name="buscar_huespedes_etiqueta">Huéspedes</string>
+    <string name="buscar_boton">Buscar hoteles</string>
+    <string name="buscar_subtitulo">Elige destino y fechas. Después podrás afinar con filtros.</string>
+    <string name="buscar_falta_destino">Elige un destino para continuar.</string>
+    <string name="buscar_falta_fechas">Elige tus fechas para continuar.</string>
+    <string name="buscar_editar">Editar la búsqueda</string>
+    <string name="buscar_resumen_vacio">Completa tu búsqueda</string>
+
+    <!-- Destino (§14) -->
+    <string name="titulo_destino">¿A dónde vas?</string>
+    <string name="destino_pista">Ciudad o distrito</string>
+    <string name="destino_recientes">Búsquedas recientes</string>
+    <string name="destino_sugerencias">Destinos sugeridos</string>
+    <string name="destino_sin_resultados_titulo">No encontramos ese destino</string>
+    <string name="destino_sin_resultados">Prueba con el nombre de una ciudad o de un distrito.</string>
+    <string name="cd_limpiar_busqueda">Borrar lo escrito</string>
+    <string name="destino_quitar_reciente">Quitar de búsquedas recientes</string>
+
+    <!-- Fechas (§15) -->
+    <string name="titulo_fechas">Fechas</string>
+    <string name="fechas_ayuda">Toca el día de entrada y después el de salida.</string>
+    <string name="fechas_resumen">%1$s · %2$d noches</string>
+    <string name="fechas_resumen_una">%1$s · 1 noche</string>
+    <string name="fechas_sin_elegir">Todavía no elegiste ninguna fecha.</string>
+
+    <!-- Huéspedes (§16) -->
+    <string name="titulo_huespedes">Huéspedes</string>
+    <string name="huespedes_adultos">Adultos</string>
+    <string name="huespedes_adultos_nota">13 años o más</string>
+    <string name="huespedes_ninos">Niños</string>
+    <string name="huespedes_ninos_nota">De 0 a 12 años</string>
+    <string name="huespedes_habitaciones">Habitaciones</string>
+    <string name="huespedes_habitaciones_nota">Cuántas vas a reservar</string>
+    <string name="huespedes_resumen_etiqueta">Tu selección</string>
+    <string name="cd_aumentar">Aumentar</string>
+    <string name="cd_reducir">Reducir</string>
+    <string name="cd_aumentar_campo">Aumentar %1$s</string>
+    <string name="cd_reducir_campo">Reducir %1$s</string>
+
+    <!-- Resultados (§17) -->
+    <string name="resultados_mejor_valorados">Mejor valorados</string>
+    <string name="resultados_en">en %1$s</string>
+    <string name="resultados_sin_destino">en todos los destinos</string>
+    <string name="resultados_filtros">Filtros</string>
+    <string name="resultados_filtros_activos">Filtros · %1$d</string>
+    <string name="resultados_orden">Ordenar</string>
+    <string name="resultados_orden_actual">Ordenar · %1$s</string>
+    <string name="resultados_vacio_titulo">Sin resultados</string>
+    <string name="resultados_vacio">No hay alojamientos que cumplan estos filtros. Prueba quitando alguno.</string>
+    <string name="resultados_ver_mas">Ver más alojamientos</string>
+    <string name="resultados_cargando_mas">Buscando más alojamientos…</string>
+    <string name="resultados_editar">Editar la búsqueda</string>
+    <string name="resultados_quitar_filtros">Quitar los filtros</string>
+    <string name="cd_filtros_activos">Filtros, %1$d activos</string>
+
+    <!-- Filtros (§18) -->
+    <string name="titulo_filtros">Filtros</string>
+    <string name="filtros_precio">Precio por noche</string>
+    <string name="filtros_precio_valor">Hasta %1$s</string>
+    <string name="filtros_precio_todos">Cualquier precio</string>
+    <string name="filtros_rating">Calificación mínima</string>
+    <string name="filtros_rating_todos">Cualquiera</string>
+    <string name="filtros_rating_valor">%1$d o más</string>
+    <string name="filtros_servicios">Servicios</string>
+    <string name="filtros_habitacion">Tipo de habitación</string>
+    <string name="filtros_habitacion_todas">Cualquier tipo</string>
+    <string name="filtros_aplicar">Ver resultados</string>
+    <string name="filtros_resumen">%1$d activos</string>
+    <string name="filtros_limpiar">Limpiar filtros</string>
+
+    <!-- Orden (§19) -->
+    <string name="titulo_orden">Ordenar por</string>
+    <string name="orden_recomendados_nota">Buenas valoraciones con muchas opiniones</string>
+    <string name="orden_precio_menor_nota">Del más barato al más caro</string>
+    <string name="orden_precio_mayor_nota">Del más caro al más barato</string>
+    <string name="orden_mejor_rating_nota">La nota más alta primero</string>
+    <string name="orden_mas_populares_nota">Los que más opiniones tienen</string>
+
+    <!-- Hojas inferiores: denominador comun -->
+    <string name="cd_cerrar">Cerrar</string>
+    <string name="hoja_cancelar">Cancelar</string>
+
+    <!-- ==================== PERFIL DEL CLIENTE (§40) ==================== -->
+    <string name="perfil_titulo">Mi perfil</string>
+    <string name="perfil_datos">Datos personales</string>
+    <string name="perfil_documento">Documento</string>
+    <string name="perfil_nacimiento">Fecha de nacimiento</string>
+    <string name="perfil_direccion">Dirección</string>
+    <string name="perfil_telefono">Teléfono</string>
+    <string name="perfil_correo">Correo electrónico</string>
+    <string name="perfil_sin_dato">Sin registrar</string>
+    <string name="perfil_pago">Métodos de pago</string>
+    <string name="perfil_pago_vacio">Todavía no guardaste ninguna tarjeta.</string>
+    <string name="perfil_pago_nota">Solo guardamos la marca y los últimos cuatro dígitos. El número completo y el código de seguridad nunca se almacenan.</string>
+    <string name="perfil_preferencias">Preferencias</string>
+    <string name="perfil_notificaciones">Notificaciones</string>
+    <string name="perfil_notificaciones_resumen">%1$d sin leer</string>
+    <string name="perfil_notificaciones_resumen_vacio">Al día</string>
+    <string name="perfil_idioma">Idioma</string>
+    <string name="perfil_idioma_valor">Español</string>
+    <string name="perfil_moneda">Moneda</string>
+    <string name="perfil_moneda_valor">Soles (S/)</string>
+    <string name="perfil_sesion">Sesión</string>
+    <string name="perfil_cerrar">Cerrar sesión</string>
+    <string name="perfil_version">Versión %1$s</string>
+    <string name="tarjeta_vence">vence %1$s</string>
+    <string name="cd_editar_perfil">Editar mis datos</string>
+
+    <!-- ==================== TAXI (§35 a §39) ==================== -->
+    <string name="taxi_titulo">Taxi al aeropuerto</string>
+    <string name="taxi_subtitulo">Traslado desde tu alojamiento hasta el aeropuerto, coordinado con recepción.</string>
+    <string name="taxi_activo_titulo">Tu servicio en curso</string>
+    <string name="taxi_conductor_asignado">Conductor asignado</string>
+    <string name="taxi_paso_actual">paso actual</string>
+    <string name="taxi_nota_solicitado">Estamos buscando un conductor disponible.</string>
+    <string name="taxi_nota_asignado">%1$s aceptó tu solicitud.</string>
+    <string name="taxi_nota_en_camino">%1$s va en camino al punto de recojo.</string>
+    <string name="taxi_nota_en_traslado">Vas en camino a %1$s.</string>
+    <string name="taxi_nota_finalizado">El servicio terminó. ¡Buen viaje!</string>
+    <string name="taxi_mostrar_qr">Mostrar mi código QR</string>
+    <string name="taxi_gratuito">Gratis</string>
+    <string name="taxi_ida_y_vuelta">ida y vuelta</string>
+    <string name="taxi_incluido_en_reserva">Tu reserva superó el mínimo del alojamiento, así que el traslado va incluido.</string>
+    <string name="taxi_sin_reserva_titulo">Necesitas una reserva</string>
+    <string name="taxi_sin_reserva">El traslado al aeropuerto se pide desde una reserva. Cuando tengas una, podrás solicitarlo aquí.</string>
+    <string name="taxi_ir_reservas">Ver mis reservas</string>
+    <string name="taxi_historial">Servicios anteriores</string>
+    <string name="taxi_pedir">Pedir taxi</string>
+    <string name="taxi_reserva_etiqueta">¿Para qué reserva?</string>
+    <string name="taxi_recogida">Punto de recojo</string>
+    <string name="taxi_destino">Destino</string>
+    <string name="taxi_destino_pista">Aeropuerto o dirección</string>
+    <string name="taxi_recogida_pista">¿Dónde te recogemos?</string>
+    <string name="taxi_fecha">Fecha</string>
+    <string name="taxi_hora">Hora</string>
+    <string name="taxi_pasajeros">Pasajeros</string>
+    <string name="taxi_pasajeros_nota">Hasta 6 por vehículo</string>
+    <string name="taxi_ida_vuelta">Ida y vuelta</string>
+    <string name="taxi_ida_vuelta_nota">El conductor te espera también a la vuelta.</string>
+    <string name="taxi_confirmar">Solicitar traslado</string>
+    <string name="taxi_precio">Precio</string>
+    <string name="taxi_ubicacion_esperando">Esperando la ubicación del conductor.</string>
+    <string name="taxi_falta_reserva">Elige la reserva a la que pertenece el traslado.</string>
+    <string name="taxi_falta_ubicacion">Todavía no tenemos la dirección del alojamiento. Inténtalo en un momento.</string>
+    <string name="taxi_faltan_direcciones">Indica el punto de recojo y el destino.</string>
+    <string name="taxi_falta_horario">Elige la fecha y la hora del traslado.</string>
+    <string name="taxi_solicitado_titulo">Traslado solicitado</string>
+    <string name="taxi_solicitado_mensaje">Estamos buscando un conductor para el %1$s a las %2$s.</string>
+    <string name="taxi_sin_pasajeros_titulo">Sin traslados</string>
+    <string name="taxi_sin_pasajeros">Cuando pidas un traslado al aeropuerto aparecerá aquí, con su conductor y su estado.</string>
+    <string name="taxi_error_qr">No pudimos generar el código. Vuelve a intentarlo.</string>
+    <string name="vehiculo_sin_datos">Vehículo sin registrar</string>
+    <string name="cd_foto_conductor">Fotografía del conductor</string>
+    <string name="cd_foto_vehiculo">Fotografía del vehículo</string>
+    <string name="cd_reserva_elegida">Reserva elegida</string>
+    <string name="cd_mostrar_qr">Mostrar el código QR</string>
+    <string name="cd_qr_codigo">Código QR del traslado %1$s</string>
+
+    <!-- Seguimiento (RF-099, §37) -->
+    <string name="taxi_distancia">A %1$s del punto de recojo</string>
+    <string name="taxi_distancia_cerca">El conductor está llegando al punto de recojo.</string>
+    <string name="taxi_ubicacion_actualizada">Última ubicación: %1$s</string>
+    <string name="taxi_ubicacion_vieja">La ubicación puede estar desactualizada.</string>
+    <string name="mapa_descripcion">Plano del recorrido: el vehículo y el punto de recojo.</string>
+
+    <!-- Valorar el traslado (RF-105) -->
+    <string name="titulo_valorar_taxi">Valorar el traslado</string>
+    <string name="accion_valorar_taxi">Valorar el traslado</string>
+    <string name="taxi_valorado">Valoraste este traslado con %1$d</string>
+    <string name="valorar_taxi_pregunta">¿Cómo estuvo tu traslado?</string>
+    <string name="valorar_taxi_mensaje">Tu calificación ayuda a mantener la calidad del servicio.</string>
+    <string name="valorar_taxi_listo">¡Gracias! Tu calificación quedó registrada.</string>
+    <string name="valorar_taxi_escala">1 a 10, donde 10 es un servicio excelente.</string>
+
+    <!-- QR (§39) -->
+    <string name="titulo_qr">Tu código QR</string>
+    <string name="qr_instruccion">Muestra esta pantalla al conductor. Él escanea el código y el servicio queda cerrado.</string>
+    <string name="qr_codigo_etiqueta">Identificador del servicio</string>
+    <string name="qr_sin_conductor">El código aparece cuando un conductor acepta tu solicitud.</string>
+
+</resources>

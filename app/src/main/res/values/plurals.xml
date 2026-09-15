@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Plurales. El codigo de la aplicacion compone casi todos sus textos en Java
+    porque salen de los modelos, pero aqui el numero viene de un dato y la
+    concordancia es responsabilidad de la interfaz: "1 servicios" es un error
+    que se ve, y una cadena de formato no lo puede resolver.
+-->
+<resources>
+
+    <plurals name="taxi_servicios_conductor">
+        <item quantity="one">%1$d servicio</item>
+        <item quantity="other">%1$d servicios</item>
+    </plurals>
+
+    <plurals name="taxi_resenas_conductor">
+        <item quantity="one">%1$d calificación</item>
+        <item quantity="other">%1$d calificaciones</item>
+    </plurals>
+
+    <plurals name="resultados_total">
+        <item quantity="one">%1$d alojamiento</item>
+        <item quantity="other">%1$d alojamientos</item>
+    </plurals>
+
+    <plurals name="destino_total">
+        <item quantity="one">%1$d alojamiento</item>
+        <item quantity="other">%1$d alojamientos</item>
+    </plurals>
+
+    <plurals name="perfil_tarjetas">
+        <item quantity="one">%1$d tarjeta guardada</item>
+        <item quantity="other">%1$d tarjetas guardadas</item>
+    </plurals>
+
+    <plurals name="taxi_pasajeros">
+        <item quantity="one">%1$d pasajero</item>
+        <item quantity="other">%1$d pasajeros</item>
+    </plurals>
+
+    <plurals name="reserva_huespedes">
+        <item quantity="one">%1$d huésped</item>
+        <item quantity="other">%1$d huéspedes</item>
+    </plurals>
+
+    <plurals name="admin_perfil_habitaciones">
+        <item quantity="one">%1$d habitación</item>
+        <item quantity="other">%1$d habitaciones</item>
+    </plurals>
+
+    <plurals name="admin_habitaciones_total">
+        <item quantity="one">%1$d habitación</item>
+        <item quantity="other">%1$d habitaciones</item>
+    </plurals>
+
+    <plurals name="admin_habitaciones_a_la_venta">
+        <item quantity="one">%1$d a la venta</item>
+        <item quantity="other">%1$d a la venta</item>
+    </plurals>
+
+    <plurals name="admin_hotel_fotos">
+        <item quantity="one">%1$d fotografía</item>
+        <item quantity="other">%1$d fotografías</item>
+    </plurals>
+
+    <plurals name="admin_clientes_estancias">
+        <item quantity="one">%1$d estadía</item>
+        <item quantity="other">%1$d estadías</item>
+    </plurals>
+
+    <!-- Descripción del contador de no leídos: el número suelto no dice nada. -->
+    <plurals name="admin_mensajes_sin_leer">
+        <item quantity="one">%1$d mensaje sin leer</item>
+        <item quantity="other">%1$d mensajes sin leer</item>
+    </plurals>
+
+    <plurals name="admin_cargos_resumen">
+        <item quantity="one">En %1$d cobro adicional</item>
+        <item quantity="other">En %1$d cobros adicionales</item>
+    </plurals>
+
+    <plurals name="admin_reportes_reservas">
+        <item quantity="one">%1$d reserva</item>
+        <item quantity="other">%1$d reservas</item>
+    </plurals>
+
+    <plurals name="admin_reportes_noches">
+        <item quantity="one">%1$d noche</item>
+        <item quantity="other">%1$d noches</item>
+    </plurals>
+
+    <plurals name="admin_reportes_servicio_veces">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d veces</item>
+    </plurals>
+
+    <plurals name="admin_hotel_fotos_faltantes">
+        <item quantity="one">Falta %1$d para el mínimo de %2$d</item>
+        <item quantity="other">Faltan %1$d para el mínimo de %2$d</item>
+    </plurals>
+</resources>

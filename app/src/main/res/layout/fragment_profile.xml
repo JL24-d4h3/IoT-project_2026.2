@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Perfil del cliente (§40).
+
+     Es una pantalla de consulta, no de edicion: enseña lo que el sistema sabe
+     del usuario y desde donde llegar a lo que se puede cambiar. Por eso todo va
+     en filas de dato leidas de arriba abajo, sin campos de formulario — un
+     campo editable invita a escribir, y aqui no hay donde guardar. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/perfil_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_md"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Quien es ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Circulo con iniciales en vez de fotografia: no todas
+                         las cuentas tienen una, y un hueco roto en la cabecera
+                         se lee como un fallo de carga justo en la pantalla que
+                         dice quien eres. -->
+                    <TextView
+                        android:id="@+id/perfil_iniciales"
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="@dimen/avatar_lg"
+                        android:layout_height="@dimen/avatar_lg"
+                        android:background="@drawable/bg_circulo_primario"
+                        android:gravity="center"
+                        android:textColor="@color/colorOnPrimaryContainer"
+                        tools:text="CM" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_base"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/perfil_nombre"
+                            style="@style/TextAppearance.App.H2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="Camila Mendoza" />
+
+                        <TextView
+                            android:id="@+id/perfil_correo_cabecera"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="camila.mendoza@correo.pe" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ============ Datos personales ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/space_md"
+                            android:text="@string/perfil_datos" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_documento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_nacimiento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_direccion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_telefono"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_correo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Metodos de pago ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/perfil_pago" />
+
+                        <LinearLayout
+                            android:id="@+id/perfil_tarjetas"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/perfil_pago_vacio"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/perfil_pago_vacio"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <!-- RC-011, RT-038. La nota no es letra pequeña legal: es
+                             la respuesta a "¿dónde está mi número de tarjeta?",
+                             que es la primera pregunta al ver cuatro dígitos. -->
+                        <TextView
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:drawablePadding="@dimen/space_sm"
+                            android:text="@string/perfil_pago_nota"
+                            app:drawableStartCompat="@drawable/ic_info"
+                            app:drawableTint="@color/colorTextSecondary" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Preferencias ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/space_md"
+                            android:text="@string/perfil_preferencias" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_idioma"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/perfil_fila_moneda"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.SettingRowView
+                            android:id="@+id/perfil_fila_notificaciones"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:minHeight="@dimen/touch_target_min" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Sesion ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/perfil_sesion" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/perfil_cerrar_sesion"
+                            style="@style/Widget.App.Button.Destructive"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/perfil_cerrar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/perfil_version"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xl"
+                    android:gravity="center"
+                    tools:text="Versión 1.0" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/perfil_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/perfil_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

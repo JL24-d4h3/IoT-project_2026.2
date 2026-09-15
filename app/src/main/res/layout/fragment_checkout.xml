@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/checkout_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <org.iot.project.ui.components.BookingCardView
+                        android:id="@+id/checkout_reserva"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_lg"
+                        android:text="@string/detalle_cargos" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm">
+
+                        <org.iot.project.ui.components.ChargeListView
+                            android:id="@+id/checkout_cargos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="@dimen/space_md" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Solo cuando no hay ningun consumo: un titulo seguido de
+                         una tarjeta vacia parece un fallo de carga. -->
+                    <TextView
+                        android:id="@+id/checkout_sin_cargos"
+                        style="@style/TextAppearance.App.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/checkout_sin_cargos"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_lg">
+
+                        <org.iot.project.ui.components.PriceBreakdownView
+                            android:id="@+id/checkout_desglose"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="@dimen/space_md" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/checkout_nota" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorSurface"
+                android:orientation="vertical"
+                android:padding="@dimen/screen_margin">
+
+                <TextView
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_sm"
+                    android:text="@string/checkout_mensaje" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/checkout_confirmar"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    android:text="@string/checkout_confirmar" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Fondo opaco: este panel tapa al formulario que queda debajo. -->
+        <LinearLayout
+            android:id="@+id/checkout_exito"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="@dimen/empty_state_icon"
+                android:layout_height="@dimen/empty_state_icon"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_check"
+                app:tint="@color/colorSuccess" />
+
+            <TextView
+                style="@style/TextAppearance.App.H1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:text="@string/checkout_listo_titulo" />
+
+            <TextView
+                android:id="@+id/checkout_exito_mensaje"
+                style="@style/TextAppearance.App.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:gravity="center"
+                tools:text="Cerramos tu estadía en Casa del Mar. ¡Gracias por alojarte con nosotros!" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/checkout_valorar"
+                style="@style/Widget.App.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_xl"
+                android:text="@string/accion_valorar" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/checkout_volver"
+                style="@style/Widget.App.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/accion_volver" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/checkout_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

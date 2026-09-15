@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Orden de los resultados (§19). Hoja inferior y no dialogo: son cinco
+     opciones con subtitulo y en un dialogo habria que recortarlas.
+
+     Sin boton "Aplicar": elegir un orden ya es la decision, y confirmarla
+     despues seria un paso de mas. Al tocar una opcion se aplica y se cierra. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/sheet_top_padding"
+    android:paddingBottom="@dimen/space_lg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingEnd="@dimen/screen_margin">
+
+        <TextView
+            style="@style/TextAppearance.App.H2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/titulo_orden" />
+
+        <ImageButton
+            android:id="@+id/hoja_cerrar"
+            android:layout_width="@dimen/touch_target_min"
+            android:layout_height="@dimen/touch_target_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_cerrar"
+            android:padding="@dimen/space_md"
+            android:src="@drawable/ic_close"
+            app:tint="@color/colorTextPrimary" />
+    </LinearLayout>
+
+    <!-- Las opciones se añaden en tiempo de ejecucion, una por cada valor de
+         OrdenBusqueda: la lista de ordenes es del modelo, no del diseño, y
+         escribirla aqui obligaria a tocar el XML cada vez que cambie. -->
+    <LinearLayout
+        android:id="@+id/orden_opciones"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:orientation="vertical" />
+
+</LinearLayout>

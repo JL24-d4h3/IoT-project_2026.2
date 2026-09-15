@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Grafo del rol Conductor (§46).
+
+    El conductor no entra con un User sino con un Driver, que es otro modelo
+    (ver SessionManager). Su primera pantalla real es la lista de servicios
+    asignados; hasta entonces, el panel de entrada.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_driver"
+    app:startDestination="@id/driverHomeFragment">
+
+    <fragment
+        android:id="@+id/driverHomeFragment"
+        android:name="org.iot.project.ui.common.PanelRolFragment"
+        android:label="@string/titulo_inicio_conductor"
+        tools:layout="@layout/fragment_panel_rol" />
+
+</navigation>

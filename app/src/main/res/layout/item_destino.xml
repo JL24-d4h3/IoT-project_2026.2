@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una fila de la lista de destinos (§14): una ciudad o una busqueda
+     reciente. El icono es lo que las distingue, y por eso no lleva etiqueta:
+     una ciudad y un historial se leen igual, lo que cambia es de donde salen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target_min"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingEnd="@dimen/space_sm">
+
+    <ImageView
+        android:id="@+id/destino_icono"
+        android:layout_width="@dimen/icon_sm"
+        android:layout_height="@dimen/icon_sm"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_location"
+        app:tint="@color/colorTextSecondary" />
+
+    <TextView
+        android:id="@+id/destino_texto"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingTop="@dimen/space_md"
+        android:paddingBottom="@dimen/space_md"
+        tools:text="Miraflores, Lima" />
+
+    <ImageButton
+        android:id="@+id/destino_quitar"
+        android:layout_width="@dimen/touch_target_min"
+        android:layout_height="@dimen/touch_target_min"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/destino_quitar_reciente"
+        android:padding="@dimen/space_md"
+        android:src="@drawable/ic_close"
+        android:visibility="gone"
+        app:tint="@color/colorTextSecondary"
+        tools:visibility="visible" />
+
+</LinearLayout>

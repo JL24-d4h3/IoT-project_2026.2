@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Una estadía con sus cobros adicionales (§44, RF-051 a RF-054).
+
+    La tarjeta es la estadía, no el cobro. RF-054 pide asociar cada cobro con su
+    reserva, y colgándolos de la estadía a la que pertenecen la asociación no hay
+    que deducirla: se ve. Una fila por cobro repetiría el nombre del huésped y el
+    código de la reserva en cada línea, y el total de la estadía —que es la
+    cuenta que el administrador viene a leer— no existiría en ningún sitio.
+
+    Dentro van los cobros con el mismo componente que usan el detalle de la
+    reserva y el checkout del cliente (ChargeListView), para que un cobro se lea
+    igual desde los tres lados.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card.Interactive"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <TextView
+            android:id="@+id/cargos_huesped"
+            style="@style/TextAppearance.App.H3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="Diego Salas Pinto" />
+
+        <TextView
+            android:id="@+id/cargos_habitacion"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="EST-2026-0420 · Hab. 602" />
+
+        <TextView
+            android:id="@+id/cargos_fechas"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="14 set – 18 set · 4 noches" />
+
+        <org.iot.project.ui.components.ChargeListView
+            android:id="@+id/cargos_lista"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/divider_thickness"
+            android:layout_marginTop="@dimen/space_sm"
+            android:background="@color/colorDivider" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/TextAppearance.App.Body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/admin_cargos_total" />
+
+            <TextView
+                android:id="@+id/cargos_total"
+                style="@style/TextAppearance.App.Price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                tools:text="S/ 83" />
+
+            <!--
+                La tarjeta entera abre el detalle de la reserva; el chevron solo
+                lo anuncia. Sin él, una tarjeta con cifras dentro parece un dato
+                y no una puerta.
+            -->
+            <ImageView
+                android:layout_width="@dimen/icon_md"
+                android:layout_height="@dimen/icon_md"
+                android:layout_marginStart="@dimen/space_xs"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/colorTextSecondary" />
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

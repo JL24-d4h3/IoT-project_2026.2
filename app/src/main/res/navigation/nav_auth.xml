@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Grafo de acceso (§74). Es el que se carga al abrir la aplicacion, mientras
+    no haya sesion: aqui todavia no se sabe que rol va a entrar, asi que no hay
+    barra inferior que mostrar.
+
+    Al entrar, MainActivity cambia este grafo entero por el del rol.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_auth"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="org.iot.project.ui.auth.login.LoginFragment"
+        android:label="@string/acceso_titulo"
+        tools:layout="@layout/fragment_login" />
+
+    <fragment
+        android:id="@+id/registroFragment"
+        android:name="org.iot.project.ui.auth.registro.RegistroFragment"
+        android:label="@string/registro_titulo"
+        tools:layout="@layout/fragment_registro" />
+
+    <fragment
+        android:id="@+id/recuperacionFragment"
+        android:name="org.iot.project.ui.auth.recuperacion.RecuperacionFragment"
+        android:label="@string/recuperar_titulo"
+        tools:layout="@layout/fragment_recuperacion" />
+
+</navigation>

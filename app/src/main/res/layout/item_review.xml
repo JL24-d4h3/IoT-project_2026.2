@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/space_md"
+    android:paddingBottom="@dimen/space_md">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/review_avatar"
+        android:layout_width="@dimen/avatar_md"
+        android:layout_height="@dimen/avatar_md"
+        android:contentDescription="@string/cd_avatar_autor"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circle"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:src="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/review_author"
+        style="@style/TextAppearance.App.H3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:ellipsize="end"
+        android:maxLines="1"
+        app:layout_constraintTop_toTopOf="@id/review_avatar"
+        app:layout_constraintStart_toEndOf="@id/review_avatar"
+        app:layout_constraintEnd_toStartOf="@id/review_rating"
+        tools:text="Camila Torres" />
+
+    <TextView
+        android:id="@+id/review_date"
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:layout_marginTop="@dimen/space_xs"
+        app:layout_constraintTop_toBottomOf="@id/review_author"
+        app:layout_constraintStart_toEndOf="@id/review_avatar"
+        app:layout_constraintEnd_toStartOf="@id/review_rating"
+        tools:text="Hace 12 días" />
+
+    <org.iot.project.ui.components.RatingBadgeView
+        android:id="@+id/review_rating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/review_avatar"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="10" />
+
+    <TextView
+        android:id="@+id/review_comment"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        app:layout_constraintTop_toBottomOf="@id/review_avatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="La vista desde la habitación es exactamente la de las fotos." />
+
+    <View
+        android:id="@+id/review_divider"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/border_width"
+        android:layout_marginTop="@dimen/space_md"
+        android:background="@color/colorDivider"
+        app:layout_constraintTop_toBottomOf="@id/review_comment"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

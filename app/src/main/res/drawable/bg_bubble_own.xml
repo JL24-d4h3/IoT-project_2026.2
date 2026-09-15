@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Burbuja de un mensaje propio. La esquina inferior derecha va recta: es la
+     que apunta al lado del que sale el mensaje. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/colorPrimary" />
+    <corners
+        android:topLeftRadius="@dimen/radius_control"
+        android:topRightRadius="@dimen/radius_control"
+        android:bottomLeftRadius="@dimen/radius_control"
+        android:bottomRightRadius="@dimen/space_xs" />
+</shape>

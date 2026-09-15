@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Un periodo del reporte de reservas y ventas (RF-055 a RF-058).
+
+    Va en tarjeta y no en fila de tabla porque el reporte se hojea igual que el
+    resto de listas del panel. Lleva el estilo de card pero no el de card
+    interactiva: una fila de reporte no lleva a ninguna parte, y un ripple que
+    no hace nada promete algo que no cumple.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_sm">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/periodo_etiqueta"
+                style="@style/TextAppearance.App.H3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="septiembre 2026" />
+
+            <TextView
+                android:id="@+id/periodo_monto"
+                style="@style/TextAppearance.App.Price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                tools:text="S/ 4,120" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/periodo_detalle"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="6 reservas · 18 noches" />
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

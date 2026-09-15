@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Grafo del rol Cliente (§79, prioridad 1 a 8). Los cuatro destinos de nivel
+    superior son los de la barra inferior; el resto se apilan encima.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_client"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="org.iot.project.ui.client.home.HomeFragment"
+        android:label="@string/nav_inicio"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="org.iot.project.ui.client.search.SearchFragment"
+        android:label="@string/nav_buscar"
+        tools:layout="@layout/fragment_search" />
+
+    <fragment
+        android:id="@+id/bookingsFragment"
+        android:name="org.iot.project.ui.client.bookings.BookingsFragment"
+        android:label="@string/nav_reservas"
+        tools:layout="@layout/fragment_bookings" />
+
+    <fragment
+        android:id="@+id/taxiFragment"
+        android:name="org.iot.project.ui.client.taxi.TaxiFragment"
+        android:label="@string/nav_taxi"
+        tools:layout="@layout/fragment_taxi" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="org.iot.project.ui.client.profile.ProfileFragment"
+        android:label="@string/nav_perfil"
+        tools:layout="@layout/fragment_profile" />
+
+    <!-- ============ Destinos apilados sobre la barra inferior ============ -->
+
+    <!-- El destino se elige en su propia pantalla y no en un desplegable sobre
+         el formulario: la lista de ciudades y distritos crece con el catalogo y
+         un desplegable acabaria tapando media pantalla. Al volver, la busqueda
+         sigue donde estaba porque vive en el ViewModel del grafo, no aqui. -->
+    <fragment
+        android:id="@+id/destinoFragment"
+        android:name="org.iot.project.ui.client.search.DestinoFragment"
+        android:label="@string/titulo_destino"
+        tools:layout="@layout/fragment_destino" />
+
+    <fragment
+        android:id="@+id/hotelDetailFragment"
+        android:name="org.iot.project.ui.client.hoteldetail.HotelDetailFragment"
+        android:label="@string/titulo_detalle_hotel"
+        tools:layout="@layout/fragment_hotel_detail">
+        <argument
+            android:name="hotelId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="org.iot.project.ui.client.notifications.NotificationsFragment"
+        android:label="@string/titulo_notificaciones"
+        tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/bookingFlowFragment"
+        android:name="org.iot.project.ui.client.booking.BookingFlowFragment"
+        android:label="@string/titulo_reservar"
+        tools:layout="@layout/fragment_booking_flow">
+        <argument
+            android:name="hotelId"
+            app:argType="string" />
+        <argument
+            android:name="roomId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Todas cuelgan del detalle de una reserva y todas reciben su id: ninguna
+         tiene sentido sin saber de que reserva se trata. -->
+
+    <fragment
+        android:id="@+id/bookingDetailFragment"
+        android:name="org.iot.project.ui.client.bookingdetail.BookingDetailFragment"
+        android:label="@string/titulo_detalle_reserva"
+        tools:layout="@layout/fragment_booking_detail">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/paymentFragment"
+        android:name="org.iot.project.ui.client.payment.PaymentFragment"
+        android:label="@string/titulo_pago"
+        tools:layout="@layout/fragment_payment">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/checkoutFragment"
+        android:name="org.iot.project.ui.client.checkout.CheckoutFragment"
+        android:label="@string/titulo_checkout"
+        tools:layout="@layout/fragment_checkout">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/reviewFragment"
+        android:name="org.iot.project.ui.client.review.ReviewFragment"
+        android:label="@string/titulo_valorar"
+        tools:layout="@layout/fragment_review">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="org.iot.project.ui.client.chat.ChatFragment"
+        android:label="@string/titulo_chat"
+        tools:layout="@layout/fragment_chat">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+</navigation>

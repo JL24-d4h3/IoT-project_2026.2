@@ -1,0 +1,2363 @@
+# PROMPT MAESTRO — DISEÑO UI/UX DE LA APLICACIÓN MÓVIL DE RESERVAS DE HOTELES
+
+## 0. PROPÓSITO DEL PROMPT
+
+Diseña y desarrolla la **interfaz visual completa de una aplicación móvil Android nativa para reservas y gestión de alojamiento en hoteles**, perteneciente al proyecto del curso **1TEL05 – Servicios y Aplicaciones para IoT**.
+
+Este prompt está dirigido principalmente al **diseño e implementación de las vistas de la aplicación móvil**.
+
+La prioridad NO es diseñar la arquitectura backend, la base de datos, las APIs ni la lógica interna del sistema.
+
+La prioridad absoluta debe ser:
+
+> **crear una aplicación móvil visualmente excelente, moderna, elegante, consistente, intuitiva, reutilizable y suficientemente pulida como para destacar por su frontend.**
+
+El resultado debe sentirse como un producto real y profesional, no como una colección de pantallas de un proyecto universitario.
+
+---
+
+# 1. CONTEXTO FUNCIONAL MÍNIMO
+
+La aplicación pertenece a un sistema de reservas de hoteles.
+
+El usuario principal es el **cliente**, quien debe poder:
+
+* Buscar hoteles.
+* Seleccionar destino.
+* Seleccionar fechas.
+* Seleccionar huéspedes.
+* Filtrar resultados.
+* Explorar hoteles.
+* Consultar fotografías.
+* Consultar habitaciones.
+* Consultar servicios.
+* Reservar.
+* Consultar sus reservas.
+* Gestionar reservas.
+* Realizar un pago simulado.
+* Comunicarse con el hotel durante una reserva activa.
+* Realizar checkout.
+* Calificar el hotel.
+* Solicitar un taxi al aeropuerto.
+* Consultar el taxi asignado.
+* Visualizar información del conductor y vehículo.
+* Seguir el estado del servicio.
+* Calificar al conductor.
+
+Existen además otros roles:
+
+* Administrador de hotel.
+* Conductor de taxi.
+* Superadmin.
+
+La aplicación móvil puede cambiar de interfaz según el rol autenticado.
+
+**No es necesario implementar en este trabajo la lógica backend completa.**
+
+Cuando sea necesario representar información todavía no conectada al backend, utilizar **mock data realista y visualmente coherente**.
+
+---
+
+# 2. TECNOLOGÍA DEL FRONTEND
+
+La aplicación debe ser:
+
+* Android nativo.
+* Java.
+* XML.
+* Android Studio.
+* API 34 / Android 14 como mínimo.
+
+NO utilizar:
+
+* Kotlin.
+* Jetpack Compose.
+* Flutter.
+* React Native.
+* Interfaces híbridas.
+
+La interfaz debe construirse mediante XML y componentes Android/Material apropiados.
+
+Se permite utilizar:
+
+* Activities.
+* Fragments.
+* RecyclerView.
+* Navigation Component.
+* ViewModel.
+* LiveData.
+* Material Components.
+* Drawables.
+* ShapeDrawables.
+* Custom Views cuando aporten valor visual o de reutilización.
+
+La implementación debe favorecer la separación entre:
+
+**UI → estado de UI → datos/mock data**
+
+sin introducir complejidad innecesaria.
+
+---
+
+# 3. OBJETIVO VISUAL
+
+La aplicación debe tener una identidad visual propia.
+
+Debe transmitir:
+
+* Calidad.
+* Confianza.
+* Elegancia.
+* Modernidad.
+* Comodidad.
+* Turismo.
+* Organización.
+* Facilidad de uso.
+
+Debe evitar parecer:
+
+* Un formulario empresarial.
+* Una aplicación administrativa.
+* Una plantilla genérica de Material Design.
+* Un clon de Booking.
+* Una colección de XMLs sin sistema visual.
+* Una aplicación sobrecargada de colores.
+* Una aplicación excesivamente minimalista y vacía.
+
+La interfaz debe encontrar un equilibrio entre:
+
+> **claridad funcional + riqueza visual + sofisticación.**
+
+---
+
+# 4. REFERENCIAS DE DISEÑO
+
+Utilizar varias referencias conceptuales, pero sin copiar literalmente ninguna.
+
+## 4.1. Booking como referencia funcional
+
+La aplicación puede tomar como referencia aplicaciones de reservas como Booking para:
+
+* Jerarquía de búsqueda.
+* Presentación de hoteles.
+* Uso de fotografías.
+* Cards.
+* Filtros.
+* Fechas.
+* Precios.
+* Disponibilidad.
+* Flujo de reserva.
+* Gestión de reservas.
+
+Sin embargo:
+
+**NO copiar la identidad visual de Booking.**
+
+No utilizar:
+
+* Su logotipo.
+* Su nombre como parte de la aplicación.
+* Sus colores de marca como identidad principal.
+* Sus textos.
+* Sus fotografías.
+* Una réplica visual de sus pantallas.
+
+---
+
+# 4.2. JetBrains como referencia estética
+
+Utilizar el ecosistema visual de JetBrains como inspiración para ciertos principios:
+
+* Precisión.
+* Consistencia.
+* Jerarquía tipográfica.
+* Espaciado controlado.
+* Componentes bien definidos.
+* Estados visuales claros.
+* Sobriedad.
+* Interacciones previsibles.
+* Excelente organización de información.
+* Sensación de producto profesional.
+
+Sin embargo, **NO convertir la aplicación en un IDE**.
+
+Una aplicación de hoteles necesita:
+
+* Fotografía.
+* Espacios visuales.
+* Inspiración.
+* Sensación de viaje.
+* Información emocional.
+* CTA más visibles.
+* Cards visualmente atractivas.
+
+Por tanto:
+
+> **JetBrains aporta disciplina visual; las aplicaciones modernas de hospitality aportan riqueza visual y experiencia de reserva.**
+
+La combinación debe resultar en una interfaz propia.
+
+---
+
+# 5. PRINCIPIOS DE DISEÑO
+
+Todos los diseños deben seguir estos principios.
+
+## 5.1. Jerarquía
+
+Cada pantalla debe tener claramente:
+
+1. Elemento principal.
+2. Información secundaria.
+3. Acciones principales.
+4. Información complementaria.
+
+El usuario debe entender rápidamente:
+
+> ¿Dónde estoy?
+> ¿Qué estoy viendo?
+> ¿Qué puedo hacer aquí?
+> ¿Cuál es la acción principal?
+
+---
+
+## 5.2. Progressive disclosure
+
+No mostrar toda la información simultáneamente.
+
+Primero:
+
+**información esencial**
+
+y después:
+
+**información secundaria bajo demanda.**
+
+Utilizar:
+
+* Expandibles.
+* Bottom sheets.
+* Dialogs.
+* Secciones.
+* Tabs.
+* Detalles desplegables.
+
+cuando sea apropiado.
+
+---
+
+## 5.3. Consistencia
+
+Los mismos conceptos deben verse iguales en toda la aplicación.
+
+Por ejemplo:
+
+* Hotel card → siempre misma estructura base.
+* Rating → mismo componente.
+* Chip → mismo sistema.
+* Precio → misma jerarquía.
+* Botón primario → mismo lenguaje visual.
+* Estados → mismo código visual.
+* Headers → estructura coherente.
+
+---
+
+# 6. SISTEMA VISUAL
+
+Antes de diseñar todas las pantallas, definir un **Design System interno**.
+
+Debe incluir:
+
+## Colores
+
+Definir:
+
+* Color primario.
+* Color secundario.
+* Background principal.
+* Background secundario.
+* Surface.
+* Border.
+* Texto principal.
+* Texto secundario.
+* Texto deshabilitado.
+* Éxito.
+* Advertencia.
+* Error.
+* Información.
+
+La paleta debe ser sofisticada.
+
+Evitar utilizar demasiados colores simultáneamente.
+
+La identidad debe poder reconocerse incluso sin fotografías.
+
+---
+
+# 7. TIPOGRAFÍA
+
+Definir una jerarquía tipográfica completa.
+
+Como mínimo:
+
+* Display.
+* Heading 1.
+* Heading 2.
+* Heading 3.
+* Body.
+* Body secondary.
+* Caption.
+* Label.
+* Button.
+* Price.
+* Numeric emphasis.
+
+La tipografía debe permitir distinguir claramente:
+
+**Hotel → ubicación → descripción → precio → acción.**
+
+No utilizar tamaños arbitrarios en cada pantalla.
+
+---
+
+# 8. ESPACIADO
+
+Crear una escala consistente de espaciado.
+
+Por ejemplo:
+
+* 4dp.
+* 8dp.
+* 12dp.
+* 16dp.
+* 20dp.
+* 24dp.
+* 32dp.
+
+No colocar elementos utilizando márgenes arbitrarios en cada XML.
+
+El espaciado debe formar parte del sistema visual.
+
+---
+
+# 9. RADIOS Y SUPERFICIES
+
+Definir una familia coherente de:
+
+* Corner radius.
+* Cards.
+* Buttons.
+* Chips.
+* Inputs.
+* Dialogs.
+* Bottom sheets.
+
+No utilizar simultáneamente:
+
+* Cards extremadamente redondeadas.
+* Cards cuadradas.
+* Botones circulares.
+* Inputs con radios diferentes.
+
+Todo debe pertenecer al mismo lenguaje visual.
+
+---
+
+# 10. ICONOGRAFÍA
+
+Utilizar iconos coherentes.
+
+Preferentemente:
+
+* Material Symbols.
+* Vector Drawables.
+* Iconos personalizados solamente cuando sea necesario.
+
+Los iconos deben:
+
+* Tener tamaños consistentes.
+* Utilizar el mismo estilo.
+* Tener significado claro.
+* No utilizarse simplemente como decoración.
+
+---
+
+# 11. FOTOGRAFÍA
+
+La fotografía es uno de los elementos centrales de esta aplicación.
+
+Los hoteles deben sentirse visualmente atractivos.
+
+Utilizar:
+
+* Imágenes grandes.
+* Aspect ratios consistentes.
+* Rounded corners cuando corresponda.
+* Galerías.
+* Hero images.
+* Thumbnails.
+* Image overlays.
+
+Las imágenes no deben ser simplemente pequeños thumbnails.
+
+En una aplicación hotelera:
+
+> **la fotografía es información.**
+
+Debe ayudar al usuario a decidir.
+
+---
+
+# 12. HOME DEL CLIENTE
+
+La Home debe ser una de las pantallas más trabajadas.
+
+Debe contener aproximadamente:
+
+### Header
+
+* Saludo contextual.
+* Perfil.
+* Notificaciones.
+
+### Hero / Search area
+
+Una zona visualmente dominante para:
+
+* Destino.
+* Fechas.
+* Huéspedes.
+
+### Acciones rápidas
+
+Por ejemplo:
+
+* Mis reservas.
+* Taxis.
+* Favoritos, si se decide incorporarlos.
+* Historial.
+
+### Descubrimiento
+
+Mostrar:
+
+* Hoteles recomendados.
+* Destinos.
+* Hoteles destacados.
+
+Las secciones deben sentirse como contenido de una aplicación de hospitality, no como un dashboard administrativo.
+
+---
+
+# 13. SEARCH EXPERIENCE
+
+La búsqueda debe ser uno de los elementos centrales de UX.
+
+Flujo:
+
+**Destino → Fechas → Huéspedes → Buscar**
+
+El buscador puede dividirse en componentes individuales.
+
+Ejemplo conceptual:
+
+```text
+┌──────────────────────────────┐
+│ 📍 ¿A dónde vas?             │
+│ Lima                         │
+├──────────────────────────────┤
+│ 📅 Check-in    📅 Check-out  │
+│ 20 Sep          24 Sep       │
+├──────────────────────────────┤
+│ 👤 2 huéspedes               │
+└──────────────────────────────┘
+
+           [ Buscar hoteles ]
+```
+
+Debe sentirse rápido y agradable.
+
+---
+
+# 14. DESTINO
+
+Diseñar una vista específica para seleccionar destino.
+
+Debe permitir:
+
+* Buscar.
+* Ver destinos recientes.
+* Seleccionar sugerencias.
+* Mostrar ubicación mediante iconografía.
+* Vaciar búsqueda.
+* Manejar estado sin resultados.
+
+Utilizar un campo de búsqueda visualmente prominente.
+
+---
+
+# 15. SELECTOR DE FECHAS
+
+La selección de fechas debe tener una experiencia de alta calidad.
+
+Preferentemente:
+
+* Calendario.
+* Selección de rango.
+* Check-in claramente identificado.
+* Check-out claramente identificado.
+* Estado seleccionado.
+* Estado hover/pressed cuando corresponda.
+* Fechas no disponibles.
+* Mes anterior/siguiente.
+* Resumen del rango seleccionado.
+
+La interfaz debe evitar confusión entre:
+
+**fecha de entrada y fecha de salida.**
+
+---
+
+# 16. SELECTOR DE HUÉSPEDES
+
+Crear un selector intuitivo.
+
+Debe permitir controlar:
+
+* Adultos.
+* Niños.
+* Habitaciones.
+
+Utilizar controles:
+
+`−  2  +`
+
+con buena accesibilidad táctil.
+
+Mostrar un resumen final:
+
+**2 adultos · 1 niño · 1 habitación**
+
+---
+
+# 17. RESULTADOS DE BÚSQUEDA
+
+Los resultados deben priorizar visualmente:
+
+1. Fotografía.
+2. Nombre.
+3. Ubicación.
+4. Rating.
+5. Información relevante.
+6. Precio.
+7. Acción.
+
+Crear una **HotelCard reutilizable**.
+
+Ejemplo conceptual:
+
+```text
+┌───────────────────────────────┐
+│                               │
+│         HOTEL IMAGE           │
+│                               │
+│                    ♡          │
+├───────────────────────────────┤
+│ Hotel Miraflores              │
+│ Miraflores · Lima             │
+│                               │
+│ 9.2  Excelente · 284 reseñas  │
+│                               │
+│ Desde                         │
+│ S/ 280 / noche                │
+└───────────────────────────────┘
+```
+
+La composición final debe ser considerablemente más sofisticada que este esquema.
+
+---
+
+# 18. FILTROS
+
+Diseñar filtros como una experiencia independiente.
+
+Filtros posibles:
+
+* Precio.
+* Rating.
+* Tipo de habitación.
+* Servicios.
+* Disponibilidad.
+* Ubicación.
+
+Los servicios deben representarse mediante chips.
+
+Ejemplo:
+
+`Wi-Fi` `Piscina` `Gimnasio` `Desayuno`
+
+Estados:
+
+* Normal.
+* Seleccionado.
+* Disabled.
+
+Debe existir una forma clara de:
+
+**Aplicar filtros**
+
+y
+
+**Limpiar filtros.**
+
+---
+
+# 19. SORTING
+
+Permitir ordenar los resultados visualmente.
+
+Opciones:
+
+* Recomendados.
+* Precio menor.
+* Precio mayor.
+* Mejor rating.
+* Más populares.
+
+Puede implementarse mediante:
+
+* Bottom sheet.
+* Dialog.
+* Segmented control.
+
+Elegir la alternativa visualmente más apropiada.
+
+---
+
+# 20. HOTEL DETAIL
+
+Esta debe ser una de las pantallas visualmente más importantes.
+
+La pantalla debe tener una **hero image/gallery**.
+
+Estructura conceptual:
+
+```text
+[ HERO IMAGE / GALLERY ]
+
+Hotel Miraflores
+★★★★★
+
+9.2 · Excelente
+284 reseñas
+
+📍 Miraflores, Lima
+
+────────────────────
+
+Descripción
+
+────────────────────
+
+Servicios
+
+[ Wi-Fi ] [ Piscina ]
+[ Gimnasio ] [ Desayuno ]
+
+────────────────────
+
+Habitaciones
+
+[ Room Cards ]
+
+────────────────────
+
+Lugares cercanos
+
+[ Place Cards ]
+
+────────────────────
+
+Desde S/ 280 / noche
+
+[ Seleccionar habitación ]
+```
+
+Debe sentirse como una pantalla premium.
+
+---
+
+# 21. GALERÍA DEL HOTEL
+
+Crear una experiencia visual de galería.
+
+Debe permitir:
+
+* Fotografía principal.
+* Thumbnails o collage.
+* Contador de fotografías.
+* Abrir galería completa.
+* Navegar entre fotografías.
+* Cerrar galería.
+
+No limitarse a un simple ImageView.
+
+---
+
+# 22. RATING
+
+El sistema utiliza una escala de:
+
+**1 a 10**
+
+No utilizar estrellas como representación principal del rating.
+
+Crear un componente reutilizable:
+
+**RatingBadge**
+
+Ejemplo:
+
+```text
+┌──────┐
+│ 9.2  │  Excelente
+└──────┘
+```
+
+Debe tener variantes:
+
+* Grande.
+* Pequeño.
+* Inline.
+* Card.
+
+La representación debe ser visualmente clara.
+
+---
+
+# 23. SERVICIOS
+
+Los servicios deben utilizar:
+
+* Chips.
+* Icons.
+* Small cards.
+
+Ejemplo:
+
+```text
+Wi-Fi              Piscina
+Gimnasio           Desayuno
+Estacionamiento    Spa
+```
+
+Separar:
+
+### Incluidos
+
+Servicios incluidos en la reserva.
+
+### Adicionales
+
+Servicios que tienen un precio adicional.
+
+Ejemplo:
+
+```text
+Servicios adicionales
+
+Lavandería                 S/ 20
+Traslado aeropuerto        S/ 50
+```
+
+---
+
+# 24. COMPONENTE DE SERVICIO
+
+Crear un componente reutilizable:
+
+**ServiceChip**
+
+y, cuando sea necesario:
+
+**ServiceCard**
+
+Debe soportar:
+
+* Icono.
+* Nombre.
+* Estado.
+* Precio.
+* Incluido/adicional.
+
+Debe existir consistencia entre:
+
+**Home → Hotel Detail → Filters → Hotel Administration**
+
+---
+
+# 25. HABITACIONES
+
+Crear un componente:
+
+**RoomCard**
+
+Debe mostrar:
+
+* Fotografía.
+* Tipo.
+* Capacidad.
+* Tamaño.
+* Piso cuando sea relevante.
+* Características.
+* Precio.
+* Disponibilidad.
+* CTA.
+
+Ejemplo:
+
+```text
+┌──────────────────────────────┐
+│        ROOM IMAGE            │
+├──────────────────────────────┤
+│ Habitación Deluxe            │
+│ 2 huéspedes · 32 m²          │
+│                              │
+│ Wi-Fi · A/C · Desayuno       │
+│                              │
+│ S/ 320 / noche               │
+│                              │
+│ [ Seleccionar ]              │
+└──────────────────────────────┘
+```
+
+---
+
+# 26. RESERVA
+
+Diseñar un flujo de reserva claro.
+
+No colocar todo en una pantalla excesivamente larga.
+
+Preferentemente:
+
+### Step 1
+
+Habitación.
+
+### Step 2
+
+Detalles de reserva.
+
+### Step 3
+
+Servicios adicionales.
+
+### Step 4
+
+Resumen.
+
+### Step 5
+
+Pago.
+
+### Step 6
+
+Confirmación.
+
+Mostrar progreso cuando sea útil.
+
+---
+
+# 27. RESUMEN DE RESERVA
+
+Crear un componente:
+
+**BookingSummary**
+
+Debe mostrar:
+
+* Hotel.
+* Habitación.
+* Check-in.
+* Check-out.
+* Huéspedes.
+* Precio base.
+* Servicios adicionales.
+* Total.
+
+El precio total debe tener una jerarquía visual fuerte.
+
+Ejemplo:
+
+```text
+Alojamiento             S/ 960
+Servicios adicionales    S/ 70
+──────────────────────────────
+Total                   S/ 1030
+```
+
+---
+
+# 28. PAGO
+
+El pago es simulado.
+
+Diseñar una interfaz visualmente creíble.
+
+Debe permitir:
+
+* Seleccionar tarjeta existente.
+* Añadir tarjeta.
+* Visualizar método de pago.
+* Confirmar pago.
+
+La tarjeta puede representarse como una pequeña **Payment Card UI**.
+
+No es necesario implementar procesamiento financiero real.
+
+---
+
+# 29. CONFIRMACIÓN
+
+Después de reservar, mostrar una pantalla de confirmación.
+
+Debe transmitir claramente:
+
+**La reserva fue realizada correctamente.**
+
+Incluir:
+
+* Icono/ilustración.
+* Hotel.
+* Fechas.
+* Habitación.
+* Código de reserva.
+* Precio.
+* CTA para ver reserva.
+* CTA relacionado con taxi cuando corresponda.
+
+Debe ser una pantalla visualmente memorable.
+
+---
+
+# 30. MIS RESERVAS
+
+Crear una sección principal:
+
+**Reservas**
+
+Separar:
+
+* Próximas.
+* Activas.
+* Historial.
+
+Utilizar tabs o segmented controls si mejoran la experiencia.
+
+---
+
+# 31. BOOKING CARD
+
+Crear un componente reutilizable:
+
+**BookingCard**
+
+Debe mostrar:
+
+* Fotografía del hotel.
+* Nombre.
+* Fechas.
+* Habitación.
+* Precio.
+* Estado.
+* CTA.
+
+Estados visuales:
+
+* Confirmada.
+* Activa.
+* Pendiente.
+* Cancelada.
+* Finalizada.
+
+No depender únicamente del color para distinguir estados.
+
+---
+
+# 32. BOOKING DETAIL
+
+Mostrar:
+
+* Información del hotel.
+* Habitación.
+* Fechas.
+* Huéspedes.
+* Servicios.
+* Precio.
+* Estado.
+* Información del pago.
+* Chat cuando esté permitido.
+* Taxi cuando corresponda.
+
+Las acciones importantes deben estar siempre localizables.
+
+---
+
+# 33. CHAT
+
+Diseñar un chat moderno.
+
+Debe incluir:
+
+* Header del hotel.
+* Avatar.
+* Estado.
+* Burbujas de mensaje.
+* Timestamp.
+* Input.
+* Botón enviar.
+* Estados de mensaje.
+
+Debe sentirse como una conversación real, no como un RecyclerView de TextViews.
+
+El chat solamente aparece cuando corresponde a una reserva activa.
+
+---
+
+# 34. CHECKOUT
+
+Diseñar el checkout como una experiencia clara.
+
+Mostrar:
+
+* Resumen del alojamiento.
+* Servicios.
+* Cargos adicionales.
+* Total.
+* Calificación.
+* Comentario.
+
+Si corresponde al usuario un taxi gratuito, mostrarlo como una oportunidad claramente visible, pero sin convertirlo en un elemento invasivo.
+
+---
+
+# 35. TAXI
+
+El sistema de taxis es secundario frente al sistema hotelero.
+
+Por tanto:
+
+> **No permitir que el módulo de taxis domine visualmente la aplicación.**
+
+Debe integrarse naturalmente con la experiencia de reserva.
+
+---
+
+# 36. SOLICITUD DE TAXI
+
+Diseñar:
+
+* Punto de recogida.
+* Destino.
+* Fecha.
+* Hora.
+* Pasajeros.
+* Ida / ida y vuelta.
+
+La pantalla debe ser muy simple.
+
+---
+
+# 37. TAXI ASSIGNED
+
+Cuando exista un conductor asignado mostrar:
+
+* Fotografía del conductor.
+* Nombre.
+* Rating 1–10.
+* Vehículo.
+* Placa.
+* Estado.
+* Mapa.
+* Información del viaje.
+
+Debe sentirse parecido a una interfaz moderna de ride-hailing, pero adaptada al contexto del hotel.
+
+---
+
+# 38. ESTADOS DEL TAXI
+
+Los estados son:
+
+**SOLICITADO → ASIGNADO → EN CAMINO → EN TRASLADO → FINALIZADO**
+
+Cada estado debe tener una representación visual clara.
+
+Utilizar:
+
+* Timeline.
+* Progress indicator.
+* Status badge.
+
+Evitar mostrar únicamente texto.
+
+---
+
+# 39. QR
+
+El cliente puede visualizar un QR asociado al servicio.
+
+Cuando sea necesario mostrarlo:
+
+Crear una pantalla dedicada o bottom sheet con:
+
+* QR grande.
+* Identificador.
+* Información básica del servicio.
+* Instrucción clara.
+
+Debe ser extremadamente fácil de escanear.
+
+---
+
+# 40. PERFIL DEL CLIENTE
+
+Crear una pantalla de perfil moderna.
+
+Debe contener:
+
+* Avatar.
+* Nombre.
+* Información personal.
+* Email.
+* Teléfono.
+* Datos relevantes.
+* Métodos de pago.
+* Configuración.
+* Notificaciones.
+
+No convertirla en una lista interminable de opciones.
+
+Agrupar las opciones por categorías.
+
+---
+
+# 41. NOTIFICACIONES
+
+Diseñar un centro de notificaciones.
+
+Tipos:
+
+* Reserva.
+* Pago.
+* Checkout.
+* Cargo adicional.
+* Taxi.
+* Mensaje del hotel.
+
+Utilizar:
+
+* Iconos.
+* Timestamp.
+* Estados leído/no leído.
+* Agrupación cuando corresponda.
+
+---
+
+# 42. ADMINISTRADOR DE HOTEL
+
+El administrador necesita una interfaz diferente a la del cliente.
+
+NO reutilizar la Home del cliente simplemente cambiando botones.
+
+Debe sentirse como una:
+
+> **herramienta de gestión hotelera móvil.**
+
+La interfaz puede ser más cercana al estilo JetBrains/productivity:
+
+* Más densidad informativa.
+* Menos fotografía.
+* Más tablas/cards compactas.
+* Estados.
+* Métricas.
+* Acciones rápidas.
+
+Esto es precisamente donde la referencia JetBrains puede tener mayor peso.
+
+---
+
+# 43. HOME DEL ADMINISTRADOR
+
+Mostrar:
+
+* Resumen del hotel.
+* Reservas actuales.
+* Próximos checkouts.
+* Alertas.
+* Mensajes.
+* Ingresos por servicios adicionales.
+* Acciones rápidas.
+
+Ejemplo conceptual:
+
+```text
+Buenos días
+
+Hotel Miraflores
+
+12 reservas activas
+3 checkouts hoy
+S/ 1,240 servicios adicionales
+
+[ Reservas ] [ Clientes ]
+[ Servicios ] [ Habitaciones ]
+
+Alertas
+...
+```
+
+---
+
+# 44. ADMINISTRACIÓN DEL HOTEL
+
+Crear navegación clara para:
+
+* Información del hotel.
+* Habitaciones.
+* Servicios.
+* Clientes.
+* Reservas.
+* Cargos.
+* Mensajes.
+
+No intentar colocar todas las opciones en una sola pantalla.
+
+---
+
+# 45. CONFIGURACIÓN DE SERVICIOS
+
+Esta vista debe ser especialmente buena.
+
+Mostrar el catálogo de servicios mediante chips.
+
+Ejemplo:
+
+```text
+Servicios del hotel
+
+Incluidos
+[✓ Wi-Fi]
+[✓ Piscina]
+[✓ Desayuno]
+
+Adicionales
+[✓ Lavandería]  S/ 20
+[✓ Traslado]    S/ 50
+
+Agregar servicio
+```
+
+La selección debe ser visual.
+
+El administrador no debe tener que escribir manualmente el nombre de cada servicio.
+
+---
+
+# 46. CONDUCTOR
+
+La interfaz del conductor debe ser simple y orientada a acción.
+
+Home:
+
+* Estado.
+* Ubicación.
+* Solicitudes disponibles.
+* Servicio activo.
+
+Las solicitudes deben utilizar:
+
+**TaxiRequestCard**
+
+con:
+
+* Origen.
+* Destino.
+* Distancia.
+* Pasajeros.
+* Precio.
+* Acción aceptar.
+
+Cuando exista un servicio activo:
+
+> ocultar la lista de solicitudes y concentrar toda la pantalla en el servicio actual.
+
+---
+
+# 47. SUPERADMIN
+
+El Superadmin puede utilizar una interfaz más administrativa.
+
+Debe priorizar:
+
+* Usuarios.
+* Conductores.
+* Hoteles.
+* Aprobaciones.
+* Reportes.
+* Logs.
+
+Aquí puede utilizarse una estética más cercana a herramientas profesionales:
+
+* Data cards.
+* Listas densas.
+* Filtros.
+* Badges.
+* Métricas.
+* Estados.
+
+No obstante, debe seguir perteneciendo al mismo Design System.
+
+---
+
+# 48. NAVEGACIÓN
+
+Diseñar una navegación coherente.
+
+Para el cliente considerar:
+
+**Inicio | Buscar | Reservas | Taxi | Perfil**
+
+No necesariamente utilizar exactamente esta estructura si una alternativa produce una mejor UX.
+
+La navegación debe decidirse según:
+
+* Frecuencia.
+* Importancia.
+* Contexto.
+* Jerarquía.
+
+No agregar una sección al Bottom Navigation solamente porque existe una funcionalidad.
+
+---
+
+# 49. BOTTOM NAVIGATION
+
+Debe contener únicamente destinos principales.
+
+Evitar:
+
+* Más de 5 destinos.
+* Iconos ambiguos.
+* Labels inconsistentes.
+* Navegación redundante.
+
+El estado activo debe ser extremadamente claro.
+
+---
+
+# 50. ESTADOS DE UI
+
+Cada pantalla importante debe diseñarse considerando:
+
+## Loading
+
+Skeletons cuando sea apropiado.
+
+## Empty
+
+Ejemplo:
+
+> No tienes reservas todavía.
+
+Incluir ilustración/icono y CTA.
+
+## Error
+
+Mensaje comprensible + acción para reintentar.
+
+## Success
+
+Confirmación clara.
+
+## Disabled
+
+Estados visuales coherentes.
+
+## Offline/API unavailable
+
+Informar sin romper toda la experiencia.
+
+---
+
+# 51. SKELETON LOADING
+
+Para contenido visual como:
+
+* Hotel cards.
+* Room cards.
+* Booking cards.
+
+preferir skeleton loading en lugar de una pantalla completamente bloqueada.
+
+Debe conservar la estructura de la interfaz mientras carga.
+
+---
+
+# 52. EMPTY STATES
+
+Crear empty states reutilizables.
+
+Ejemplo:
+
+```text
+        [ illustration ]
+
+     Aún no tienes reservas
+
+   Explora hoteles y encuentra
+       tu próxima estancia.
+
+      [ Buscar hoteles ]
+```
+
+Debe existir una identidad visual consistente.
+
+---
+
+# 53. ERROR STATES
+
+Evitar mensajes técnicos como:
+
+> NullPointerException
+
+o
+
+> HTTP 500.
+
+Mostrar mensajes orientados al usuario.
+
+Ejemplo:
+
+> No pudimos cargar los hoteles.
+
+> Intenta nuevamente en unos segundos.
+
+[ Reintentar ]
+
+---
+
+# 54. DIALOGS Y BOTTOM SHEETS
+
+No utilizar Dialogs indiscriminadamente.
+
+Usarlos cuando:
+
+* Se necesita una decisión.
+* La información es contextual.
+* No merece una pantalla completa.
+
+Usar Bottom Sheets para:
+
+* Filtros.
+* Ordenamiento.
+* Selección rápida.
+* Información contextual.
+
+---
+
+# 55. MICROINTERACCIONES
+
+La interfaz debe sentirse viva.
+
+Cuando sea técnicamente razonable, incorporar:
+
+* Ripple.
+* Press states.
+* Transiciones suaves.
+* Cambios de estado.
+* Animaciones cortas.
+* Feedback visual.
+* Expansión de cards.
+* Selección de chips.
+
+No utilizar animaciones únicamente por decoración.
+
+La regla es:
+
+> **animar para comunicar, no para presumir.**
+
+---
+
+# 56. ACCESIBILIDAD
+
+Diseñar teniendo en cuenta:
+
+* Contraste.
+* Tamaños táctiles adecuados.
+* Texto legible.
+* Labels.
+* Iconos comprensibles.
+* No depender únicamente del color.
+* Estados claramente diferenciables.
+
+Los botones importantes deben ser fáciles de pulsar.
+
+---
+
+# 57. RESPONSIVIDAD
+
+Aunque el objetivo principal sea Android móvil, las vistas deben soportar diferentes tamaños de pantalla razonablemente.
+
+Evitar:
+
+* Coordenadas absolutas.
+* Elementos que se corten.
+* Textos que desborden.
+* Imágenes deformadas.
+
+Utilizar correctamente:
+
+* ConstraintLayout.
+* LinearLayout.
+* FrameLayout.
+* ScrollView.
+* RecyclerView.
+
+según corresponda.
+
+---
+
+# 58. COMPONENTES REUTILIZABLES
+
+Crear una biblioteca interna de componentes.
+
+Como mínimo:
+
+### Navigation
+
+* AppHeader.
+* BottomNavigation.
+
+### Hotels
+
+* HotelCard.
+* HotelImageGallery.
+* RatingBadge.
+* HotelInfoSection.
+
+### Rooms
+
+* RoomCard.
+* RoomFeature.
+
+### Services
+
+* ServiceChip.
+* ServiceCard.
+* ServiceSection.
+
+### Booking
+
+* BookingCard.
+* BookingSummary.
+* BookingStatus.
+* PriceBreakdown.
+
+### Taxi
+
+* TaxiRequestCard.
+* DriverCard.
+* VehicleCard.
+* TaxiStatus.
+* QRView.
+
+### UI
+
+* PrimaryButton.
+* SecondaryButton.
+* IconButton.
+* SearchField.
+* DateSelector.
+* GuestSelector.
+* FilterChip.
+* EmptyState.
+* ErrorState.
+* LoadingSkeleton.
+
+---
+
+# 59. COMPONENTES COMO SISTEMA
+
+Los componentes no deben ser simplemente XMLs copiados y pegados.
+
+Cada componente debe:
+
+* Tener una responsabilidad clara.
+* Poder reutilizarse.
+* Permitir estados.
+* Mantener el mismo estilo.
+* Evitar duplicación.
+
+Por ejemplo:
+
+**HotelCard**
+
+debe poder utilizarse en:
+
+* Home.
+* Search.
+* Recommendations.
+* Favorites si se implementan.
+
+---
+
+# 60. MOCK DATA
+
+Mientras no exista backend:
+
+utilizar mock data.
+
+Los datos deben parecer reales.
+
+NO utilizar repetidamente:
+
+```text
+Hotel 1
+Hotel 2
+Hotel 3
+```
+
+Utilizar datos plausibles:
+
+* Nombres de hoteles.
+* Fotografías.
+* Precios.
+* Ratings.
+* Ubicaciones.
+* Servicios.
+* Habitaciones.
+* Reservas.
+
+Esto es importante porque una interfaz de alta calidad pierde credibilidad cuando los datos parecen artificiales.
+
+---
+
+# 61. CONTENIDO VISUAL
+
+El diseño debe contemplar:
+
+* Textos suficientemente realistas.
+* Longitudes variables.
+* Hoteles con nombres cortos y largos.
+* Precios distintos.
+* Diferentes cantidades de servicios.
+* Ratings diferentes.
+* Estados distintos.
+
+Esto permitirá comprobar que los componentes realmente son robustos.
+
+---
+
+# 62. NO DISEÑAR SOLO EL "HAPPY PATH"
+
+Cada pantalla importante debe considerar:
+
+* Estado normal.
+* Loading.
+* Empty.
+* Error.
+* Success.
+* Disabled.
+* Long content.
+* Sin fotografía.
+* Muchos servicios.
+* Sin servicios.
+* Precio elevado.
+* Precio bajo.
+* Rating alto.
+* Rating bajo.
+
+El objetivo es que la interfaz siga siendo coherente en todos estos casos.
+
+---
+
+# 63. DISEÑO DE LA EXPERIENCIA COMPLETA
+
+El usuario debe sentir una progresión natural:
+
+```text
+DESCUBRIR
+   ↓
+BUSCAR
+   ↓
+EXPLORAR
+   ↓
+COMPARAR
+   ↓
+ELEGIR
+   ↓
+RESERVAR
+   ↓
+PAGAR
+   ↓
+DISFRUTAR
+   ↓
+CHECKOUT
+   ↓
+CALIFICAR
+   ↓
+TRANSPORTE
+```
+
+Cada etapa debe tener una interfaz diseñada específicamente para su objetivo.
+
+No reutilizar indiscriminadamente la misma estructura.
+
+---
+
+# 64. JERARQUÍA VISUAL DEL PRODUCTO
+
+La aplicación debe priorizar visualmente:
+
+### Nivel 1
+
+* Hotel.
+* Fotografía.
+* Destino.
+* Precio.
+* Disponibilidad.
+
+### Nivel 2
+
+* Rating.
+* Servicios.
+* Habitación.
+* Fechas.
+
+### Nivel 3
+
+* Información secundaria.
+* Detalles administrativos.
+* Metadatos.
+
+La información secundaria nunca debe competir visualmente con la acción principal.
+
+---
+
+# 65. BOTONES Y CTA
+
+Definir una jerarquía clara:
+
+### Primary
+
+Acciones fundamentales:
+
+* Buscar.
+* Reservar.
+* Confirmar.
+* Pagar.
+* Seleccionar.
+
+### Secondary
+
+Acciones importantes pero no principales.
+
+### Tertiary
+
+Acciones secundarias.
+
+### Destructive
+
+* Cancelar.
+* Eliminar.
+* Rechazar.
+
+No utilizar el mismo estilo visual para todas las acciones.
+
+---
+
+# 66. PRECIOS
+
+El precio es información crítica en una aplicación hotelera.
+
+Debe tener una jerarquía fuerte.
+
+Ejemplo:
+
+```text
+Desde
+
+S/ 280
+por noche
+```
+
+o:
+
+```text
+S/ 1,120
+4 noches
+```
+
+No hacer que el precio compita con el nombre del hotel, pero tampoco esconderlo.
+
+---
+
+# 67. ESTADOS Y BADGES
+
+Crear un sistema de badges.
+
+Ejemplos:
+
+* Disponible.
+* No disponible.
+* Confirmada.
+* Activa.
+* Cancelada.
+* Pendiente.
+* En camino.
+* Finalizada.
+* Incluido.
+* Adicional.
+
+Todos deben compartir:
+
+* Tipografía.
+* Padding.
+* Radius.
+* Iconografía.
+* Jerarquía.
+
+---
+
+# 68. MAPAS
+
+Cuando sea necesario representar ubicación:
+
+utilizar una interfaz de mapa integrada visualmente con el producto.
+
+El mapa no debe dominar toda la aplicación.
+
+Debe servir para:
+
+* Ubicación del hotel.
+* Lugares cercanos.
+* Seguimiento del taxi.
+
+---
+
+# 69. QR
+
+El QR debe tener suficiente espacio alrededor.
+
+No colocarlo como un elemento pequeño dentro de una card.
+
+Cuando el usuario necesita escanearlo:
+
+> convertirlo en el elemento principal de la pantalla.
+
+---
+
+# 70. PERFIL Y CONFIGURACIÓN
+
+Agrupar opciones.
+
+Ejemplo:
+
+### Cuenta
+
+* Información personal.
+* Email.
+* Teléfono.
+
+### Pago
+
+* Tarjetas.
+
+### Preferencias
+
+* Notificaciones.
+* Configuración.
+
+### Sesión
+
+* Cerrar sesión.
+
+No crear una lista infinita de botones independientes.
+
+---
+
+# 71. CONSISTENCIA ENTRE ROLES
+
+Aunque cliente, administrador, conductor y Superadmin tengan interfaces diferentes:
+
+deben compartir:
+
+* Tipografía.
+* Colores.
+* Iconografía.
+* Buttons.
+* Chips.
+* Badges.
+* Cards.
+* Spacing.
+* Radius.
+* Motion.
+
+La aplicación debe parecer un solo producto.
+
+---
+
+# 72. DIFERENCIACIÓN ENTRE ROLES
+
+La diferencia debe producirse principalmente mediante:
+
+**información + navegación + densidad + acciones**
+
+y no mediante cuatro identidades visuales completamente diferentes.
+
+Cliente:
+
+> Visual / hospitality / descubrimiento.
+
+Administrador:
+
+> Gestión / información / control.
+
+Conductor:
+
+> Acción / ubicación / servicio activo.
+
+Superadmin:
+
+> Administración / métricas / control.
+
+---
+
+# 73. ARQUITECTURA DE VISTAS
+
+Organizar las vistas de manera lógica.
+
+Una estructura conceptual puede ser:
+
+```text
+ui/
+├── auth/
+├── client/
+│   ├── home/
+│   ├── search/
+│   ├── hotel/
+│   ├── booking/
+│   ├── reservations/
+│   ├── chat/
+│   ├── taxi/
+│   └── profile/
+│
+├── hotel_admin/
+│   ├── dashboard/
+│   ├── reservations/
+│   ├── rooms/
+│   ├── services/
+│   ├── clients/
+│   └── alerts/
+│
+├── driver/
+│   ├── home/
+│   ├── requests/
+│   └── active_service/
+│
+└── superadmin/
+    ├── dashboard/
+    ├── users/
+    ├── drivers/
+    ├── hotels/
+    ├── reports/
+    └── logs/
+```
+
+La estructura exacta puede modificarse si existe una alternativa mejor.
+
+---
+
+# 74. AUTHENTICATION UI
+
+Diseñar:
+
+* Login.
+* Registro.
+* Recuperación de contraseña.
+* Estados de error.
+* Validaciones.
+* Loading.
+* Success.
+
+La pantalla de login debe ser visualmente atractiva pero sencilla.
+
+No sobrecargarla con información.
+
+---
+
+# 75. SPLASH / ONBOARDING
+
+Si se utiliza onboarding:
+
+debe ser corto.
+
+No crear cinco o seis pantallas innecesarias.
+
+Como máximo unas pocas pantallas que expliquen:
+
+* Descubrimiento.
+* Reservas.
+* Transporte.
+
+Debe poder omitirse.
+
+---
+
+# 76. DETALLE DEL PRODUCTO
+
+La aplicación debe sentirse como una experiencia coherente desde:
+
+**Splash → Login → Home → Search → Hotel → Room → Booking → Payment → Reservation → Taxi → Profile**
+
+No diseñar cada pantalla aisladamente.
+
+Antes de implementar, analizar cómo cada pantalla conduce naturalmente a la siguiente.
+
+---
+
+# 77. CALIDAD VISUAL
+
+El estándar esperado es:
+
+> **nivel portfolio profesional.**
+
+No basta con que:
+
+* Compile.
+* Funcione.
+* Tenga botones.
+* Tenga RecyclerViews.
+* Cumpla los requisitos.
+
+Debe existir una intención clara detrás de:
+
+* Cada color.
+* Cada margen.
+* Cada tamaño.
+* Cada componente.
+* Cada jerarquía.
+* Cada imagen.
+* Cada interacción.
+
+---
+
+# 78. EVITAR ESTOS ERRORES
+
+NO producir:
+
+* Pantallas genéricas de CRUD.
+* Formularios gigantes.
+* Cards excesivamente cargadas.
+* Texto innecesario.
+* Colores aleatorios.
+* Iconos inconsistentes.
+* Botones con estilos diferentes en cada pantalla.
+* Margen arbitrario.
+* 10 componentes visuales compitiendo por atención.
+* Pantallas sin jerarquía.
+* RecyclerViews visualmente monótonos.
+* Interfaces completamente blancas sin estructura.
+* Gradientes excesivos.
+* Sombras exageradas.
+* Border radius aplicado indiscriminadamente.
+* Animaciones innecesarias.
+* Copia de Booking.
+* Clon visual de cualquier aplicación existente.
+
+---
+
+# 79. PRIORIDAD DE DISEÑO
+
+Si existe conflicto entre agregar una funcionalidad visualmente secundaria y mejorar una pantalla importante:
+
+**priorizar la calidad visual de la pantalla importante.**
+
+Orden de prioridad:
+
+1. Home.
+2. Search.
+3. Hotel Detail.
+4. Room Selection.
+5. Booking Flow.
+6. Reservations.
+7. Taxi.
+8. Profile.
+9. Hotel Administration.
+10. Driver.
+11. Superadmin.
+
+El módulo de hoteles/reservas es el corazón del producto.
+
+---
+
+# 80. CRITERIOS DE EVALUACIÓN VISUAL
+
+Antes de considerar terminada una pantalla, evaluar:
+
+### Jerarquía
+
+¿Es evidente qué debe mirar primero el usuario?
+
+### Consistencia
+
+¿Utiliza correctamente el Design System?
+
+### Usabilidad
+
+¿La acción principal es evidente?
+
+### Densidad
+
+¿Existe demasiada información?
+
+### Espaciado
+
+¿Existe suficiente espacio entre elementos?
+
+### Tipografía
+
+¿Existe una jerarquía clara?
+
+### Fotografía
+
+¿Las imágenes tienen suficiente protagonismo?
+
+### Color
+
+¿La paleta tiene intención?
+
+### Componentes
+
+¿Son reutilizables?
+
+### Estados
+
+¿La pantalla funciona también sin datos?
+
+### Accesibilidad
+
+¿Se puede utilizar cómodamente en un teléfono?
+
+### Profesionalismo
+
+¿Parece una aplicación real o un proyecto académico?
+
+---
+
+# 81. ORDEN DE IMPLEMENTACIÓN
+
+No comenzar creando todas las Activities simultáneamente.
+
+Seguir aproximadamente este orden:
+
+## Fase 1 — Design System
+
+Crear:
+
+* Colores.
+* Tipografía.
+* Dimensiones.
+* Shapes.
+* Buttons.
+* Chips.
+* Badges.
+* Cards.
+* Iconografía.
+
+## Fase 2 — Cliente
+
+Crear:
+
+* Home.
+* Search.
+* Filters.
+* Hotel Detail.
+* Room Selection.
+* Booking.
+* Payment.
+* Confirmation.
+* Reservations.
+* Profile.
+
+## Fase 3 — Interacciones
+
+Agregar:
+
+* Date picker.
+* Guest selector.
+* Filters.
+* Bottom sheets.
+* Dialogs.
+* Navigation.
+* Estados.
+
+## Fase 4 — Taxi
+
+Crear:
+
+* Request.
+* Assigned driver.
+* Tracking.
+* QR.
+* Completion.
+
+## Fase 5 — Administración
+
+Crear:
+
+* Hotel Admin.
+* Driver.
+* Superadmin.
+
+## Fase 6 — Refinamiento
+
+Revisar:
+
+* Spacing.
+* Typography.
+* Alignment.
+* Empty states.
+* Error states.
+* Loading.
+* Accessibility.
+* Animations.
+* Transitions.
+* Consistency.
+
+---
+
+# 82. REGLA FUNDAMENTAL SOBRE BACKEND
+
+Este prompt NO debe interpretarse como una solicitud para diseñar o implementar el backend.
+
+No dedicar esfuerzo innecesario a:
+
+* Base de datos.
+* APIs.
+* Endpoints.
+* Arquitectura de servidores.
+* Persistencia.
+* Autenticación real.
+* Seguridad backend.
+* Lógica distribuida.
+
+Cuando una funcionalidad necesite datos:
+
+> utilizar interfaces y mock data bien estructurados.
+
+La implementación debe quedar preparada para conectar posteriormente la fuente de datos real.
+
+---
+
+# 83. REGLA FUNDAMENTAL SOBRE UI
+
+No diseñar únicamente pensando:
+
+> “¿Qué componentes necesito para cumplir el requisito?”
+
+Diseñar pensando:
+
+> “¿Cuál es la mejor experiencia posible para que un usuario real complete esta tarea?”
+
+El requisito funcional define **qué existe**.
+
+El diseño define **cómo se experimenta**.
+
+---
+
+# 84. REGLA FUNDAMENTAL SOBRE REUTILIZACIÓN
+
+Evitar dos extremos:
+
+### Extremo 1
+
+Copiar y pegar cada XML.
+
+### Extremo 2
+
+Crear un sistema de abstracciones tan complejo que dificulte modificar la UI.
+
+Buscar un punto intermedio:
+
+> **componentes reutilizables, simples y visualmente consistentes.**
+
+---
+
+# 85. RESULTADO ESPERADO
+
+El resultado final debe ser una aplicación móvil que visualmente pueda describirse como:
+
+> **una plataforma moderna de hospitality con la riqueza visual de una aplicación de viajes y la disciplina de diseño de una herramienta profesional.**
+
+Debe ser:
+
+* Moderna.
+* Elegante.
+* Visual.
+* Clara.
+* Rápida de comprender.
+* Consistente.
+* Reutilizable.
+* Accesible.
+* Escalable.
+* Profesional.
+
+La aplicación debe tener una identidad propia.
+
+No debe parecer:
+
+* Booking.
+* Airbnb.
+* Uber.
+* Un dashboard administrativo.
+* Una plantilla Material.
+* Un proyecto universitario genérico.
+
+Debe parecer un producto nuevo que podría convertirse en una aplicación comercial real.
+
+---
+
+# 86. PRINCIPIO FINAL
+
+La prioridad del proyecto frontend es:
+
+**EXPERIENCIA > ESTÉTICA AISLADA**
+
+y
+
+**CONSISTENCIA > DECORACIÓN**
+
+y
+
+**CLARIDAD > CANTIDAD DE ELEMENTOS**
+
+y
+
+**CALIDAD DE LAS PANTALLAS PRINCIPALES > CANTIDAD DE PANTALLAS**
+
+y
+
+**REUTILIZACIÓN > COPIAR Y PEGAR**
+
+y, especialmente:
+
+> **El usuario debe poder reservar un hotel sin pensar demasiado en cómo utilizar la aplicación.**
+
+La interfaz debe hacer que la complejidad del sistema desaparezca detrás de una experiencia sencilla, visual y natural.
+
+El objetivo no es simplemente que la aplicación "se vea bonita".
+
+El objetivo es que **se sienta diseñada**.

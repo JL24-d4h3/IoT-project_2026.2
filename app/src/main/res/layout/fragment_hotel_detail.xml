@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/detalle_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <org.iot.project.ui.components.HotelImageGalleryView
+                    android:id="@+id/detalle_galeria"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/gallery_height" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <TextView
+                        android:id="@+id/detalle_nombre"
+                        style="@style/TextAppearance.App.H1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:text="Casa Andina Select Miraflores" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="@dimen/icon_xs"
+                            android:layout_height="@dimen/icon_xs"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_location"
+                            app:tint="@color/colorTextSecondary" />
+
+                        <TextView
+                            android:id="@+id/detalle_ubicacion"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_xs"
+                            android:layout_weight="1"
+                            tools:text="Miraflores, Lima · Av. Larco 345" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <org.iot.project.ui.components.RatingBadgeView
+                            android:id="@+id/detalle_rating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="9.2" />
+
+                        <TextView
+                            android:id="@+id/detalle_num_resenas"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_sm"
+                            android:layout_weight="1"
+                            tools:text="128 reseñas" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/detalle_precio"
+                        style="@style/TextAppearance.App.Price"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        tools:text="Desde S/ 320 por noche" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:background="@color/colorDivider" />
+
+                <!-- Descripción -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/detalle_descripcion_titulo" />
+
+                    <TextView
+                        android:id="@+id/detalle_descripcion"
+                        style="@style/TextAppearance.App.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        tools:text="Habitaciones amplias a dos cuadras del malecón, con desayuno incluido." />
+                </LinearLayout>
+
+                <!-- Servicios. En fila horizontal: son muchos y se hojean mejor
+                     de un vistazo que apilados en una columna larga. -->
+                <LinearLayout
+                    android:id="@+id/detalle_servicios_seccion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/screen_margin">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="@dimen/screen_margin"
+                        android:paddingEnd="@dimen/screen_margin"
+                        android:text="@string/detalle_servicios_titulo" />
+
+                    <HorizontalScrollView
+                        android:id="@+id/detalle_servicios_scroll"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:clipToPadding="false"
+                        android:paddingStart="@dimen/screen_margin"
+                        android:paddingEnd="@dimen/screen_margin"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/detalle_servicios"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+                    </HorizontalScrollView>
+
+                    <org.iot.project.ui.components.EmptyStateView
+                        android:id="@+id/detalle_servicios_vacio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <!-- Qué hay cerca -->
+                <LinearLayout
+                    android:id="@+id/detalle_cerca_seccion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/detalle_cerca_titulo" />
+
+                    <LinearLayout
+                        android:id="@+id/detalle_cerca"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
+                <!-- Habitaciones -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/screen_margin"
+                    android:paddingEnd="@dimen/screen_margin"
+                    android:paddingTop="@dimen/screen_margin">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/detalle_habitaciones_titulo" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/detalle_habitaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="2"
+                        tools:listitem="@layout/item_room_card" />
+
+                    <org.iot.project.ui.components.EmptyStateView
+                        android:id="@+id/detalle_habitaciones_vacio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <!-- Reseñas -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/detalle_resenas_titulo" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/detalle_resenas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="2"
+                        tools:listitem="@layout/item_review" />
+
+                    <org.iot.project.ui.components.EmptyStateView
+                        android:id="@+id/detalle_resenas_vacio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/detalle_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/gallery_height" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/detalle_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </FrameLayout>
+
+</LinearLayout>

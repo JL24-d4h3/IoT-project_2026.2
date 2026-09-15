@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una fila que lleva a otra pantalla.
+
+     La diferencia con DataRowView es el chevron: una fila de datos y una fila
+     que se toca se ven igual hasta que una de las dos tiene una marca que dice
+     "esto sigue". Sin el, el resumen de notificaciones del perfil parece un
+     dato mas y nadie lo pulsa. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageView
+        android:id="@+id/fila_icono"
+        android:layout_width="@dimen/icon_md"
+        android:layout_height="@dimen/icon_md"
+        android:importantForAccessibility="no"
+        app:tint="@color/colorPrimary"
+        tools:src="@drawable/ic_notifications" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_base"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/fila_titulo"
+            style="@style/TextAppearance.App.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Notificaciones" />
+
+        <TextView
+            android:id="@+id/fila_resumen"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:visibility="gone"
+            tools:text="3 sin leer"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="@dimen/icon_sm"
+        android:layout_height="@dimen/icon_sm"
+        android:layout_marginStart="@dimen/space_sm"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_chevron_right"
+        app:tint="@color/colorTextSecondary" />
+
+</merge>

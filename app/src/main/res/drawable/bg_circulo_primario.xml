@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Círculo con las iniciales, para cuando no hay fotografía.
+
+    El color de las iniciales es colorOnPrimaryContainer y no colorPrimary: el
+    teal de la marca sobre su propio contenedor claro no llega al contraste que
+    exige §56, y este par sí.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/colorPrimaryContainer" />
+</shape>

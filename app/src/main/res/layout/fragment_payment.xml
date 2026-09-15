@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/pago_formulario"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/screen_margin">
+
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_md">
+
+                            <TextView
+                                android:id="@+id/pago_reserva"
+                                style="@style/TextAppearance.App.H3"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                tools:text="Casa del Mar · EST-2026-0418" />
+
+                            <org.iot.project.ui.components.PriceBreakdownView
+                                android:id="@+id/pago_desglose"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_lg"
+                        android:text="@string/pago_metodo_titulo" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.App.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm">
+
+                        <!-- RadioGroup de la plataforma: Material 1.12 solo
+                             trae MaterialRadioButton, no un grupo propio. Los
+                             botones si son Material y toman el color del tema. -->
+                        <RadioGroup
+                            android:id="@+id/pago_metodos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="@dimen/space_sm"
+                            android:paddingTop="@dimen/space_xs"
+                            android:paddingEnd="@dimen/space_sm"
+                            android:paddingBottom="@dimen/space_xs" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/pago_simulado_aviso" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorSurface"
+                android:orientation="vertical"
+                android:padding="@dimen/screen_margin">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/pago_confirmar"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/button_height"
+                    tools:text="Pagar S/ 1,440" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Fondo opaco: este panel tapa al formulario que queda debajo. -->
+        <LinearLayout
+            android:id="@+id/pago_exito"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorBackground"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="@dimen/empty_state_icon"
+                android:layout_height="@dimen/empty_state_icon"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_check"
+                app:tint="@color/colorSuccess" />
+
+            <TextView
+                style="@style/TextAppearance.App.H1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:text="@string/pago_confirmado_titulo" />
+
+            <TextView
+                android:id="@+id/pago_exito_mensaje"
+                style="@style/TextAppearance.App.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:gravity="center"
+                tools:text="Tu reserva EST-2026-0418 quedó confirmada. Te esperamos el 12 de octubre." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/pago_ver_reserva"
+                style="@style/Widget.App.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_xl"
+                android:text="@string/accion_ver_reserva" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/pago_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

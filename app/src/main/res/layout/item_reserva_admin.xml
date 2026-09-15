@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fila de reserva en el panel del administrador (§42, §44).
+
+    No reutiliza la tarjeta de reserva del cliente y no es por gusto: aquella
+    enseña el nombre y la foto del hotel, que para el administrador es su propio
+    hotel repetido en todas las filas. Lo que aquí identifica una reserva es
+    quién llega y a qué habitación, así que eso es lo que va primero.
+
+    El código de reserva baja a la segunda línea junto a la habitación: el
+    administrador busca por nombre de huésped o por número de habitación, y el
+    código solo hace falta cuando hay que citarlo.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card.Interactive"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/reserva_huesped"
+                style="@style/TextAppearance.App.H3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Ana Beltrán Ruiz" />
+
+            <org.iot.project.ui.components.BookingStatusBadgeView
+                android:id="@+id/reserva_estado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/reserva_habitacion"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="EST-2026-0004 · Hab. 601 · Doble clásica" />
+
+        <TextView
+            android:id="@+id/reserva_fechas"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="20 set – 24 set · 4 noches" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/divider_thickness"
+            android:layout_marginTop="@dimen/space_md"
+            android:background="@color/colorDivider" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/reserva_total"
+                style="@style/TextAppearance.App.Price"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                tools:text="S/ 1,280" />
+
+            <!--
+                La fila entera abre el detalle; el chevron solo lo anuncia. Sin
+                él, una tarjeta con cifras dentro parece un dato y no una puerta.
+            -->
+            <ImageView
+                android:layout_width="@dimen/icon_md"
+                android:layout_height="@dimen/icon_md"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/colorTextSecondary" />
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Una conversación de la bandeja del hotel (§44, RF-064).
+
+    Tres líneas y no más: quién escribe, de qué estadía habla y qué dijo. El
+    nombre del huésped va primero porque es lo que el administrador busca con la
+    vista al abrir la bandeja, y la estadía debajo porque un mismo huésped puede
+    tener dos reservas abiertas y entonces dos filas se leerían iguales.
+
+    La previa del último mensaje se corta a una línea: una bandeja se hojea, no
+    se lee, y el mensaje entero está a un toque. Se enseña el texto del mensaje
+    y no un "tienes 3 mensajes", porque el asunto de la conversación es
+    justamente lo último que se dijo.
+
+    La fila entera abre el chat; el chevron solo lo anuncia.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card.Interactive"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/conversacion_nombre"
+                style="@style/TextAppearance.App.H3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Diego Salas Pinto" />
+
+            <!--
+                El contador solo aparece cuando hay algo sin leer, y se anuncia
+                con su descripción completa: para un lector de pantalla, un "2"
+                suelto no dice de qué es.
+            -->
+            <TextView
+                android:id="@+id/conversacion_sin_leer"
+                style="@style/TextAppearance.App.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:background="@drawable/bg_badge_unread"
+                android:gravity="center"
+                android:minWidth="@dimen/space_lg"
+                android:paddingStart="@dimen/space_sm"
+                android:paddingTop="@dimen/space_xs"
+                android:paddingEnd="@dimen/space_sm"
+                android:paddingBottom="@dimen/space_xs"
+                android:textColor="@color/colorOnPrimary"
+                android:visibility="gone"
+                tools:text="2"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/conversacion_estadia"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="EST-2026-0420 · Hab. 302" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/conversacion_previa"
+                style="@style/TextAppearance.App.BodySecondary"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="¿El check-in cierra a alguna hora o podemos registrarnos a las 22:00?" />
+
+            <TextView
+                android:id="@+id/conversacion_hora"
+                style="@style/TextAppearance.App.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                tools:text="hace 2 horas" />
+
+            <ImageView
+                android:layout_width="@dimen/icon_md"
+                android:layout_height="@dimen/icon_md"
+                android:layout_marginStart="@dimen/space_xs"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/colorTextSecondary" />
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

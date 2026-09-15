@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Miniatura de una fotografía del hotel (§42, RF-012 y RF-013).
+
+    Es pequeña y va en tira horizontal a propósito: aquí las fotografías no se
+    contemplan, se revisan. Lo que el administrador viene a comprobar es
+    cuántas hay y qué se ve en ellas, y para eso una tira que enseña varias a
+    la vez informa más que una galería a pantalla completa.
+
+    La equis va encima de la imagen y no debajo. Quitar es lo único que se
+    puede hacer con una fotografía, y sacarla de la imagen obligaría a repetir
+    el botón en una fila aparte, gastando en cada miniatura un renglón que la
+    tira no tiene.
+
+    El orden de los hijos importa: en un FrameLayout lo último se dibuja
+    encima, así que el velo va antes que la equis y después de la imagen. El
+    velo es más pequeño que el botón y está centrado con él —28dp de círculo y
+    10dp de margen dan el mismo centro que los 48dp del botón—, de modo que el
+    área táctil sigue siendo el objetivo táctil completo y no el círculo.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/foto_admin_width"
+    android:layout_height="@dimen/foto_admin_height"
+    android:layout_marginEnd="@dimen/space_sm">
+
+    <ImageView
+        android:id="@+id/foto_imagen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_skeleton"
+        android:contentDescription="@string/cd_imagen_hotel"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/ic_search_off" />
+
+    <View
+        android:id="@+id/foto_velo"
+        android:layout_width="@dimen/circulo_sobre_foto"
+        android:layout_height="@dimen/circulo_sobre_foto"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="@dimen/space_sm"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:background="@drawable/bg_circulo_velo"
+        android:importantForAccessibility="no" />
+
+    <ImageButton
+        android:id="@+id/foto_quitar"
+        android:layout_width="@dimen/touch_target_min"
+        android:layout_height="@dimen/touch_target_min"
+        android:layout_gravity="top|end"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_quitar_foto"
+        android:padding="@dimen/space_md"
+        android:src="@drawable/ic_close"
+        app:tint="@color/colorSurface" />
+
+</FrameLayout>

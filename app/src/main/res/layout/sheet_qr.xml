@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Codigo QR del cliente (§39, §69).
+
+     La pantalla es casi toda el simbolo: §39 pide que sea extremadamente facil
+     de escanear, y eso significa que nada compita con el codigo ni lo encoja.
+     Por eso el QR va sobre fondo blanco puro y con su tamaño propio, y los
+     datos del servicio van debajo en texto pequeño.
+
+     El texto del codigo esta ademas de en el dibujo porque un lector puede
+     fallar por reflejo o por suciedad en la pantalla, y entonces el conductor
+     todavia tiene algo que teclear. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingTop="@dimen/sheet_top_padding"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingBottom="@dimen/space_lg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.App.H2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/titulo_qr" />
+
+        <ImageButton
+            android:id="@+id/qr_cerrar"
+            android:layout_width="@dimen/touch_target_min"
+            android:layout_height="@dimen/touch_target_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_cerrar"
+            android:src="@drawable/ic_close"
+            app:tint="@color/colorTextSecondary" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/qr_instruccion"
+        style="@style/TextAppearance.App.BodySecondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:text="@string/qr_instruccion" />
+
+    <!-- Fondo blanco explicito: el simbolo se lee por contraste con el fondo, y
+         el fondo de la app es gris claro. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:background="@android:color/white">
+
+        <org.iot.project.ui.components.QrView
+            android:id="@+id/qr_codigo"
+            android:layout_width="@dimen/qr_size"
+            android:layout_height="@dimen/qr_size"
+            android:layout_gravity="center_horizontal" />
+
+        <!-- El hueco que deja el QR cuando no se pudo dibujar. Ocupa su mismo
+             sitio para que la hoja no cambie de alto segun el resultado. -->
+        <TextView
+            android:id="@+id/qr_error"
+            style="@style/TextAppearance.App.Body"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/qr_size"
+            android:gravity="center"
+            android:padding="@dimen/space_base"
+            android:text="@string/taxi_error_qr"
+            android:textColor="@color/colorError"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/qr_codigo_texto"
+        style="@style/TextAppearance.App.NumericEmphasis"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_base"
+        android:gravity="center"
+        android:letterSpacing="0.08"
+        tools:text="TAX-2026-0733" />
+
+    <TextView
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/qr_codigo_etiqueta" />
+
+    <LinearLayout
+        android:id="@+id/qr_datos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:orientation="vertical">
+
+        <org.iot.project.ui.components.DataRowView
+            android:id="@+id/qr_fila_recogida"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <org.iot.project.ui.components.DataRowView
+            android:id="@+id/qr_fila_destino"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" />
+
+        <org.iot.project.ui.components.DataRowView
+            android:id="@+id/qr_fila_cuando"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm" />
+    </LinearLayout>
+
+</LinearLayout>

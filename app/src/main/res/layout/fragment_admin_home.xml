@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Portada del administrador de hotel (§43).
+
+    No reutiliza la Home del cliente (§42): allí manda la fotografía y aquí
+    manda el dato. El administrador abre la aplicación para saber qué pasa hoy
+    en su hotel —cuántas habitaciones están ocupadas, cuáles se liberan, cuánto
+    se ha facturado por servicios— y todo eso cabe en una tarjeta.
+
+    Por eso no hay estado vacío: un hotel sin huéspedes no es una pantalla sin
+    contenido, es un hotel con cero reservas activas, y eso es exactamente lo
+    que el tablero tiene que decir.
+
+    El orden de los bloques no es casual. Primero las tres cifras del día, que
+    se leen de un vistazo y responden a la pregunta con la que se abre la
+    aplicación. Después el índice de las acciones rápidas, porque la barra
+    inferior solo lleva cinco secciones y el resto de la gestión —datos del
+    hotel, clientes, cobros, mensajes, reportes— no se alcanza de otra forma:
+    un índice que hay que bajar a buscar deja de ser un índice. Y debajo lo que
+    se consulta despacio: las estadías en curso, el desglose de ingresos y las
+    conversaciones recientes.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/admin_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/admin_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_base"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Resumen del hotel ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_base">
+
+                            <TextView
+                                android:id="@+id/admin_hotel_nombre"
+                                style="@style/TextAppearance.App.H2"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                tools:text="Casa del Mar" />
+
+                            <TextView
+                                android:id="@+id/admin_hotel_ubicacion"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                tools:text="Miraflores, Lima · Av. Malecón Cisneros 1240" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/divider_thickness"
+                            android:background="@color/colorDivider" />
+
+                        <!--
+                            Las tres cifras del día. Van juntas y con divisores
+                            porque se leen como un conjunto, no una por una.
+                        -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/space_base"
+                            android:paddingTop="@dimen/space_md"
+                            android:paddingEnd="@dimen/space_base"
+                            android:paddingBottom="@dimen/space_md">
+
+                            <org.iot.project.ui.components.StatView
+                                android:id="@+id/admin_stat_activas"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <View
+                                android:layout_width="@dimen/divider_thickness"
+                                android:layout_height="@dimen/space_3xl"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="@dimen/space_md"
+                                android:layout_marginEnd="@dimen/space_md"
+                                android:background="@color/colorDivider" />
+
+                            <org.iot.project.ui.components.StatView
+                                android:id="@+id/admin_stat_salidas"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <View
+                                android:layout_width="@dimen/divider_thickness"
+                                android:layout_height="@dimen/space_3xl"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="@dimen/space_md"
+                                android:layout_marginEnd="@dimen/space_md"
+                                android:background="@color/colorDivider" />
+
+                            <org.iot.project.ui.components.StatView
+                                android:id="@+id/admin_stat_ingresos"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Acciones rápidas ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/admin_acciones_titulo" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="horizontal">
+
+                        <org.iot.project.ui.components.AccionRapidaView
+                            android:id="@+id/admin_accion_hotel"
+                            style="@style/Widget.App.Tile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <org.iot.project.ui.components.AccionRapidaView
+                            android:id="@+id/admin_accion_clientes"
+                            style="@style/Widget.App.Tile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_sm"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="horizontal">
+
+                        <org.iot.project.ui.components.AccionRapidaView
+                            android:id="@+id/admin_accion_cobros"
+                            style="@style/Widget.App.Tile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <org.iot.project.ui.components.AccionRapidaView
+                            android:id="@+id/admin_accion_mensajes"
+                            style="@style/Widget.App.Tile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_sm"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="horizontal">
+
+                        <org.iot.project.ui.components.AccionRapidaView
+                            android:id="@+id/admin_accion_reportes"
+                            style="@style/Widget.App.Tile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <!--
+                            El hueco que deja la quinta pieza. Sin él, Reportes
+                            se estiraría hasta ocupar las dos columnas y
+                            parecería la acción principal de la rejilla, que no
+                            lo es: las cinco pesan lo mismo.
+                        -->
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="@dimen/space_sm"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ============ Estadías en curso ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/admin_estadias_titulo"
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/admin_estadias_titulo" />
+
+                    <TextView
+                        android:id="@+id/admin_estadias_nota"
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:text="@string/admin_estadias_nota"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/admin_estadias"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="2"
+                        tools:listitem="@layout/item_estadia_admin" />
+
+                    <TextView
+                        android:id="@+id/admin_estadias_vacio"
+                        style="@style/TextAppearance.App.BodySecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/admin_estadias_vacio"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <!-- ============ Ingresos por servicios adicionales ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/admin_reportes_servicios_titulo" />
+
+                    <!--
+                        El desglose de la cifra que ya está arriba en la tarjeta.
+                        La cifra sola no dice de dónde sale; aquí se ve qué
+                        servicios la componen, que es lo que el administrador
+                        necesita para decidir cuáles promocionar.
+                    -->
+                    <org.iot.project.ui.components.IngresoListView
+                        android:id="@+id/admin_home_ingresos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm" />
+
+                    <TextView
+                        android:id="@+id/admin_home_ingresos_vacio"
+                        style="@style/TextAppearance.App.BodySecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/admin_reportes_servicios_vacio"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/admin_home_ver_reporte"
+                        style="@style/Widget.App.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start"
+                        android:text="@string/admin_home_ver_reporte" />
+                </LinearLayout>
+
+                <!-- ============ Mensajes ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H2"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/nav_mensajes" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_home_ver_mensajes"
+                            style="@style/Widget.App.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_sm"
+                            android:text="@string/admin_home_ver_mensajes" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/admin_home_mensajes_nota"
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:visibility="gone"
+                        tools:text="2 mensajes sin leer"
+                        tools:visibility="visible" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/admin_home_mensajes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:nestedScrollingEnabled="false"
+                        tools:itemCount="3"
+                        tools:listitem="@layout/item_conversacion_admin" />
+
+                    <TextView
+                        android:id="@+id/admin_home_mensajes_vacio"
+                        style="@style/TextAppearance.App.BodySecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/admin_mensajes_vacio"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/admin_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_base"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/admin_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

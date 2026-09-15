@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una reserva dentro del selector del formulario de taxi (§36).
+
+     El estilo es el interactivo porque esta tarjeta se toca para elegir: sin
+     el, el toque no dejaria rastro visible y no se sabria si registro. -->
+<org.iot.project.ui.components.BookingSummaryView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.App.Card.Interactive"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />

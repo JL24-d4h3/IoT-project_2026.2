@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Agregar o editar un servicio del hotel (§45).
+
+    Una sola hoja para las dos cosas porque son la misma decisión: qué servicio
+    es, si se cobra y cuánto. Al agregar se elige del catálogo; al editar ya está
+    elegido y lo que cambia es lo demás. Separarlas en dos pantallas duplicaría
+    el formulario para que una de ellas tuviera un campo menos.
+
+    El catálogo se marca con chips y no con un desplegable: §45 pide que la
+    selección sea visual y que el administrador no escriba nombres. Un
+    desplegable esconde las opciones detrás de un toque más y no deja ver de un
+    vistazo qué más se puede ofrecer.
+
+    El desplazamiento envuelve la hoja entera —título y botones incluidos—, que
+    es como están hechas las demás hojas de la aplicación: con el teclado abierto
+    por el precio, lo que tiene que poder alcanzarse es el botón de guardar.
+-->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/sheet_top_padding"
+        android:paddingBottom="@dimen/space_lg">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <TextView
+                android:id="@+id/servicio_titulo"
+                style="@style/TextAppearance.App.H2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                tools:text="Agregar servicio" />
+
+            <ImageButton
+                android:id="@+id/servicio_cerrar"
+                android:layout_width="@dimen/touch_target_min"
+                android:layout_height="@dimen/touch_target_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_cerrar"
+                android:padding="@dimen/space_md"
+                android:src="@drawable/ic_close"
+                app:tint="@color/colorTextPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <!-- ============ Elegir del catálogo ============ -->
+            <LinearLayout
+                android:id="@+id/servicio_catalogo_bloque"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:text="@string/admin_servicio_catalogo" />
+
+                <TextView
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/admin_servicio_catalogo_nota" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/servicio_catalogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    app:singleSelection="true"
+                    app:selectionRequired="true" />
+            </LinearLayout>
+
+            <!-- ============ Cómo se ofrece ============ -->
+            <TextView
+                style="@style/TextAppearance.App.H3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:text="@string/admin_servicio_forma" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/servicio_forma"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                app:singleSelection="true"
+                app:selectionRequired="true" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/servicio_precio_campo"
+                style="@style/Widget.App.TextInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:hint="@string/admin_servicio_precio"
+                app:prefixText="@string/admin_servicio_moneda"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- Sin hint propio: el del TextInputLayout ya ocupa ese mismo
+                     hueco, y los dos textos se dibujarían superpuestos. -->
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/servicio_precio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/servicio_guardar"
+                style="@style/Widget.App.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_lg"
+                android:text="@string/admin_servicio_guardar" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/servicio_quitar"
+                style="@style/Widget.App.Button.Destructive"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/admin_servicio_quitar"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Escala de espaciado, radios y tamanos (CONTEXTO_FRONTEND.md §6.3 y §6.4).
+
+    No se escriben margenes sueltos en los XML de layout: todo sale de aqui.
+    Si falta un valor, se agrega aqui primero.
+-->
+<resources>
+
+    <!-- ==================== ESPACIADO (§6.3) ====================
+         Escala: 4 - 8 - 12 - 16 - 20 - 24 - 32 - 40 - 48. Sin valores intermedios. -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_base">16dp</dimen>
+    <dimen name="space_lg">20dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+    <dimen name="space_2xl">32dp</dimen>
+    <dimen name="space_3xl">40dp</dimen>
+    <dimen name="space_4xl">48dp</dimen>
+
+    <!-- Margen lateral de pantalla: SIEMPRE 16dp. Ni 12, ni 20. -->
+    <dimen name="screen_margin">16dp</dimen>
+
+    <!-- ==================== RADIOS (§6.4) ==================== -->
+    <dimen name="radius_chip">8dp</dimen>
+    <dimen name="radius_control">12dp</dimen>
+    <dimen name="radius_card">16dp</dimen>
+    <dimen name="radius_sheet">24dp</dimen>
+    <dimen name="radius_circle">999dp</dimen>
+
+    <!-- ==================== BORDES Y ELEVACION ====================
+         Elevacion minima: la jerarquia la hacen el espaciado y el peso
+         tipografico, no la sombra (§78). -->
+    <dimen name="border_width">1dp</dimen>
+    <dimen name="elevation_flat">0dp</dimen>
+    <dimen name="elevation_raised">2dp</dimen>
+
+    <!-- ==================== COMPONENTES ==================== -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_height_sm">40dp</dimen>
+    <dimen name="input_height">52dp</dimen>
+    <dimen name="touch_target_min">48dp</dimen>
+    <dimen name="header_height">56dp</dimen>
+    <dimen name="bottom_nav_height">64dp</dimen>
+    <dimen name="divider_thickness">1dp</dimen>
+
+    <!-- ==================== ICONOS (§6.5) ====================
+         Solo tres tamanos: 16 inline en texto, 20 en chips y botones, 24 suelto. -->
+    <dimen name="icon_xs">16dp</dimen>
+    <dimen name="icon_sm">20dp</dimen>
+    <dimen name="icon_md">24dp</dimen>
+
+    <!-- ==================== FOTOGRAFIA (§6.6) ==================== -->
+    <dimen name="avatar_sm">32dp</dimen>
+    <dimen name="avatar_md">40dp</dimen>
+    <dimen name="avatar_lg">64dp</dimen>
+    <dimen name="thumbnail_sm">64dp</dimen>
+    <dimen name="thumbnail_md">88dp</dimen>
+
+    <!-- ==================== ESTADOS VACIOS Y SKELETON ==================== -->
+    <dimen name="empty_state_icon">72dp</dimen>
+    <dimen name="skeleton_radius">8dp</dimen>
+
+    <!-- ==================== TARJETA DE HOTEL ==================== -->
+    <!-- Proporción cercana a 16:9 sobre el ancho típico de un teléfono.
+         Da a la fotografía peso suficiente sin comerse la lista entera. -->
+    <dimen name="hotel_card_image_height">168dp</dimen>
+
+    <!-- ==================== GALERIA DE FOTOS ==================== -->
+    <!-- Ocupa algo mas de un tercio de la pantalla: las fotos son el
+         argumento principal de la ficha (RF-013), pero hay que dejar ver
+         el nombre y el precio sin desplazar. -->
+    <dimen name="gallery_height">260dp</dimen>
+    <dimen name="gallery_dot">6dp</dimen>
+
+    <!-- ==================== TIRA DE FOTOGRAFIAS DEL ADMINISTRADOR ============ -->
+    <!-- Miniatura apaisada, bastante mas pequena que la galeria del cliente
+         (gallery_height): alli la fotografia vende, aqui solo confirma que
+         esta registrada. Con este ancho entran dos y medio en un telefono
+         normal, que es lo que deja ver que hay una tira y se puede desplazar. -->
+    <dimen name="foto_admin_width">148dp</dimen>
+    <dimen name="foto_admin_height">96dp</dimen>
+
+    <!-- El circulo oscuro que respalda la equis. Mide justo el doble del
+         margen que lo separa de la esquina, de modo que su centro cae sobre el
+         centro del boton de 48dp que lleva encima: el circulo se ve, pero
+         quien recibe el toque es el boton entero. -->
+    <dimen name="circulo_sobre_foto">32dp</dimen>
+
+    <!-- ==================== TARJETA DE HABITACION ==================== -->
+    <dimen name="room_card_image_height">140dp</dimen>
+
+    <!-- ==================== CHAT ==================== -->
+    <!-- Tope del ancho de una burbuja. Deja siempre ver el fondo de la
+         conversacion, para que se distinga quien escribio cada mensaje de un
+         vistazo; sin tope, un mensaje largo y otro corto se verian iguales. -->
+    <dimen name="bubble_max_width">280dp</dimen>
+
+    <!-- ==================== SELECTOR DE CUENTA (§16) ==================== -->
+    <!-- Ancho fijo del numero entre el − y el +. Sin ancho fijo, el control
+         entero se desplaza al pasar de 9 a 10 y el dedo pierde el boton. -->
+    <dimen name="stepper_value_width">40dp</dimen>
+
+    <!-- ==================== FORMULARIO DE BUSQUEDA (§13) ==================== -->
+    <!-- Alto de una fila del formulario. Es mas alto que un campo de texto
+         porque lleva etiqueta y valor en dos lineas, y sigue por debajo del
+         minimo comodo de toque para que las tres filas quepan sin desplazar. -->
+    <dimen name="form_row_height">64dp</dimen>
+
+    <!-- ==================== HOJAS INFERIORES (§15, §16, §18, §19) ==================== -->
+    <!-- Aire entre el borde superior de la hoja y su primer titulo. La hoja
+         ya trae su propio radio; esto separa el asa del contenido. -->
+    <dimen name="sheet_top_padding">20dp</dimen>
+
+    <!-- ==================== LINEA DE TIEMPO (§38) ==================== -->
+    <dimen name="timeline_column">20dp</dimen>
+    <dimen name="timeline_dot">12dp</dimen>
+    <dimen name="timeline_line">2dp</dimen>
+    <dimen name="timeline_row_height">40dp</dimen>
+
+    <!-- ==================== SELECCION ==================== -->
+    <!-- Borde de la tarjeta elegida. Mas grueso que el normal para que la
+         eleccion se vea sin depender solo del color. -->
+    <dimen name="stroke_selected">2dp</dimen>
+
+    <!-- ==================== CODIGO QR (§39) ==================== -->
+    <!-- Lado maximo del simbolo. Por encima de esto ocupa la hoja entera y
+         deja de ser comodo de sostener frente al lector. -->
+    <dimen name="qr_size">240dp</dimen>
+
+    <!-- ==================== SEGUIMIENTO DEL TAXI (§37, RF-099) ==================== -->
+    <!-- El plano es un apoyo, no el protagonista: tiene que verse de un
+         vistazo cuanto falta sin empujar al conductor fuera de la pantalla.
+         Cabe entero junto a la tarjeta del conductor en un telefono normal. -->
+    <dimen name="map_height">180dp</dimen>
+
+</resources>

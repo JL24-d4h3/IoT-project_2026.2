@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El item activo del bottom navigation usa el primario; el resto, texto secundario. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/colorPrimary" android:state_checked="true" />
+    <item android:color="@color/colorTextSecondary" />
+</selector>

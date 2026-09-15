@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eleccion de destino (§14).
+
+     Es una pantalla y no una hoja inferior porque necesita tres cosas que una
+     hoja no da bien: campo de texto con teclado, historial de busquedas
+     descartable y sugerencias. Una hoja con teclado deja medio contenido
+     tapado. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <org.iot.project.ui.components.SearchFieldView
+        android:id="@+id/campo_destino"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/input_height"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:layout_marginEnd="@dimen/screen_margin" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/lista_destinos"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/space_lg"
+            tools:itemCount="6"
+            tools:listitem="@layout/item_destino" />
+
+        <!-- El texto no coincide con ninguna ciudad ni distrito. No se ofrece
+             "buscar de todas formas" porque la busqueda compara el destino
+             contra esos dos campos: ofrecerlo llevaria a una pantalla de sin
+             resultados que el usuario no podria explicarse. -->
+        <org.iot.project.ui.components.EmptyStateView
+            android:id="@+id/estado_sin_resultados"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

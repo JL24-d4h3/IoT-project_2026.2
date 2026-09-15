@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una opcion de orden (§19).
+
+     Lleva subtitulo porque los dos primeros nombres no se distinguen solos:
+     "Recomendados" y "Mejor valorados" suenan a lo mismo hasta que se explica
+     que uno pesa la valoracion por el numero de resenas y el otro no. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/form_row_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingTop="@dimen/space_md"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingBottom="@dimen/space_md">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/orden_nombre"
+            style="@style/TextAppearance.App.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Recomendados" />
+
+        <TextView
+            android:id="@+id/orden_nota"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="Mejor valorados con más opiniones" />
+    </LinearLayout>
+
+    <!-- Decorativa: la fila entera ya dice si esta elegida o no. -->
+    <ImageView
+        android:id="@+id/orden_marca"
+        android:layout_width="@dimen/icon_sm"
+        android:layout_height="@dimen/icon_sm"
+        android:layout_marginStart="@dimen/space_md"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_check"
+        app:tint="@color/colorPrimary" />
+
+</LinearLayout>

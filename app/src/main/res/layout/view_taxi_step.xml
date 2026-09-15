@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Paso del seguimiento del taxi (§38).
+
+    No es <merge> como el resto de los componentes: las filas se crean en
+    código, una por estado del flujo, y necesitan una raíz de verdad.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <!-- Columna del trazado: el conector de arriba, el punto y el de abajo.
+         Al ser segmentos de la propia fila, las filas contiguas forman una
+         linea continua sin tener que dibujarla aparte. -->
+    <LinearLayout
+        android:layout_width="@dimen/timeline_column"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/step_line_top"
+            android:layout_width="@dimen/timeline_line"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/colorBorder" />
+
+        <View
+            android:id="@+id/step_dot"
+            android:layout_width="@dimen/timeline_dot"
+            android:layout_height="@dimen/timeline_dot"
+            android:background="@drawable/bg_timeline_dot" />
+
+        <View
+            android:id="@+id/step_line_bottom"
+            android:layout_width="@dimen/timeline_line"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/colorBorder" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/step_label"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:layout_weight="1"
+        android:minHeight="@dimen/timeline_row_height"
+        android:gravity="center_vertical"
+        tools:text="En camino" />
+
+</LinearLayout>

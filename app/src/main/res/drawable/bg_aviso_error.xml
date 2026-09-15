@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fondo de un aviso de error dentro de un formulario.
+
+    Es más ancho que bg_badge_error a propósito: aquel es una píldora de una
+    línea y este envuelve un mensaje que puede ocupar dos o tres.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/colorErrorContainer" />
+    <corners android:radius="@dimen/radius_control" />
+</shape>

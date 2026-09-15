@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Paleta de la aplicación. Fuente de verdad visual (CONTEXTO_FRONTEND.md §6.1).
+
+    Regla dura: maximo UN color de acento por pantalla. El primario manda; el
+    ambar solo aparece en ratings y nunca como color de accion.
+
+    Nota de contraste (§56): colorAccent (#E9A23B) sobre blanco da 2.2:1, NO
+    cumple AA. Por eso el ambar se usa siempre como FONDO de un badge, con
+    colorOnAccentContainer como texto (6.1:1). Nunca texto ambar sobre blanco.
+-->
+<resources>
+
+    <!-- ==================== MARCA ==================== -->
+    <color name="colorPrimary">#0D5C63</color>
+    <color name="colorPrimaryDark">#073D48</color>
+    <color name="colorPrimaryContainer">#DCEAEA</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnPrimaryContainer">#073D48</color>
+
+    <color name="colorAccent">#E9A23B</color>
+    <color name="colorAccentContainer">#FDF3E3</color>
+    <color name="colorOnAccentContainer">#7A5410</color>
+
+    <!--
+        El secundario reutiliza la familia del primario a proposito: si tuviera
+        un matiz propio, los chips y switches introducirian un segundo acento
+        que rompe la regla de un solo acento por pantalla.
+    -->
+    <color name="colorSecondary">#0D5C63</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorSecondaryContainer">#DCEAEA</color>
+    <color name="colorOnSecondaryContainer">#073D48</color>
+
+    <!-- ==================== NEUTROS ==================== -->
+    <color name="colorBackground">#F7F8F8</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurfaceVariant">#EEF1F1</color>
+    <color name="colorBorder">#E2E6E6</color>
+
+    <color name="colorTextPrimary">#141B1C</color>
+    <color name="colorTextSecondary">#5A6668</color>
+    <color name="colorTextDisabled">#9AA5A6</color>
+
+    <!-- Alias con los nombres de rol de Material 3 -->
+    <color name="colorOnSurface">#141B1C</color>
+    <color name="colorOnSurfaceVariant">#5A6668</color>
+
+    <!-- ==================== SEMANTICOS ==================== -->
+    <!-- Disponible / confirmada / pagado -->
+    <color name="colorSuccess">#2E7D52</color>
+    <color name="colorSuccessContainer">#DFF0E6</color>
+    <color name="colorOnSuccessContainer">#1B5E3A</color>
+
+    <!-- Pendiente / por vencer -->
+    <color name="colorWarning">#B8860B</color>
+    <color name="colorWarningContainer">#FBF0D9</color>
+    <color name="colorOnWarningContainer">#7A5A08</color>
+
+    <!-- Error / cancelada / no disponible -->
+    <color name="colorError">#C0392B</color>
+    <color name="colorErrorContainer">#FBE3E0</color>
+    <color name="colorOnErrorContainer">#8C2A1E</color>
+    <color name="colorOnError">#FFFFFF</color>
+
+    <!-- Avisos informativos -->
+    <color name="colorInfo">#2A6FB0</color>
+    <color name="colorInfoContainer">#E1EDF8</color>
+    <color name="colorOnInfoContainer">#1B4E7D</color>
+
+    <!-- ==================== SUPERFICIES Y OVERLAYS ==================== -->
+    <!-- Velo sobre fotografias para que el texto blanco sea legible (§11) -->
+    <color name="colorScrim">#66000000</color>
+    <color name="colorScrimStrong">#99000000</color>
+
+    <!-- Bloques de carga (§51) -->
+    <color name="colorSkeleton">#EEF1F1</color>
+    <color name="colorDivider">#E2E6E6</color>
+    <color name="colorTransparent">#00000000</color>
+
+</resources>

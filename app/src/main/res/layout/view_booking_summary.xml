@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="com.google.android.material.card.MaterialCardView">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_base">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/summary_hotel"
+                style="@style/TextAppearance.App.H3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Casa del Mar" />
+
+            <ImageView
+                android:id="@+id/summary_check"
+                android:layout_width="@dimen/icon_md"
+                android:layout_height="@dimen/icon_md"
+                android:layout_marginStart="@dimen/space_sm"
+                android:contentDescription="@string/cd_reserva_elegida"
+                android:src="@drawable/ic_check"
+                android:visibility="gone"
+                app:tint="@color/colorPrimary"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/summary_code"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="RSV-2026-0418" />
+
+        <TextView
+            android:id="@+id/summary_dates"
+            style="@style/TextAppearance.App.BodySecondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="20 set – 24 set · 4 noches · 2 huéspedes" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/summary_status"
+                style="@style/TextAppearance.App.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_primary"
+                android:paddingStart="@dimen/space_sm"
+                android:paddingTop="@dimen/space_xs"
+                android:paddingEnd="@dimen/space_sm"
+                android:paddingBottom="@dimen/space_xs"
+                android:textColor="@color/colorOnPrimaryContainer"
+                tools:text="Confirmada" />
+
+            <TextView
+                android:id="@+id/summary_total"
+                style="@style/TextAppearance.App.NumericEmphasis"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="S/ 1,920" />
+        </LinearLayout>
+
+        <!-- Solo aparece cuando la reserva alcanza el mínimo del hotel: es el
+             dato que explica por qué el taxi sale gratis (RT-012). -->
+        <TextView
+            android:id="@+id/summary_taxi_hint"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/taxi_incluido_en_reserva"
+            android:textColor="@color/colorSuccess"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+</merge>

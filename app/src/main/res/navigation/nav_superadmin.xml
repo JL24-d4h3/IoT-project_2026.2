@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Grafo del rol Superadministrador (§47).
+
+    Es el unico rol que puede aprobar hoteles y habilitar conductores (RF-077),
+    de ahi que su panel sea el unico con acceso a esas dos colas.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_superadmin"
+    app:startDestination="@id/superadminPanelFragment">
+
+    <fragment
+        android:id="@+id/superadminPanelFragment"
+        android:name="org.iot.project.ui.common.PanelRolFragment"
+        android:label="@string/titulo_panel_superadmin"
+        tools:layout="@layout/fragment_panel_rol" />
+
+</navigation>
