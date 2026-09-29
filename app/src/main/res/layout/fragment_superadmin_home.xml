@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Portada del superadministrador (§47).
+
+    Responde a dos preguntas: cómo está la plataforma y qué espera una decisión
+    mía. El orden lo sigue: primero las cuatro cifras, que se leen de un
+    vistazo; después el aviso de pendientes, que es lo único accionable de la
+    pantalla; y al final los últimos movimientos, que se consultan despacio.
+
+    El aviso de pendientes no se esconde cuando no hay ninguno: se queda y dice
+    que no hay. Un bloque que desaparece deja al superadministrador sin saber si
+    no hay pendientes o si el tablero no cargó.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/sa_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/sa_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_base"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Las cuatro cifras ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <org.iot.project.ui.components.StatView
+                        android:id="@+id/sa_stat_usuarios"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <org.iot.project.ui.components.StatView
+                        android:id="@+id/sa_stat_conductores"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:orientation="horizontal">
+
+                    <org.iot.project.ui.components.StatView
+                        android:id="@+id/sa_stat_hoteles"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <org.iot.project.ui.components.StatView
+                        android:id="@+id/sa_stat_pendientes"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <!-- ============ Lo que espera una decisión ============ -->
+                <!--
+                    Una fila por cada cosa pendiente, con su propio acceso. Una
+                    sola fila obligaría a elegir cuál de las dos mostrar cuando
+                    las dos esperan, y el superadministrador se enteraría de una
+                    sola. Sin nada pendiente las filas se van y quedan el título
+                    y la frase que lo dicen.
+                -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sa_pendientes_tarjeta"
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            android:id="@+id/sa_pendientes_titulo"
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Lo que espera tu decisión" />
+
+                        <LinearLayout
+                            android:id="@+id/sa_pendientes_conductores"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <TextView
+                                android:id="@+id/sa_pendientes_conductores_texto"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                tools:text="1 conductor espera aprobación" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/sa_pendientes_conductores_accion"
+                                style="@style/Widget.App.Button.Primary.Small"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_sm"
+                                android:text="@string/sa_ir_a_conductores" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/sa_pendientes_hoteles"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <TextView
+                                android:id="@+id/sa_pendientes_hoteles_texto"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                tools:text="2 hoteles todavía no tienen administrador" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/sa_pendientes_hoteles_accion"
+                                style="@style/Widget.App.Button.Primary.Small"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_sm"
+                                android:text="@string/sa_ir_a_hoteles" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/sa_pendientes_vacio"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:text="@string/sa_sin_pendientes_mensaje"
+                            android:visibility="gone"
+                            tools:visibility="gone" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Los últimos movimientos ============ -->
+                <TextView
+                    android:id="@+id/sa_ultimos_titulo"
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:text="@string/sa_ultimos_movimientos" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:background="@color/colorDivider" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/sa_ultimos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_bitacora" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sa_ver_auditoria"
+                    style="@style/Widget.App.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/sa_ver_toda_la_auditoria" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/sa_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_base"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/sa_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

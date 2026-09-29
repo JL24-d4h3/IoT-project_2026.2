@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Elegir quien administra el hotel (RF-008).
+
+     Hoja y no pantalla: se elige una persona de una lista corta y se vuelve a
+     la ficha, que es donde esta el hotel del que se esta hablando. Una pantalla
+     propia obligaria a navegar de ida y vuelta para una sola decision.
+
+     Misma composicion que sheet_filtros: titulo, lista y salida por la cruz. -->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/sheet_top_padding"
+        android:paddingBottom="@dimen/space_xl">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingEnd="@dimen/screen_margin">
+
+            <TextView
+                style="@style/TextAppearance.App.H2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/sa_asignar_titulo" />
+
+            <ImageButton
+                android:id="@+id/sa_asignar_cerrar"
+                android:layout_width="@dimen/touch_target_min"
+                android:layout_height="@dimen/touch_target_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_cerrar"
+                android:padding="@dimen/space_md"
+                android:src="@drawable/ic_close"
+                app:tint="@color/colorTextPrimary" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/sa_asignar_lista"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            tools:itemCount="3"
+            tools:listitem="@layout/item_administrador_elegible" />
+
+        <org.iot.project.ui.components.EmptyStateView
+            android:id="@+id/sa_asignar_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_margin"
+            android:layout_marginTop="@dimen/space_md"
+            android:layout_marginEnd="@dimen/screen_margin"
+            android:visibility="gone" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

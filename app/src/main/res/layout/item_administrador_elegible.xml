@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una cuenta a la que se le puede dar el hotel (RF-008).
+
+     Una sola linea: lo unico que se elige aqui es una persona, y su correo no
+     cambia la decision. La fila entera es el boton —lo dice el chevron— porque
+     dentro de una hoja un boton por fila seria un blanco pequeño repetido. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/form_row_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingTop="@dimen/space_md"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingBottom="@dimen/space_md">
+
+    <TextView
+        android:id="@+id/sa_candidato_nombre"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        tools:text="Martín Rojas Delgado" />
+
+    <ImageView
+        android:layout_width="@dimen/icon_sm"
+        android:layout_height="@dimen/icon_sm"
+        android:layout_marginStart="@dimen/space_md"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_chevron_right"
+        app:tint="@color/colorTextSecondary" />
+
+</LinearLayout>

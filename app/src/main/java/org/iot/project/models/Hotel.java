@@ -1,5 +1,7 @@
 package org.iot.project.models;
 
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +30,13 @@ public class Hotel {
     private double montoMinimoTaxi;
     private double latitud;
     private double longitud;
+
+    /** Si el hotel ya se ofrece en el catalogo del cliente (RF-007). */
+    private boolean publicado;
+
+    /** Administrador asignado, o {@code null} si todavia no tiene (RF-008). */
+    @Nullable
+    private String administradorId;
 
     private final List<String> fotos = new ArrayList<>();
     private final List<NearbyPlace> lugaresCercanos = new ArrayList<>();
@@ -94,10 +103,23 @@ public class Hotel {
         this.numReviews = numReviews;
     }
 
+    /**
+     * El "Desde S/ ..." del hotel, que es el de su habitacion mas barata.
+     *
+     * <p>Delega en {@link #calcularPrecioDesde()} y no devuelve el campo tal
+     * cual: un hotel recien registrado no tiene precio propio -- el alta del
+     * superadministrador no lo pide -- y el precio lo pone su administrador al
+     * cargar habitaciones. Si se devolviera el campo, todo hotel nacido del alta
+     * se anunciaria en el catalogo como "Desde S/ 0".
+     */
     public double getPrecioDesde() {
-        return precioDesde;
+        return calcularPrecioDesde();
     }
 
+    /**
+     * Fija el precio de respaldo: el que se anuncia mientras el hotel no tenga
+     * habitaciones cargadas. En cuanto tenga una, manda la mas barata.
+     */
     public void setPrecioDesde(double precioDesde) {
         this.precioDesde = precioDesde;
     }
@@ -201,6 +223,39 @@ public class Hotel {
     /** Cumple el minimo de 4 fotografias exigido por RF-013. */
     public boolean cumpleMinimoFotos() {
         return fotos.size() >= MIN_FOTOS;
+    }
+
+    /** Si el hotel se ofrece en el catalogo del cliente (RF-007). */
+    public boolean isPublicado() {
+        return publicado;
+    }
+
+    /** Publica o retira el hotel. Retirar no tiene condiciones. */
+    public void setPublicado(boolean publicado) {
+        this.publicado = publicado;
+    }
+
+    /** Identificador del administrador asignado, o {@code null} si no tiene. */
+    @Nullable
+    public String getAdministradorId() {
+        return administradorId;
+    }
+
+    public void setAdministradorId(@Nullable String administradorId) {
+        this.administradorId = administradorId;
+    }
+
+    /**
+     * Si el hotel reune lo minimo para ofrecerse al cliente.
+     *
+     * <p>Un hotel sin fotografias ni habitaciones no es publicable (RF-013,
+     * RF-014): ofrecerlo seria enseñar una ficha que no dice nada. La regla vive
+     * aqui y no en el repositorio porque es del hotel, no de quien lo guarda, y
+     * asi la comprueban igual el administrador antes de publicar y el
+     * superadministrador al mirar la ficha.
+     */
+    public boolean aptoParaPublicar() {
+        return cumpleMinimoFotos() && !habitaciones.isEmpty();
     }
 
     /** "Miraflores · Lima", el subtitulo que acompana al nombre en la HotelCard. */

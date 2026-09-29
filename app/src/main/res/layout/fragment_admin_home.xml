@@ -71,14 +71,43 @@
                             android:orientation="vertical"
                             android:padding="@dimen/space_base">
 
-                            <TextView
-                                android:id="@+id/admin_hotel_nombre"
-                                style="@style/TextAppearance.App.H2"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                tools:text="Casa del Mar" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/admin_hotel_nombre"
+                                    style="@style/TextAppearance.App.H2"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    tools:text="Casa del Mar" />
+
+                                <!--
+                                    El estado de publicación, en la portada y no
+                                    solo en los datos del hotel: mientras diga
+                                    "Sin publicar", nada del hotel lo está
+                                    viendo ningún cliente, y eso es lo primero
+                                    que hay que saber al entrar.
+                                -->
+                                <TextView
+                                    android:id="@+id/admin_hotel_publicacion"
+                                    style="@style/TextAppearance.App.Label"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/space_sm"
+                                    android:paddingStart="@dimen/space_sm"
+                                    android:paddingTop="@dimen/space_xs"
+                                    android:paddingEnd="@dimen/space_sm"
+                                    android:paddingBottom="@dimen/space_xs"
+                                    android:textColor="@color/colorOnWarningContainer"
+                                    tools:background="@drawable/bg_badge_warning"
+                                    tools:text="Sin publicar" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/admin_hotel_ubicacion"
@@ -89,6 +118,21 @@
                                 android:ellipsize="end"
                                 android:maxLines="1"
                                 tools:text="Miraflores, Lima · Av. Malecón Cisneros 1240" />
+
+                            <!--
+                                Qué le falta para publicarse. Solo se enseña
+                                cuando falta algo: publicado, el distintivo de
+                                arriba ya lo dice y esta línea sería repetirlo.
+                            -->
+                            <TextView
+                                android:id="@+id/admin_hotel_falta"
+                                style="@style/TextAppearance.App.BodySecondary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm"
+                                android:visibility="gone"
+                                tools:text="Para publicarlo faltan fotografías y habitaciones."
+                                tools:visibility="visible" />
                         </LinearLayout>
 
                         <View
@@ -410,6 +454,16 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />
+
+        <!-- RF-008: un administrador recien creado todavia no tiene hotel. No es
+             un error y no se arregla reintentando, asi que no lleva boton. -->
+        <org.iot.project.ui.components.EmptyStateView
+            android:id="@+id/admin_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
     </FrameLayout>
 
 </LinearLayout>

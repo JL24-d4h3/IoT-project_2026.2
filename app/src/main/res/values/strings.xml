@@ -276,6 +276,8 @@
     <!-- Portada del administrador (§43): el tablero del día -->
     <string name="admin_home_ubicacion">%1$s, %2$s · %3$s</string>
     <string name="admin_home_stat_activas">Reservas activas</string>
+    <string name="admin_sin_hotel_titulo">Todavía no tienes un hotel</string>
+    <string name="admin_sin_hotel_mensaje">Un superadministrador tiene que asignarte uno. Cuando lo haga, aquí verás el resumen de tu hotel.</string>
     <string name="admin_home_stat_salidas">Checkouts hoy</string>
     <string name="admin_home_stat_ingresos">Servicios adicionales</string>
     <string name="admin_estadias_titulo">Estadías en curso</string>
@@ -314,6 +316,14 @@
     <string name="admin_hotel_coordenada_invalida">Escribe solo números, por ejemplo -12.1219.</string>
     <string name="admin_hotel_coordenada_rango">La latitud va de -90 a 90 y la longitud de -180 a 180.</string>
     <string name="admin_hotel_guardado">Datos del hotel actualizados.</string>
+
+    <!-- Publicación (RF-007). Quien publica es el administrador; el superadministrador solo puede retirar. -->
+    <string name="admin_publicacion_visible">Tu hotel se está mostrando a los clientes</string>
+    <string name="admin_publicacion_oculto">Tu hotel todavía no se muestra a los clientes</string>
+    <string name="admin_publicacion_listo">Ya está todo listo para publicarlo.</string>
+    <string name="admin_publicacion_retirar_ayuda">Si lo retiras, dejará de aparecer en el buscador. Las reservas que ya existen no se pierden.</string>
+    <string name="admin_publicacion_hecha">%1$s ya se ofrece en el catálogo.</string>
+    <string name="admin_retirada_hecha">%1$s ya no se ofrece en el catálogo.</string>
 
     <string name="admin_hotel_fotos">Fotografías</string>
     <string name="admin_hotel_fotos_estado">%1$s · mínimo %2$d</string>
@@ -412,7 +422,7 @@
     <string name="admin_habitacion_precio_obligatorio">Indica cuánto cuesta la noche.</string>
     <string name="admin_habitacion_precio_cero">El precio por noche debe ser mayor que cero.</string>
     <string name="admin_habitacion_precio_invalido">Escribe solo números, por ejemplo 320 o 320.50.</string>
-    <string name="admin_habitacion_sin_hotel">Esta cuenta no tiene un hotel asignado.</string>
+    <string name="admin_habitacion_sin_hotel">Todavía no tienes un hotel asignado.</string>
 
     <!-- ==================== RESERVAS DEL HOTEL (§44) ==================== -->
     <string name="admin_reservas_vacio_titulo">Todavía no hay reservas</string>
@@ -515,16 +525,169 @@
     <string name="driver_home_disponibles">Solicitudes disponibles</string>
     <string name="driver_home_activos">En curso</string>
     <string name="driver_home_completados">Completados</string>
-    <string name="driver_home_siguiente">Aceptar solicitudes, compartir tu ubicación y validar el QR del cliente llegan en la siguiente entrega.</string>
+    <string name="driver_aceptar">Aceptar</string>
+    <!-- RF-089: %1$s ya viene formateado por Distancia.legible ("1,9 km", "850 m"). -->
+    <string name="driver_a_distancia">A %1$s de ti</string>
+    <string name="driver_sin_servicio_titulo">No hay solicitudes ahora mismo</string>
+    <string name="driver_sin_servicio">Cuando un cliente pida un traslado al aeropuerto cerca de ti, aparecerá aquí.</string>
+    <string name="driver_servicio_activo">Servicio en curso</string>
+    <string name="driver_voy_en_camino">Voy en camino</string>
+    <string name="driver_inicie_traslado">Inicié el traslado</string>
+    <string name="driver_validar_codigo">Validar código del cliente</string>
+    <string name="driver_recogida">Punto de recojo</string>
+    <string name="driver_destino">Destino</string>
+    <string name="driver_pasajeros">Pasajeros</string>
+    <string name="driver_codigo_titulo">Código del cliente</string>
+    <string name="driver_codigo_instruccion">Pídele al cliente el código que aparece bajo su QR.</string>
+    <string name="driver_codigo_campo">Código</string>
+    <string name="driver_codigo_confirmar">Cerrar servicio</string>
+    <string name="driver_servicio_cerrado">Servicio cerrado. Ya puedes aceptar otro.</string>
 
     <!-- ==================== PANEL DEL SUPERADMIN (§47) ==================== -->
-    <string name="titulo_panel_superadmin">Panel</string>
-    <string name="superadmin_usuarios">Usuarios</string>
-    <string name="superadmin_hoteles">Hoteles</string>
-    <string name="superadmin_conductores">Conductores</string>
-    <string name="superadmin_por_aprobar">Por aprobar</string>
-    <string name="superadmin_bitacora">Últimos movimientos</string>
-    <string name="superadmin_siguiente">La gestión de usuarios, hoteles y reportes llega en la siguiente entrega.</string>
+    <string name="sa_titulo_inicio">Panel de la plataforma</string>
+    <string name="sa_stat_usuarios">Usuarios activos</string>
+    <string name="sa_stat_conductores">Conductores habilitados</string>
+    <string name="sa_stat_hoteles">Hoteles publicados</string>
+    <string name="sa_stat_pendientes">Conductores por aprobar</string>
+    <string name="sa_de_total">%1$d de %2$d</string>
+    <string name="sa_ultimos_movimientos">Últimos movimientos</string>
+    <string name="sa_ver_toda_la_auditoria">Ver toda la auditoría</string>
+    <string name="sa_ir_a_conductores">Ver conductores</string>
+    <string name="sa_ir_a_hoteles">Ver hoteles</string>
+    <string name="sa_pendientes_titulo">Lo que espera tu decisión</string>
+    <string name="sa_sin_pendientes_titulo">No hay nada pendiente</string>
+    <string name="sa_sin_pendientes_mensaje">No hay conductores esperando aprobación ni hoteles sin administrador.</string>
+
+    <plurals name="sa_conductores_pendientes">
+        <item quantity="one">%1$d conductor espera aprobación</item>
+        <item quantity="other">%1$d conductores esperan aprobación</item>
+    </plurals>
+
+    <plurals name="sa_hoteles_sin_administrador">
+        <item quantity="one">%1$d hotel todavía no tiene administrador</item>
+        <item quantity="other">%1$d hoteles todavía no tienen administrador</item>
+    </plurals>
+
+    <!-- ============ Perfil del superadministrador ============ -->
+    <!--
+        Las cifras de la tarjeta son las mismas de la portada, así que sus
+        rótulos se reutilizan: dos listas de nombres para lo mismo dirían cosas
+        distintas el día que una cambie.
+    -->
+    <string name="sa_perfil_plataforma">La plataforma que administras</string>
+    <string name="sa_perfil_plataforma_error">No pudimos cargar las cifras de la plataforma.</string>
+
+    <!-- ============ Cuentas de la plataforma (RF-005, RF-006) ============ -->
+    <!--
+        Los nombres de los roles no están aquí: los dice Role.getDisplayName(),
+        que es donde ya viven. Escribirlos otra vez dejaría dos listas que el
+        día que cambie un rol dirían cosas distintas.
+    -->
+    <string name="sa_cuenta_activa">Activa</string>
+    <string name="sa_cuenta_desactivada">Desactivada</string>
+    <string name="sa_activar">Activar</string>
+    <string name="sa_desactivar">Desactivar</string>
+    <string name="sa_filtro_todas">Todas</string>
+    <string name="sa_usuarios_vacio_titulo">No hay cuentas con ese rol</string>
+    <string name="sa_usuarios_vacio_mensaje">Cambia el filtro para ver las demás.</string>
+    <string name="sa_desactivar_titulo">¿Desactivar a %1$s?</string>
+    <string name="sa_desactivar_mensaje">No podrá volver a entrar con su cuenta. Sus reservas y su historial no se borran, y puedes activarla de nuevo cuando quieras.</string>
+    <string name="sa_cuenta_ya_puede_entrar">%1$s ya puede entrar.</string>
+    <string name="sa_cuenta_ya_no_puede_entrar">%1$s ya no puede entrar.</string>
+
+    <!-- ============ Conductores (RF-077, RF-078) ============ -->
+    <string name="sa_conductor_habilitado">Habilitado</string>
+    <string name="sa_conductor_pendiente">Pendiente</string>
+    <string name="sa_conductor_sin_vehiculo">Sin vehículo registrado</string>
+    <string name="sa_habilitar">Habilitar</string>
+    <string name="sa_retirar_habilitacion">Retirar</string>
+    <string name="sa_conductores_todos">Todos</string>
+    <string name="sa_conductores_solo_pendientes">Por aprobar</string>
+    <string name="sa_conductores_vacio_titulo">No hay conductores que aprobar</string>
+    <string name="sa_conductores_vacio_mensaje">Todos los conductores registrados están habilitados.</string>
+    <string name="sa_conductores_nadie_titulo">No hay conductores registrados</string>
+    <string name="sa_conductores_nadie_mensaje">Cuando alguien se registre para conducir aparecerá aquí, esperando tu aprobación.</string>
+    <string name="sa_retirar_titulo">¿Retirar la habilitación a %1$s?</string>
+    <string name="sa_retirar_mensaje">Dejará de recibir solicitudes de traslado. Su historial y los servicios que ya cerró no cambian, y puedes habilitarlo otra vez cuando quieras.</string>
+    <string name="sa_conductor_ya_puede_recibir">%1$s ya puede recibir solicitudes.</string>
+    <string name="sa_conductor_ya_no_recibe">%1$s dejó de recibir solicitudes.</string>
+
+    <!-- ============ Auditoría (RF-118 a RF-120) ============ -->
+    <string name="sa_bitacora_buscar">Buscar por movimiento o por persona</string>
+    <string name="sa_bitacora_solo_cambios">Solo cambios</string>
+    <!--
+        Dos vacíos distintos: uno es "tu filtro no deja pasar nada" y el otro
+        "aquí no ha pasado nada todavía". Decir el primero cuando ocurre el
+        segundo manda a quitar un filtro que no está puesto.
+    -->
+    <string name="sa_bitacora_vacio_titulo">Ningún movimiento coincide</string>
+    <string name="sa_bitacora_vacio_mensaje">Prueba con otro texto o quita el filtro.</string>
+    <string name="sa_bitacora_nadie_titulo">Todavía no hay movimientos</string>
+    <string name="sa_bitacora_nadie_mensaje">Aquí se registra lo que ocurre en la plataforma: quién entra, qué se publica y qué se aprueba.</string>
+
+    <!-- ============ Hoteles (RF-007, RF-008, RF-059) ============ -->
+    <string name="sa_titulo_ficha_hotel">Ficha del hotel</string>
+    <string name="sa_hoteles_todos">Todos</string>
+    <!-- El mismo rótulo para el chip y para la insignia: el chip enseña justo
+         los hoteles que llevan esa insignia. -->
+    <string name="sa_hotel_publicado">Publicado</string>
+    <string name="sa_hotel_sin_publicar">Sin publicar</string>
+    <string name="sa_hotel_sin_administrador">Sin administrador</string>
+    <string name="sa_hotel_admin_inactivo">Administrador desactivado</string>
+    <string name="sa_hotel_admin">Administrador</string>
+    <string name="sa_hotel_admin_nombre">Administrador · %1$s</string>
+    <string name="sa_hotel_admin_vacio">Todavía no tiene administrador</string>
+    <string name="sa_asignar_administrador">Asignar administrador</string>
+    <string name="sa_cambiar_administrador">Cambiar administrador</string>
+    <string name="sa_asignar_titulo">¿Quién administra este hotel?</string>
+    <string name="sa_asignar_vacio_titulo">No hay a quién asignarlo</string>
+    <string name="sa_asignar_vacio_mensaje">No hay ninguna otra cuenta de administrador de hotel activa.</string>
+    <string name="sa_publicacion">Publicación</string>
+    <string name="sa_publicar">Publicar</string>
+    <string name="sa_retirar">Retirar del catálogo</string>
+    <string name="sa_retirar_hotel_titulo">¿Retirar %1$s del catálogo?</string>
+    <string name="sa_retirar_hotel_mensaje">Dejará de aparecer en las búsquedas de los clientes. Sus reservas, su contenido y su administrador no cambian, y puedes volver a publicarlo cuando quieras.</string>
+    <string name="sa_falta_publicar">Para publicarlo faltan fotografías y habitaciones.</string>
+    <string name="sa_falta_fotos">Para publicarlo faltan fotografías: lleva %1$d de %2$d.</string>
+    <string name="sa_falta_habitaciones">Para publicarlo hace falta al menos una habitación.</string>
+    <string name="sa_ficha_sin_descripcion">Sin descripción todavía. La escribe el administrador del hotel.</string>
+    <string name="sa_ficha_fotos">Fotografías</string>
+    <string name="sa_ficha_habitaciones">Habitaciones</string>
+    <string name="sa_ficha_fotos_valor">%1$d de %2$d</string>
+    <string name="sa_ventas_titulo">Reservas por mes</string>
+    <string name="sa_ventas_vacio">Este hotel todavía no tiene reservas que reportar.</string>
+    <string name="sa_hoteles_vacio_titulo">No hay hoteles sin publicar</string>
+    <string name="sa_hoteles_vacio_mensaje">Todos los hoteles de la plataforma están publicados.</string>
+    <string name="sa_hoteles_nadie_titulo">No hay hoteles registrados</string>
+    <string name="sa_hoteles_nadie_mensaje">Da de alta el primero para que su administrador lo complete.</string>
+    <string name="sa_hotel_ya_se_ofrece">%1$s ya se ofrece en el catálogo.</string>
+    <string name="sa_hotel_ya_no_se_ofrece">%1$s dejó de ofrecerse en el catálogo.</string>
+    <string name="sa_hotel_ya_tiene_administrador">%1$s ya tiene administrador.</string>
+
+    <!-- Alta de un hotel (RF-007). El alta la pide el dueño del hotel por fuera
+         de la aplicación y la ejecuta el superadministrador, que es quien
+         responde por la plataforma. -->
+    <string name="cd_registrar_hotel">Registrar un hotel</string>
+    <string name="sa_titulo_alta_hotel">Registrar un hotel</string>
+    <string name="sa_alta_datos">Datos del hotel</string>
+    <string name="sa_alta_ubicacion">Dónde está</string>
+    <string name="sa_alta_ayuda_coordenadas">Las coordenadas sitúan el hotel en el plano del traslado. Se copian de un mapa.</string>
+    <string name="sa_alta_nombre">Nombre del hotel</string>
+    <string name="sa_alta_ciudad">Ciudad</string>
+    <string name="sa_alta_distrito">Distrito</string>
+    <string name="sa_alta_direccion">Dirección</string>
+    <string name="sa_alta_latitud">Latitud</string>
+    <string name="sa_alta_longitud">Longitud</string>
+    <string name="sa_alta_guardar">Registrar el hotel</string>
+    <string name="sa_alta_hecha">%1$s quedó registrado. Asígnale un administrador para que pueda publicarlo.</string>
+    <string name="sa_alta_aviso">El hotel nace sin publicar: no aparecerá en el buscador hasta que su administrador lo complete y lo publique.</string>
+    <string name="sa_alta_nombre_obligatorio">El hotel necesita un nombre.</string>
+    <string name="sa_alta_ciudad_obligatoria">Indica en qué ciudad está el hotel.</string>
+    <string name="sa_alta_distrito_obligatorio">Indica el distrito del hotel.</string>
+    <string name="sa_alta_direccion_obligatoria">Indica la dirección del hotel.</string>
+    <string name="sa_alta_latitud_obligatoria">Indica la latitud.</string>
+    <string name="sa_alta_longitud_obligatoria">Indica la longitud.</string>
+    <string name="sa_alta_coordenada_invalida">Escribe solo números, por ejemplo -12.0464.</string>
 
     <!-- ==================== BUSQUEDA (§13 a §19) ==================== -->
     <string name="buscar_destino_etiqueta">Destino</string>
@@ -548,6 +711,7 @@
     <string name="destino_sugerencias">Destinos sugeridos</string>
     <string name="destino_sin_resultados_titulo">No encontramos ese destino</string>
     <string name="destino_sin_resultados">Prueba con el nombre de una ciudad o de un distrito.</string>
+    <string name="cd_cerrar_sesion">Cerrar sesión</string>
     <string name="cd_limpiar_busqueda">Borrar lo escrito</string>
     <string name="destino_quitar_reciente">Quitar de búsquedas recientes</string>
 
@@ -652,6 +816,17 @@
     <string name="taxi_nota_en_camino">%1$s va en camino al punto de recojo.</string>
     <string name="taxi_nota_en_traslado">Vas en camino a %1$s.</string>
     <string name="taxi_nota_finalizado">El servicio terminó. ¡Buen viaje!</string>
+    <!--
+        Las mismas cinco frases contadas desde el otro lado (§46). Al cliente se
+        le dice quién viene a buscarlo; al conductor, que él es quien va. Sin
+        estas, la portada del conductor le contaba su propio viaje en tercera
+        persona ("Julio va en camino") o le hablaba como si fuera el pasajero.
+    -->
+    <string name="taxi_nota_conductor_solicitado">Todavía no has aceptado este servicio.</string>
+    <string name="taxi_nota_conductor_asignado">Aceptaste el servicio. Ve al punto de recojo.</string>
+    <string name="taxi_nota_conductor_en_camino">Vas en camino al punto de recojo.</string>
+    <string name="taxi_nota_conductor_en_traslado">Llevas al cliente a %1$s.</string>
+    <string name="taxi_nota_conductor_finalizado">El servicio quedó cerrado. Ya puedes tomar otro.</string>
     <string name="taxi_mostrar_qr">Mostrar mi código QR</string>
     <string name="taxi_gratuito">Gratis</string>
     <string name="taxi_ida_y_vuelta">ida y vuelta</string>

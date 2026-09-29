@@ -23,10 +23,10 @@ import org.iot.project.models.Card;
 import org.iot.project.models.Charge;
 import org.iot.project.models.HotelService;
 import org.iot.project.models.ReservaDeHotel;
-import org.iot.project.ui.admin.AdminFormato;
 import org.iot.project.ui.components.ChargeListView;
 import org.iot.project.ui.components.PriceBreakdownView;
 import org.iot.project.utils.DateFormatter;
+import org.iot.project.utils.FormatoDeDatos;
 import org.iot.project.utils.InsetUtils;
 import org.iot.project.utils.PriceFormatter;
 
@@ -150,7 +150,7 @@ public class ReservaAdminFragment extends Fragment {
                 detalle.getCliente() != null ? detalle.getCliente().getEmail() : null,
                 R.string.perfil_sin_dato);
         binding.adminReservaFilaDocumento.bind(R.string.admin_reserva_fila_documento,
-                AdminFormato.documento(detalle.getCliente()),
+                FormatoDeDatos.documento(detalle.getCliente()),
                 R.string.perfil_sin_dato);
     }
 
@@ -199,7 +199,7 @@ public class ReservaAdminFragment extends Fragment {
             // El nombre vive en el catálogo y la reserva solo guarda a qué
             // servicio apunta (regla 8), así que hay que resolverlo. Si ya no
             // está, se dice que no está en vez de dejar un hueco.
-            nombres.add(AdminFormato.nombreServicio(servicio.getServiceId(),
+            nombres.add(FormatoDeDatos.nombreServicio(servicio.getServiceId(),
                     getString(R.string.admin_reserva_servicio_retirado)));
         }
         return String.join(getString(R.string.lista_separador), nombres);

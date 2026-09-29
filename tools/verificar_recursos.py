@@ -133,7 +133,44 @@ def destinos_nav():
     return declarados, todos, usados
 
 
-# ------------------------------------------------------ 5. Doble hint en campo
+# ------------------------------------------- 5. Barra inferior contra el grafo
+
+def barra_contra_grafo():
+    """Cada item de la barra de un rol tiene que ser un destino de su grafo.
+
+    Es el mismo fallo silencioso que la seccion 4, pero por el otro lado: la
+    barra se arma con un menu y el grafo se resuelve por reflexion, asi que un
+    item que no existe como destino no rompe la compilacion — simplemente no
+    hace nada al pulsarlo. El mapeo rol -> (grafo, menu) vive entero en
+    Roles.java justamente para que esto se pueda comprobar en un solo sitio: se
+    lee de ahi y se contrasta item por item.
+    """
+    fallos = []
+    roles = leer(os.path.join(JAVA, 'org', 'iot', 'project', 'core', 'Roles.java'))
+    for m in re.finditer(
+            r'new Roles\(\s*R\.navigation\.(\w+),\s*R\.menu\.(\w+),\s*R\.id\.(\w+)\s*\)',
+            roles, re.S):
+        grafo, menu, inicio = m.group(1), m.group(2), m.group(3)
+        ruta_grafo = os.path.join(RES, 'navigation', grafo + '.xml')
+        ruta_menu = os.path.join(RES, 'menu', menu + '.xml')
+        if not os.path.exists(ruta_grafo) or not os.path.exists(ruta_menu):
+            fallos.append(('java/.../core/Roles.java',
+                           f'el grafo {grafo} o el menu {menu} no existen'))
+            continue
+
+        declarados = set(re.findall(r'android:id="@\+id/([A-Za-z0-9_]+)"', leer(ruta_grafo)))
+        if inicio not in declarados:
+            fallos.append(('java/.../core/Roles.java',
+                           f'la pantalla de inicio {inicio} no es un destino de {grafo}'))
+        for item in re.findall(r'<item\s[^>]*android:id="@\+id/([A-Za-z0-9_]+)"',
+                               leer(ruta_menu)):
+            if item not in declarados:
+                fallos.append((os.path.relpath(ruta_menu, RAIZ),
+                               f'el item {item} de la barra no es un destino de {grafo}'))
+    return fallos
+
+
+# ------------------------------------------------------ 6. Doble hint en campo
 
 def doble_hint():
     """TextInputLayout con hint + TextInputEditText interior con hint propio.
@@ -188,6 +225,9 @@ def main():
             problemas.append(
                 f'{os.path.relpath(ruta, RAIZ)}:{n}: navigate(R.id.{destino}) no es un '
                 f'destino declarado en res/navigation/')
+
+    for ruta, motivo in barra_contra_grafo():
+        problemas.append(f'{ruta}: {motivo}')
 
     for ruta, n in doble_hint():
         problemas.append(

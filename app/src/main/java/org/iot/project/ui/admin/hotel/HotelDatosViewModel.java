@@ -29,8 +29,8 @@ import org.iot.project.models.NearbyPlace;
  * viajes y un parpadeo del esqueleto.
  *
  * <p>Los canales de las operaciones van separados por quien los pide, no por
- * tipo de operacion: {@link #guardado} y {@link #foto} los lee la pantalla, y
- * {@link #lugar} lo lee la hoja del lugar. Dos observadores sobre un mismo
+ * tipo de operacion: {@link #guardado}, {@link #foto} y {@link #publicacion} los
+ * lee la pantalla, y {@link #lugar} lo lee la hoja del lugar. Dos observadores sobre un mismo
  * estado se roban el valor: el primero que lo atiende lo limpia, y el segundo
  * recibe un nulo. Es el mismo motivo por el que la gestion de habitaciones
  * separa "guardado" de "operacion".
@@ -57,6 +57,9 @@ public class HotelDatosViewModel extends ViewModel {
     /** Resultado de registrar un lugar cercano (RF-011), que pide la hoja. */
     private final MutableLiveData<UiState<Hotel>> lugar = new MutableLiveData<>();
 
+    /** Resultado de publicar el hotel o de retirarlo (RF-007). */
+    private final MutableLiveData<UiState<Hotel>> publicacion = new MutableLiveData<>();
+
     public LiveData<UiState<Hotel>> getHotel() {
         return hotel;
     }
@@ -71,6 +74,17 @@ public class HotelDatosViewModel extends ViewModel {
 
     public LiveData<UiState<Hotel>> getLugar() {
         return lugar;
+    }
+
+    /**
+     * Resultado de publicar o de retirar, para el aviso de una sola vez.
+     *
+     * <p>Va en su propio canal y no en el de {@link #guardado}: los dos cambian
+     * el hotel, pero {@code guardado} lo lee el observador que ademas limpia el
+     * campo del formulario, y este no tiene formulario que limpiar.
+     */
+    public LiveData<UiState<Hotel>> getPublicacion() {
+        return publicacion;
     }
 
     @Nullable
@@ -97,7 +111,7 @@ public class HotelDatosViewModel extends ViewModel {
         if (hotelId == null) {
             // No es un fallo de red: es que esta cuenta no administra nada. Se
             // dice tal cual, porque reintentar no lo arreglaria.
-            hotel.setValue(UiState.<Hotel>error("Esta cuenta no tiene un hotel asignado."));
+            hotel.setValue(UiState.<Hotel>error("Todavía no tienes un hotel asignado."));
             return;
         }
         hotel.setValue(UiState.<Hotel>loading());
@@ -229,5 +243,45 @@ public class HotelDatosViewModel extends ViewModel {
     /** Limpia el resultado del ultimo lugar registrado, al cerrarse la hoja. */
     public void limpiarLugar() {
         lugar.setValue(null);
+    }
+
+    /**
+     * Publica el hotel en el catalogo o lo retira (RF-007).
+     *
+     * <p>La regla —que para publicar hace falta contenido— no se comprueba aqui:
+     * la aplica el repositorio, que es el unico que no se puede saltar. Esta
+     * pantalla se limita a enseñar lo que falta y a ofrecer el boton cuando se
+     * puede, y el error del repositorio, si llega, se enseña tal cual.
+     *
+     * <p>El hotel que devuelve la operacion es el mismo objeto que esta pantalla
+     * tiene cargado, asi que basta con publicarlo otra vez: el estado de
+     * publicacion se lee del hotel, no de un campo aparte que habria que
+     * mantener en dos sitios.
+     */
+    public void cambiarPublicacion(boolean publicado) {
+        String hotelId = getHotelId();
+        if (hotelId == null) {
+            publicacion.setValue(UiState.<Hotel>error("Todavía no tienes un hotel asignado."));
+            return;
+        }
+        publicacion.setValue(UiState.<Hotel>loading());
+        ServiceLocator.gestion().cambiarPublicacion(hotelId, publicado,
+                new ResultCallback<Hotel>() {
+                    @Override
+                    public void onExito(@NonNull Hotel datos) {
+                        hotel.setValue(UiState.success(datos));
+                        publicacion.setValue(UiState.success(datos));
+                    }
+
+                    @Override
+                    public void onError(@NonNull String mensaje) {
+                        publicacion.setValue(UiState.error(mensaje));
+                    }
+                });
+    }
+
+    /** Limpia el resultado de la ultima publicacion, ya avisado. */
+    public void limpiarPublicacion() {
+        publicacion.setValue(null);
     }
 }

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Un hotel en la lista del superadministrador (RF-007, RF-008).
+
+    Tres lineas: que hotel es, donde esta y quien responde por el. La tercera es
+    la que importa en este panel —"Sin administrador" es la señal de que falta
+    un paso— y por eso va aunque el nombre repita lo que ya dice la ficha.
+
+    La tarjeta entera abre la ficha: no lleva accion propia porque publicar y
+    asignar se deciden con el hotel delante, no desde una fila de la lista.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card.Interactive"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_sm">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_base"
+        android:paddingTop="@dimen/space_md"
+        android:paddingEnd="@dimen/space_base"
+        android:paddingBottom="@dimen/space_md">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/sa_hotel_nombre"
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Casa Andina Select Miraflores" />
+
+                <TextView
+                    android:id="@+id/sa_hotel_estado"
+                    style="@style/TextAppearance.App.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_sm"
+                    android:paddingStart="@dimen/space_sm"
+                    android:paddingTop="@dimen/space_xs"
+                    android:paddingEnd="@dimen/space_sm"
+                    android:paddingBottom="@dimen/space_xs"
+                    tools:background="@drawable/bg_badge_success"
+                    tools:text="Publicado" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/sa_hotel_ubicacion"
+                style="@style/TextAppearance.App.BodySecondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Miraflores · Lima" />
+
+            <TextView
+                android:id="@+id/sa_hotel_administrador"
+                style="@style/TextAppearance.App.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Administrador · Martín Rojas" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="@dimen/icon_md"
+            android:layout_height="@dimen/icon_md"
+            android:layout_marginStart="@dimen/space_sm"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="@color/colorTextSecondary" />
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

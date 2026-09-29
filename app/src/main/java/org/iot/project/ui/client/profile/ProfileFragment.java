@@ -1,6 +1,5 @@
 package org.iot.project.ui.client.profile;
 
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +21,7 @@ import org.iot.project.databinding.FragmentProfileBinding;
 import org.iot.project.models.Card;
 import org.iot.project.models.User;
 import org.iot.project.utils.InsetUtils;
+import org.iot.project.utils.VersionDeLaApp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +68,8 @@ public class ProfileFragment extends Fragment {
         binding.perfilFilaMoneda.bind(R.string.perfil_moneda,
                 getString(R.string.perfil_moneda_valor), R.string.perfil_sin_dato);
 
-        binding.perfilVersion.setText(getString(R.string.perfil_version, version()));
+        binding.perfilVersion.setText(getString(R.string.perfil_version,
+                VersionDeLaApp.nombre(requireContext())));
         binding.perfilFilaNotificaciones.bind(R.drawable.ic_notifications,
                 R.string.perfil_notificaciones, null);
 
@@ -215,19 +216,6 @@ public class ProfileFragment extends Fragment {
                 .setPositiveButton(R.string.sesion_cerrar,
                         (dialogo, cual) -> SessionManager.cerrarSesion())
                 .show();
-    }
-
-    @NonNull
-    private String version() {
-        try {
-            String nombre = requireContext().getPackageManager()
-                    .getPackageInfo(requireContext().getPackageName(), 0).versionName;
-            return nombre != null ? nombre : "";
-        } catch (PackageManager.NameNotFoundException e) {
-            // No deberia pasar —el paquete es este— pero si pasa, mas vale una
-            // linea de version sin numero que una pantalla que no abre.
-            return "";
-        }
     }
 
     @Override

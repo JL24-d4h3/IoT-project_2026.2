@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cuentas de la plataforma (RF-005, RF-006).
+
+    Los filtros van dentro del contenido y no fijos arriba: mientras la lista
+    carga o falla no hay nada que filtrar, y unos chips que se pueden pulsar
+    sobre un esqueleto prometen una respuesta que no existe.
+
+    Los chips no llevan texto propio de rol: lo pone la pantalla desde el
+    enum, que es donde los roles se llaman a si mismos.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/sa_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/sa_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_base"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/sa_usuarios_filtros"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/sa_filtro_todas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/sa_filtro_todas" />
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/sa_filtro_clientes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/sa_filtro_administradores"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/sa_filtro_superadmins"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/sa_usuarios_lista"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:nestedScrollingEnabled="false"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_cuenta_sa" />
+
+                <org.iot.project.ui.components.EmptyStateView
+                    android:id="@+id/sa_usuarios_vacio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xl"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/sa_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_base"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/sa_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

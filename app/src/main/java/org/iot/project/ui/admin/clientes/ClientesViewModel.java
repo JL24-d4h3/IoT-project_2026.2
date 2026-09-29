@@ -47,7 +47,7 @@ public class ClientesViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             clientes.setValue(UiState.<List<ClienteDeHotel>>error(
-                    "Esta cuenta no tiene un hotel asignado."));
+                    "Todavía no tienes un hotel asignado."));
             return;
         }
         cargado = true;

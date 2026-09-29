@@ -67,7 +67,7 @@ public class AdminPerfilViewModel extends ViewModel {
         if (hotelId == null) {
             // No es un fallo de red: es que esta cuenta no administra nada. Se
             // dice tal cual, porque reintentar no lo arreglaria.
-            hotel.setValue(UiState.<Hotel>error("Esta cuenta no tiene un hotel asignado."));
+            hotel.setValue(UiState.<Hotel>error("Todavía no tienes un hotel asignado."));
             return;
         }
         hotel.setValue(UiState.<Hotel>loading());

@@ -3,20 +3,29 @@ package org.iot.project.data.mock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import org.iot.project.core.SessionManager;
 import org.iot.project.models.Booking;
 import org.iot.project.models.BookingStatus;
 import org.iot.project.models.Conversation;
+import org.iot.project.models.Driver;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.HotelService;
 import org.iot.project.models.Message;
 import org.iot.project.models.Review;
+import org.iot.project.models.Role;
 import org.iot.project.models.Room;
 import org.iot.project.models.Service;
+import org.iot.project.models.TaxiService;
+import org.iot.project.models.Ubicacion;
+import org.iot.project.models.User;
+import org.iot.project.utils.Distancia;
 import org.junit.Test;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Comprueba los invariantes del conjunto simulado.
@@ -241,7 +250,7 @@ public class MockDataTest {
                 break;
             }
         }
-        assertTrue("El hotel " + hotelAdministrado + " (SessionManager.HOTEL_ADMINISTRADO) no "
+        assertTrue("El hotel " + hotelAdministrado + " (el hotel del administrador de demostracion) no "
                 + "tiene ninguna estadía activa que cierre hoy: la portada del administrador "
                 + "no tendría checkouts que mostrar", cierraHoy);
     }
@@ -274,7 +283,7 @@ public class MockDataTest {
             cobrosTotales += reserva.getCargos().size();
         }
 
-        assertTrue("El hotel " + hotelAdministrado + " (SessionManager.HOTEL_ADMINISTRADO) solo "
+        assertTrue("El hotel " + hotelAdministrado + " (el hotel del administrador de demostracion) solo "
                         + "tiene " + estadiasConCobros + " estadía con cobros: la pantalla de "
                         + "cobros no podría mostrar que agrupa por reserva",
                 estadiasConCobros >= 2);
@@ -315,7 +324,7 @@ public class MockDataTest {
             sinLeer += conversacion.getNumNoLeidosPara(Message.Autor.HOTEL);
         }
 
-        assertTrue("El hotel " + hotelAdministrado + " (SessionManager.HOTEL_ADMINISTRADO) solo "
+        assertTrue("El hotel " + hotelAdministrado + " (el hotel del administrador de demostracion) solo "
                         + "tiene " + abiertas + " conversación abierta: la bandeja no podría "
                         + "mostrar que ordena por la más reciente",
                 abiertas >= 2);
@@ -406,6 +415,64 @@ public class MockDataTest {
     }
 
     // ------------------------------------------------------------------
+    //  Servicios de taxi
+    // ------------------------------------------------------------------
+
+    /**
+     * El cliente de un servicio de taxi tiene que ser el de su reserva.
+     *
+     * <p>Estuvo mal: T3 declaraba a U9 y su reserva (B2) era de U1. Se nota en
+     * cuanto el conductor tiene que enseñar de quién es el pedido (RF-089), y
+     * el mismo cruce hace {@code MockTaxiRepository.solicitar}, que copia el
+     * cliente de la solicitud sin comprobar la reserva.
+     */
+    @Test
+    public void cadaServicioDeTaxiPerteneceAlClienteDeSuReserva() {
+        for (TaxiService servicio : MockData.TAXIS) {
+            Booking reserva = MockData.reserva(servicio.getBookingId());
+            assertNotNull("servicio sin reserva: " + servicio.getId(), reserva);
+            assertEquals("el cliente de " + servicio.getId() + " no es el de su reserva",
+                    reserva.getClienteId(), servicio.getClienteId());
+        }
+    }
+
+    /** El conductor de demostración tiene que empezar libre, o no verá la lista. */
+    @Test
+    public void elConductorDeDemostracionNoTieneServicioEnCurso() {
+        String demo = SessionManager.CONDUCTOR_ACTIVO;
+        for (TaxiService servicio : MockData.TAXIS) {
+            Driver asignado = servicio.getDriver();
+            if (asignado != null && asignado.getId().equals(demo)) {
+                assertTrue("El conductor de demostración (" + demo + ") no debería tener "
+                                + "servicio activo al entrar: abriría en la cara ocupada y "
+                                + "nunca vería la lista de solicitudes",
+                        !servicio.getEstado().isActive());
+            }
+        }
+    }
+
+    /** RF-088: sin al menos una solicitud cerca, la portada del conductor nace vacía. */
+    @Test
+    public void hayUnaSolicitudDisponibleEnLaCiudadDelConductorDeDemostracion() {
+        Driver demo = MockData.conductor(SessionManager.CONDUCTOR_ACTIVO);
+        assertNotNull("El conductor de demostración no existe en CONDUCTORES", demo);
+        Ubicacion base = MockData.baseDe(demo.getId());
+        assertNotNull("el conductor de demostración no tiene base", base);
+
+        boolean hay = false;
+        for (TaxiService servicio : MockData.TAXIS) {
+            if (servicio.puedeAceptarlo(demo) && servicio.hasRecojo()
+                    && Distancia.metrosEntre(base.getLatitud(), base.getLongitud(),
+                            servicio.getLatRecojo(), servicio.getLngRecojo()) <= 100_000d) {
+                hay = true;
+                break;
+            }
+        }
+        assertTrue("No hay ninguna solicitud que el conductor de demostración pueda aceptar: "
+                + "su portada nacería vacía y el bloque entero quedaría sin demostrar", hay);
+    }
+
+    // ------------------------------------------------------------------
     //  Auxiliares de consulta
     // ------------------------------------------------------------------
 
@@ -426,5 +493,94 @@ public class MockDataTest {
         assertEquals(null, MockData.servicio("NO_EXISTE"));
         assertEquals(null, MockData.habitacion("NO_EXISTE"));
         assertEquals("Hotel", MockData.nombreHotel("NO_EXISTE"));
+    }
+
+    // ==================================================================
+    //  Publicacion y administradores (RF-007, RF-008)
+    // ==================================================================
+
+    /**
+     * RF-007: los diez hoteles de la demostracion ya pasaron por el proceso de
+     * publicacion. Si nacieran sin publicar —que es como nacen— el catalogo del
+     * cliente quedaria vacio.
+     */
+    @Test
+    public void losHotelesDeEjemploEstanPublicados() {
+        assertFalse("No hay hoteles de ejemplo", MockData.HOTELES.isEmpty());
+        for (Hotel hotel : MockData.HOTELES) {
+            assertTrue(hotel.getId() + " no esta publicado", hotel.isPublicado());
+        }
+    }
+
+    /** RF-008: un hotel publicado sin administrador es un hotel que nadie atiende. */
+    @Test
+    public void losHotelesDeEjemploTienenAdministrador() {
+        for (Hotel hotel : MockData.HOTELES) {
+            String administradorId = hotel.getAdministradorId();
+            assertNotNull(hotel.getId() + " no tiene administrador", administradorId);
+            User administrador = MockData.usuario(administradorId);
+            assertNotNull(hotel.getId() + " apunta a un administrador que no existe",
+                    administrador);
+            assertEquals(hotel.getId() + " lo administra alguien que no es administrador",
+                    Role.ADMIN_HOTEL, administrador.getRol());
+        }
+    }
+
+    /**
+     * El estado que RF-008 tiene que poder resolver: existe un administrador
+     * esperando hotel, que es lo que el superadministrador va a asignar.
+     */
+    @Test
+    public void hayUnAdministradorSinHotel() {
+        int sinHotel = 0;
+        for (User usuario : MockData.USUARIOS) {
+            if (usuario.getRol() != Role.ADMIN_HOTEL) {
+                continue;
+            }
+            boolean tieneHotel = false;
+            for (Hotel hotel : MockData.HOTELES) {
+                if (usuario.getId().equals(hotel.getAdministradorId())) {
+                    tieneHotel = true;
+                    break;
+                }
+            }
+            if (!tieneHotel) {
+                sinHotel++;
+            }
+        }
+        assertEquals("La demostracion necesita exactamente un administrador sin hotel",
+                1, sinHotel);
+    }
+
+    /** El hotel que se da de alta (RF-007) tiene donde guardarse. */
+    @Test
+    public void laListaDeHotelesEsMutable() {
+        Hotel borrador = new Hotel("HTEST", "Hotel de prueba", "Cusco", "Cusco");
+        try {
+            MockData.HOTELES.add(borrador);
+            assertSame(borrador, MockData.hotel("HTEST"));
+        } finally {
+            MockData.HOTELES.remove(borrador);
+        }
+    }
+
+    /**
+     * RF-007 y el filtro del catalogo: un hotel sin publicar no se ofrece, y
+     * las seis consultas del cliente miran la misma lista.
+     */
+    @Test
+    public void elCatalogoDelClienteSoloTieneHotelesPublicados() {
+        Hotel borrador = new Hotel("HBORRADOR", "Todavía sin publicar", "Cusco", "Cusco");
+        MockData.HOTELES.add(borrador);
+        try {
+            List<Hotel> publicados = MockData.hotelesPublicados();
+            assertFalse("El borrador no deberia ofrecerse", publicados.contains(borrador));
+            assertEquals(MockData.HOTELES.size() - 1, publicados.size());
+            // Y sigue existiendo para quien lo pida por identificador: una
+            // reserva ya hecha sobre un hotel retirado tiene que poder pintarse.
+            assertSame(borrador, MockData.hotel("HBORRADOR"));
+        } finally {
+            MockData.HOTELES.remove(borrador);
+        }
     }
 }

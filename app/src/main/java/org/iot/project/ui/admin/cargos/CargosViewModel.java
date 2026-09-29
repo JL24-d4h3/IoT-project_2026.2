@@ -75,7 +75,7 @@ public class CargosViewModel extends ViewModel {
     public void recargar() {
         String hotelId = getHotelId();
         if (hotelId == null) {
-            cobros.setValue(UiState.<Cobros>error("Esta cuenta no tiene un hotel asignado."));
+            cobros.setValue(UiState.<Cobros>error("Todavía no tienes un hotel asignado."));
             return;
         }
         cargado = true;

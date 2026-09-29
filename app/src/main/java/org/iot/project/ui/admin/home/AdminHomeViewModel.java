@@ -182,8 +182,11 @@ public class AdminHomeViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             cargando = false;
-            contenido.setValue(UiState.<Contenido>error(
-                    "Esta pantalla es para el administrador de un hotel."));
+            // Un administrador sin hotel no es un error: su cuenta esta bien y
+            // lo que falta es un paso ajeno (RF-008). Se publica como vacio para
+            // que la portada lo explique en lugar de ofrecer un reintento que no
+            // arregla nada.
+            contenido.setValue(UiState.empty());
             return;
         }
 

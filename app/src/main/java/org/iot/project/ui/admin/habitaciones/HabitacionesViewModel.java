@@ -70,7 +70,7 @@ public class HabitacionesViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             habitaciones.setValue(UiState.<List<Room>>error(
-                    "Esta cuenta no tiene un hotel asignado."));
+                    "Todavía no tienes un hotel asignado."));
             return;
         }
         habitaciones.setValue(UiState.<List<Room>>loading());

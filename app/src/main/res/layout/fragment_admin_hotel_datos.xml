@@ -49,11 +49,78 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:paddingBottom="@dimen/space_lg">
 
+                <!--
+                    ============ En el catálogo (RF-007) ============
+
+                    Va primero y sin desplazarse porque es el estado de todo el
+                    hotel: mientras diga "Sin publicar", nada de lo de abajo lo
+                    está viendo ningún cliente. Es además lo último que se hace
+                    —primero se carga el contenido—, así que la tarjeta es
+                    también la que dice qué falta.
+                -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/admin_publicacion_tarjeta"
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            android:id="@+id/admin_publicacion_estado"
+                            style="@style/TextAppearance.App.Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="@dimen/space_sm"
+                            android:paddingTop="@dimen/space_xs"
+                            android:paddingEnd="@dimen/space_sm"
+                            android:paddingBottom="@dimen/space_xs"
+                            android:textColor="@color/colorOnWarningContainer"
+                            tools:background="@drawable/bg_badge_warning"
+                            tools:text="Sin publicar" />
+
+                        <TextView
+                            android:id="@+id/admin_publicacion_titulo"
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            tools:text="Tu hotel todavía no se muestra a los clientes" />
+
+                        <!--
+                            Qué le falta para poder publicarse. El botón se
+                            enseña deshabilitado en vez de esconderse: uno que
+                            desaparece deja al administrador sin saber por qué
+                            no puede, y esta frase es la respuesta.
+                        -->
+                        <TextView
+                            android:id="@+id/admin_publicacion_motivo"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            tools:text="Para publicarlo faltan fotografías: lleva 2 de 4." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_publicacion_accion"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_base"
+                            tools:text="Publicar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- ============ Cómo se presenta el hotel ============ -->
                 <com.google.android.material.card.MaterialCardView
                     style="@style/Widget.App.Card"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
 
                     <LinearLayout
                         android:layout_width="match_parent"

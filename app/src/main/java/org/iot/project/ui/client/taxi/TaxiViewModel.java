@@ -143,27 +143,34 @@ public class TaxiViewModel extends ViewModel {
     }
 
     /**
-     * Reparte los servicios del cliente en el que esta en curso y los cerrados.
+     * Reparte los servicios del cliente en el que esta en curso y los demas.
      *
      * <p>El corte lo marca el estado, no la fecha: un servicio pedido para la
-     * semana que viene sigue siendo el servicio en curso mientras no termine, y
-     * es el que el cliente viene a mirar.
+     * semana que viene sigue pendiente mientras no termine, y no es un recuerdo.
+     *
+     * <p>Cuando hay mas de uno sin cerrar —un traslado que ya va en camino y
+     * otro pedido para mas adelante—, el que se enseña arriba es el que mas
+     * avanzado va, no el de fecha mas lejana. La lista llega ordenada por fecha
+     * descendente, asi que quedarse con el primero dejaba al cliente mirando una
+     * solicitud todavia sin conductor mientras su taxi de ahora mismo caia al
+     * fondo, como si ya hubiera pasado.
      */
     @NonNull
     private static Estado separar(@NonNull List<TaxiService> servicios) {
         TaxiService activo = null;
-        List<TaxiService> anteriores = new ArrayList<>();
-
         for (TaxiService servicio : servicios) {
-            if (servicio.getEstado().isActive()) {
-                // Si hubiera mas de uno —el repositorio no lo permite, pero el
-                // dato manda— se enseña el mas reciente y el resto cae abajo.
-                if (activo == null) {
-                    activo = servicio;
-                } else {
-                    anteriores.add(servicio);
-                }
-            } else {
+            if (!servicio.getEstado().isActive()) {
+                continue;
+            }
+            if (activo == null
+                    || servicio.getEstado().ordinal() > activo.getEstado().ordinal()) {
+                activo = servicio;
+            }
+        }
+
+        List<TaxiService> anteriores = new ArrayList<>();
+        for (TaxiService servicio : servicios) {
+            if (servicio != activo) {
                 anteriores.add(servicio);
             }
         }

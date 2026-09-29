@@ -1,5 +1,6 @@
 package org.iot.project.ui.admin.home;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.view.ViewGroup;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -23,6 +25,7 @@ import org.iot.project.models.ReservaDeHotel;
 import org.iot.project.models.ResumenHotel;
 import org.iot.project.ui.admin.mensajes.ConversacionAdapter;
 import org.iot.project.ui.components.IngresoListView;
+import org.iot.project.utils.AvisoDePublicacion;
 import org.iot.project.utils.InsetUtils;
 import org.iot.project.utils.PriceFormatter;
 
@@ -136,6 +139,16 @@ public class AdminHomeFragment extends Fragment {
                 mostrar(true, false, false);
                 llenar(estado.requireData());
                 break;
+            case EMPTY:
+                // RF-008: la cuenta esta bien; lo que falta es que un
+                // superadministrador le asigne un hotel. Se explica en vez de
+                // ofrecer un reintento que no puede arreglarlo.
+                mostrar(false, false, false);
+                binding.adminVacio.setVisibility(View.VISIBLE);
+                binding.adminVacio.conIcono(R.drawable.ic_info)
+                        .conTitulo(R.string.admin_sin_hotel_titulo)
+                        .conMensaje(R.string.admin_sin_hotel_mensaje);
+                break;
             case ERROR:
             default:
                 mostrar(false, false, true);
@@ -149,6 +162,7 @@ public class AdminHomeFragment extends Fragment {
         binding.adminContenido.setVisibility(contenido ? View.VISIBLE : View.GONE);
         binding.adminEsqueleto.setVisibility(esqueleto ? View.VISIBLE : View.GONE);
         binding.adminError.setVisibility(error ? View.VISIBLE : View.GONE);
+        binding.adminVacio.setVisibility(View.GONE);
     }
 
     private void llenar(@NonNull AdminHomeViewModel.Contenido contenido) {
@@ -158,6 +172,7 @@ public class AdminHomeFragment extends Fragment {
         binding.adminHotelNombre.setText(hotel.getNombre());
         binding.adminHotelUbicacion.setText(getString(R.string.admin_home_ubicacion,
                 hotel.getDistrito(), hotel.getCiudad(), hotel.getDireccion()));
+        pintarPublicacion(hotel);
 
         binding.adminStatActivas.setDato(R.string.admin_home_stat_activas,
                 String.valueOf(resumen.getEstadias().size()));
@@ -177,6 +192,33 @@ public class AdminHomeFragment extends Fragment {
 
         pintarIngresos(resumen.getIngresos());
         pintarMensajes(contenido);
+    }
+
+    /**
+     * Si el hotel se ofrece ya a los clientes, y qué le falta si no (RF-007).
+     *
+     * <p>Va en la portada y no solo en los datos del hotel porque es el estado de
+     * todo lo demás: un administrador que acaba de recibir su hotel tiene que
+     * saber al entrar que todavía no lo ve nadie y qué es lo que falta, sin
+     * tener que buscarlo. Publicar se hace en los datos del hotel, que es donde
+     * está el botón y donde están las fotografías que faltan.
+     */
+    private void pintarPublicacion(@NonNull Hotel hotel) {
+        boolean publicado = hotel.isPublicado();
+
+        binding.adminHotelPublicacion.setText(publicado
+                ? R.string.sa_hotel_publicado : R.string.sa_hotel_sin_publicar);
+        binding.adminHotelPublicacion.setBackgroundResource(publicado
+                ? R.drawable.bg_badge_success : R.drawable.bg_badge_warning);
+        binding.adminHotelPublicacion.setTextColor(ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), publicado
+                        ? R.color.colorOnSuccessContainer : R.color.colorOnWarningContainer)));
+
+        CharSequence falta = publicado ? null : AvisoDePublicacion.motivo(requireContext(), hotel);
+        binding.adminHotelFalta.setVisibility(falta == null ? View.GONE : View.VISIBLE);
+        if (falta != null) {
+            binding.adminHotelFalta.setText(falta);
+        }
     }
 
     /**

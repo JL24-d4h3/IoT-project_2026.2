@@ -103,4 +103,15 @@ public interface HotelRepository {
      */
     @Nullable
     Hotel hotel(@NonNull String hotelId);
+
+    /**
+     * Hotel que administra un usuario, o {@code null} si no administra ninguno.
+     *
+     * <p>Es sincrona por el mismo motivo que {@link #hotel(String)}: la llaman
+     * las pantallas del administrador en cada arranque, y una espera simulada de
+     * 400 ms solo serviria para dejar la portada en esqueleto por un dato que ya
+     * esta en memoria.
+     */
+    @Nullable
+    Hotel hotelDeAdministrador(@NonNull String usuarioId);
 }

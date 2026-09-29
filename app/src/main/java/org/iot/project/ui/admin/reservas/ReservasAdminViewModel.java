@@ -88,7 +88,7 @@ public class ReservasAdminViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             secciones.setValue(UiState.<Secciones>error(
-                    "Esta cuenta no tiene un hotel asignado."));
+                    "Todavía no tienes un hotel asignado."));
             return;
         }
         cargado = true;

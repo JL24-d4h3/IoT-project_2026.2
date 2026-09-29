@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Un movimiento de la bitácora (RF-118 a RF-120).
+
+    Tres bloques de alto variable: el evento y su hora arriba, el detalle
+    debajo y el autor al final. El texto nunca lleva contraseñas ni secretos
+    (RC-042): aquí se lee quién hizo qué, no con qué credenciales entró.
+
+    Sin margen lateral propio: la lista vive dentro del contenedor con márgenes
+    de la pantalla, y sumar los dos dejaría las filas desalineadas del resto.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_md"
+    android:paddingBottom="@dimen/space_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/bitacora_evento"
+            style="@style/TextAppearance.App.Label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="Alta de hotel" />
+
+        <TextView
+            android:id="@+id/bitacora_cuando"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_sm"
+            tools:text="18/09 · 10:04" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/bitacora_detalle"
+        style="@style/TextAppearance.App.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        tools:text="Ana Ferreyra Campos registró el hotel Casa del Mar en Lima." />
+
+    <TextView
+        android:id="@+id/bitacora_autor"
+        style="@style/TextAppearance.App.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:ellipsize="end"
+        android:maxLines="1"
+        tools:text="Ana Ferreyra Campos" />
+
+</LinearLayout>
