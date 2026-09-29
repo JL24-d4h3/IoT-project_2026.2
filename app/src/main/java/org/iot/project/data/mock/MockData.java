@@ -23,6 +23,7 @@ import org.iot.project.models.Room;
 import org.iot.project.models.Service;
 import org.iot.project.models.TaxiService;
 import org.iot.project.models.TaxiStatus;
+import org.iot.project.models.Ubicacion;
 import org.iot.project.models.User;
 import org.iot.project.models.Vehicle;
 
@@ -32,7 +33,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -72,6 +75,16 @@ public final class MockData {
     public static final List<Hotel> HOTELES;
     public static final List<User> USUARIOS;
     public static final List<Driver> CONDUCTORES;
+
+    /**
+     * Base de cada conductor: donde esta cuando no tiene viaje.
+     *
+     * <p>Sin esto no hay forma de decir a que distancia le queda una solicitud.
+     * Son puntos reales de la ciudad de cada uno, no el origen de coordenadas:
+     * un conductor parado en (0,0) pondria todas las solicitudes a 6.000 km.
+     */
+    public static final Map<String, Ubicacion> BASE_CONDUCTOR;
+
     public static final List<Booking> RESERVAS;
     public static final List<Conversation> CONVERSACIONES;
     public static final List<AppNotification> NOTIFICACIONES;
@@ -122,11 +135,14 @@ public final class MockData {
 
     static {
         SERVICIOS = Collections.unmodifiableList(crearServicios());
-        HOTELES = Collections.unmodifiableList(crearHoteles());
+        // Mutable: dar de alta un hotel (RF-007) es anadir uno nuevo, y la lista
+        // donde viven tiene que poder crecer.
+        HOTELES = new ArrayList<>(crearHoteles());
         // Mutable: el registro da de alta clientes (RF-001) y tienen que poder
         // entrar con la misma cuenta que acaban de crear.
         USUARIOS = new ArrayList<>(crearUsuarios());
         CONDUCTORES = Collections.unmodifiableList(crearConductores());
+        BASE_CONDUCTOR = Collections.unmodifiableMap(crearBases());
         RESERVAS = new ArrayList<>(crearReservas());
         CONVERSACIONES = new ArrayList<>(crearConversaciones());
         NOTIFICACIONES = new ArrayList<>(crearNotificaciones());
@@ -429,6 +445,29 @@ public final class MockData {
                 habitacion("H10-R1", "H10", "Doble económica", 95, 2, 0, 16, 1, "110", 2, "hostel,budget,room", 2001));
         hoteles.add(h10);
 
+        // RF-007: un hotel nace sin publicar, y los diez de la demostracion ya
+        // pasaron por el proceso. Se marcan uno por uno —y no con un bucle— para
+        // que el dia que se anada un hotel al catalogo de ejemplo haya que
+        // responder a proposito la pregunta "¿ya esta publicado?".
+        h1.setPublicado(true);
+        h2.setPublicado(true);
+        h3.setPublicado(true);
+        h4.setPublicado(true);
+        h5.setPublicado(true);
+        h6.setPublicado(true);
+        h7.setPublicado(true);
+        h8.setPublicado(true);
+        h9.setPublicado(true);
+        h10.setPublicado(true);
+
+        // RF-008: cada hotel tiene quien lo lleve. Se reparten entre los tres
+        // administradores empezando por U2, que es el que ya administraba H1:
+        // asi nada de lo construido en el Bloque C cambia de dueno.
+        String[] administradores = {"U2", "U5", "U6"};
+        for (int i = 0; i < hoteles.size(); i++) {
+            hoteles.get(i).setAdministradorId(administradores[i % administradores.length]);
+        }
+
         return hoteles;
     }
 
@@ -472,7 +511,31 @@ public final class MockData {
         huesped.withFoto("https://loremflickr.com/200/200/portrait,man?lock=9004");
         huesped.addTarjeta(new Card("C3", "Visa", "3390", "Diego Salas Pinto", "11/27"));
 
-        return Arrays.asList(cliente, admin, superadmin, huesped);
+        // Dos administradores mas (RF-008): con diez hoteles y un solo
+        // administrador, la lista de usuarios de RF-005 tendria una sola fila de
+        // ese rol y asignar seria siempre la misma operacion.
+        User segundoAdmin = new User("U5", "Iván", "Paredes Nieto", Role.ADMIN_HOTEL);
+        segundoAdmin.setEmail("i.paredes@estadia.pe");
+        segundoAdmin.setTelefono("+51 934 776 210");
+        segundoAdmin.withDocumento("DNI", "43218907");
+        segundoAdmin.withFoto("https://loremflickr.com/200/200/portrait,man?lock=9005");
+
+        User tercerAdmin = new User("U6", "Carmen", "Zevallos Ríos", Role.ADMIN_HOTEL);
+        tercerAdmin.setEmail("c.zevallos@estadia.pe");
+        tercerAdmin.setTelefono("+51 967 330 118");
+        tercerAdmin.withDocumento("DNI", "44102376");
+        tercerAdmin.withFoto("https://loremflickr.com/200/200/portrait,woman?lock=9006");
+
+        // Y uno sin hotel: es el estado que RF-008 existe para resolver, y sin
+        // el no habria forma de demostrar la asignacion desde cero.
+        User adminSinHotel = new User("U4", "Rocío", "Vargas Lira", Role.ADMIN_HOTEL);
+        adminSinHotel.setEmail("r.vargas@estadia.pe");
+        adminSinHotel.setTelefono("+51 921 554 883");
+        adminSinHotel.withDocumento("DNI", "41887255");
+        adminSinHotel.withFoto("https://loremflickr.com/200/200/portrait,woman?lock=9007");
+
+        return Arrays.asList(cliente, admin, superadmin, huesped,
+                segundoAdmin, tercerAdmin, adminSinHotel);
     }
 
     private static List<Driver> crearConductores() {
@@ -679,7 +742,7 @@ public final class MockData {
     }
 
     // ==================================================================
-    //  Servicios de taxi: uno en curso y dos cerrados
+    //  Servicios de taxi: uno en curso, uno cerrado y dos solicitados
     // ==================================================================
 
     private static List<TaxiService> crearTaxis() {
@@ -690,7 +753,10 @@ public final class MockData {
                 .withProgramacion(HOY, LocalTime.of(9, 30), false)
                 .withPasajeros(2)
                 .withPrecio(0);
-        t1.asignarA(CONDUCTORES.get(0));
+        // D2 y no D1: D1 es el conductor de demostracion y tiene que entrar libre
+        // para poder ver la lista de solicitudes antes de aceptar nada. El cliente
+        // U1 sigue viendo su taxi en camino, ahora con D2 al volante.
+        t1.asignarA(CONDUCTORES.get(1));
         t1.avanzarA(TaxiStatus.EN_CAMINO);
         // A algo menos de 1,2 km del hotel de la reserva (H1), que es el punto
         // de recojo: el plano de seguimiento (RF-099) se dibuja desde ahi.
@@ -709,15 +775,29 @@ public final class MockData {
         t2.avanzarA(TaxiStatus.FINALIZADO);
         t2.valorar(9f);
 
-        // Recien solicitado, sin conductor todavia (RF-106)
-        TaxiService t3 = new TaxiService("T3", "TAX-2026-0734", "B2", "U9");
+        // Recien solicitado, sin conductor todavia (RF-106). El cliente es el de
+        // su reserva, B2, y B2 es de U1: la reserva manda. Es el caso de una
+        // solicitud en otra ciudad, que el conductor de Lima no ve gracias al
+        // filtro de cercania.
+        TaxiService t3 = new TaxiService("T3", "TAX-2026-0734", "B2", "U1");
         t3.withRuta("Calle Plateros 145, Cusco", "Aeropuerto Velasco Astete")
                 .withRecojo(-13.5156, -71.9785)
                 .withProgramacion(HOY.plusDays(20), LocalTime.of(15, 0), true)
                 .withPasajeros(2)
                 .withPrecio(TaxiService.TARIFA_AEROPUERTO);
 
-        return Arrays.asList(t1, t2, t3);
+        // Solicitado en Lima, ligado a B6 (Diego Salas Pinto, Casa del Mar, que
+        // sale en cuatro dias). Es la solicitud que el conductor de demostracion
+        // puede aceptar: sin ella, la unica viva seria la de Cusco y su portada
+        // naceria vacia.
+        TaxiService t4 = new TaxiService("T4", "TAX-2026-0735", "B6", "U9");
+        t4.withRuta("Av. Malecón Cisneros 1240, Miraflores", "Aeropuerto Jorge Chávez")
+                .withRecojo(-12.1219, -77.0297)
+                .withProgramacion(HOY, LocalTime.of(14, 30), false)
+                .withPasajeros(3)
+                .withPrecio(TaxiService.TARIFA_AEROPUERTO);
+
+        return Arrays.asList(t1, t2, t3, t4);
     }
 
     // ==================================================================
@@ -902,6 +982,20 @@ public final class MockData {
         return null;
     }
 
+    /** Donde esta un conductor cuando no tiene viaje (RF-098). */
+    public static Ubicacion baseDe(String driverId) {
+        return BASE_CONDUCTOR.get(driverId);
+    }
+
+    private static Map<String, Ubicacion> crearBases() {
+        Map<String, Ubicacion> bases = new HashMap<>();
+        // D1 y D2 trabajan en Lima; D3, en Cusco.
+        bases.put("D1", new Ubicacion(-12.1060, -77.0360));  // Miraflores
+        bases.put("D2", new Ubicacion(-12.1320, -77.0210));  // Barranco
+        bases.put("D3", new Ubicacion(-13.5200, -71.9700));  // Cusco
+        return bases;
+    }
+
     public static TaxiService taxi(String taxiId) {
         for (TaxiService t : TAXIS) {
             if (t.getId().equals(taxiId)) {
@@ -920,10 +1014,31 @@ public final class MockData {
         return null;
     }
 
-    /** Ciudades con al menos un hotel, en orden alfabetico. */
+    /**
+     * Los hoteles que el cliente puede ver (RF-007).
+     *
+     * <p>Es la lista que consultan todas las busquedas del catalogo. Existe aqui
+     * y no repetida en cada consulta porque el dia que la regla de publicacion
+     * cambie —o se anada otra condicion— tiene que cambiar en un solo sitio.
+     *
+     * <p>No la usa {@link #hotel(String)}: las listas que solo guardan el
+     * identificador —reservas, taxis, bitacora— necesitan el nombre para
+     * pintarse aunque el hotel se haya retirado.
+     */
+    public static List<Hotel> hotelesPublicados() {
+        List<Hotel> publicados = new ArrayList<>();
+        for (Hotel hotel : HOTELES) {
+            if (hotel.isPublicado()) {
+                publicados.add(hotel);
+            }
+        }
+        return publicados;
+    }
+
+    /** Ciudades con al menos un hotel publicado, en orden alfabetico. */
     public static List<String> ciudades() {
         List<String> ciudades = new ArrayList<>();
-        for (Hotel h : HOTELES) {
+        for (Hotel h : hotelesPublicados()) {
             if (!ciudades.contains(h.getCiudad())) {
                 ciudades.add(h.getCiudad());
             }
@@ -943,7 +1058,7 @@ public final class MockData {
      */
     public static List<String> distritos() {
         List<String> distritos = new ArrayList<>();
-        for (Hotel h : HOTELES) {
+        for (Hotel h : hotelesPublicados()) {
             if (!distritos.contains(h.getDistrito())) {
                 distritos.add(h.getDistrito());
             }
@@ -952,10 +1067,10 @@ public final class MockData {
         return distritos;
     }
 
-    /** Distritos de una ciudad, sin repetir. */
+    /** Distritos de una ciudad, sin repetir. Solo de los hoteles publicados. */
     public static List<String> distritosDe(String ciudad) {
         List<String> distritos = new ArrayList<>();
-        for (Hotel h : HOTELES) {
+        for (Hotel h : hotelesPublicados()) {
             if (h.getCiudad().equals(ciudad) && !distritos.contains(h.getDistrito())) {
                 distritos.add(h.getDistrito());
             }

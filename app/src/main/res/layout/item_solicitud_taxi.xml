@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Una solicitud de traslado en la lista del conductor (§46).
+
+    Es solo el envoltorio: la tarjeta es la misma que usa el historial del
+    cliente, para que un traslado se lea igual se mire desde donde se mire.
+-->
+<org.iot.project.ui.components.TaxiRequestCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_sm" />

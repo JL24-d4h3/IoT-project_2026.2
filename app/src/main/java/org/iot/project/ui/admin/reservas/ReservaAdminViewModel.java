@@ -114,7 +114,7 @@ public class ReservaAdminViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             reserva.setValue(UiState.<ReservaDeHotel>error(
-                    "Esta cuenta no tiene un hotel asignado."));
+                    "Todavía no tienes un hotel asignado."));
             return;
         }
         if (conEsqueleto) {

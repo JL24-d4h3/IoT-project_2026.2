@@ -309,6 +309,44 @@ public class MockGestionHotelRepository extends MockRepository
     }
 
     @Override
+    public void cambiarPublicacion(@NonNull String hotelId, boolean publicado,
+                                   @NonNull ResultCallback<Hotel> callback) {
+        ejecutar(callback, () -> {
+            Hotel hotel = exigirHotel(hotelId);
+            if (publicado && !hotel.aptoParaPublicar()) {
+                throw new IllegalStateException(loQueFalta(hotel));
+            }
+            if (hotel.isPublicado() == publicado) {
+                // Nada que cambiar: no se registra un movimiento que no ocurrio.
+                return hotel;
+            }
+            hotel.setPublicado(publicado);
+            registrar(publicado
+                    ? "Se publicó " + hotel.getNombre() + "."
+                    : "Se retiró " + hotel.getNombre() + " del catálogo.");
+            return hotel;
+        });
+    }
+
+    /**
+     * Que le falta al hotel para poder publicarse.
+     *
+     * <p>Se enumera lo que falta y no se dice un "no se puede" a secas: el
+     * administrador tiene delante la pantalla donde arreglarlo.
+     */
+    private static String loQueFalta(Hotel hotel) {
+        boolean faltanFotos = !hotel.cumpleMinimoFotos();
+        boolean faltanHabitaciones = hotel.getHabitaciones().isEmpty();
+        if (faltanFotos && faltanHabitaciones) {
+            return "Para publicar el hotel faltan fotografías y habitaciones.";
+        }
+        if (faltanFotos) {
+            return "Para publicar el hotel faltan fotografías.";
+        }
+        return "Para publicar el hotel falta al menos una habitación.";
+    }
+
+    @Override
     public void actualizarDatos(@NonNull String hotelId, @NonNull String nombre,
                                 @NonNull String descripcion, @NonNull String direccion,
                                 double latitud, double longitud,
@@ -591,6 +629,12 @@ public class MockGestionHotelRepository extends MockRepository
 
     /** RF-023: se comprueba en cada operacion, no una vez al entrar. */
     private Hotel exigirHotel(String hotelId) {
+        if (hotelId == null) {
+            // Un administrador recien creado todavia no tiene hotel: RF-008 lo
+            // resuelve asignandole uno, y hasta entonces esta es la verdad.
+            throw new IllegalStateException("Todavía no tienes un hotel asignado."
+                    + " Un superadministrador tiene que asignarte uno.");
+        }
         if (!SessionManager.puedeGestionar(hotelId)) {
             throw new IllegalStateException("Ese hotel no es el tuyo.");
         }

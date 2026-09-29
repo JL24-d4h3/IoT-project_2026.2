@@ -216,6 +216,51 @@ public class TaxiService {
     }
 
     /**
+     * RF-077, RF-090, RF-092: si este conductor puede quedarse con el pedido.
+     *
+     * <p>Responde solo por lo que el servicio sabe de si mismo. Que el
+     * conductor no tenga ya un viaje en curso lo comprueba el repositorio, que
+     * es el unico que ve todos los servicios a la vez; desde aqui no hay forma
+     * de saberlo.
+     */
+    public boolean puedeAceptarlo(Driver conductor) {
+        return estado == TaxiStatus.SOLICITADO
+                && conductor != null
+                && conductor.isHabilitado();
+    }
+
+    /**
+     * RF-108, RF-109: el conductor mueve su propio servicio al estado
+     * siguiente.
+     *
+     * <p>RF-110: a FINALIZADO no se llega por aqui. Ese estado solo lo abre la
+     * validacion del codigo, y sin este rechazo {@code canTransitionTo} lo
+     * admitiria desde EN_TRASLADO: la regla quedaria escrita solo en la
+     * pantalla, que es justo donde no se puede probar.
+     *
+     * @throws IllegalStateException si el salto no es valido o si es a
+     *                               FINALIZADO.
+     */
+    public void avanzarPorConductor(TaxiStatus siguiente) {
+        if (siguiente == TaxiStatus.FINALIZADO) {
+            throw new IllegalStateException(
+                    "El servicio se cierra validando el código del cliente.");
+        }
+        avanzarA(siguiente);
+    }
+
+    /**
+     * RF-103: el codigo que dicta el cliente es el del propio servicio.
+     *
+     * <p>Se admite con espacios alrededor y en minusculas porque el conductor
+     * lo teclea a mano: rechazar " tax-2026-0731 " castigaria la transcripcion
+     * sin proteger nada.
+     */
+    public boolean validarCodigo(String introducido) {
+        return introducido != null && codigo.equalsIgnoreCase(introducido.trim());
+    }
+
+    /**
      * RF-111, RC-016: solo se permiten las transiciones del flujo definido.
      *
      * @throws IllegalStateException si el salto de estado no es valido.

@@ -8,9 +8,8 @@ import java.util.List;
  * Usuario del sistema en cualquiera de los cuatro roles (§38).
  *
  * <p>Un usuario deshabilitado no puede acceder a las funcionalidades
- * protegidas (RF-009); el flag {@code aprobado} solo aplica a conductores,
- * que necesitan habilitacion del Superadmin antes de prestar servicios
- * (RF-077, RT-014).
+ * protegidas (RF-009). Los conductores no son usuarios: se habilitan aparte
+ * (RF-077, RT-014) y su estado vive en {@link Driver}.
  */
 public class User {
 
@@ -26,7 +25,6 @@ public class User {
     private String fotoUrl;
     private final Role rol;
     private boolean activo = true;
-    private boolean aprobado = true;
 
     private final List<Card> tarjetas = new ArrayList<>();
 
@@ -127,12 +125,16 @@ public class User {
         this.activo = activo;
     }
 
-    public boolean isAprobado() {
-        return aprobado;
-    }
-
-    public void setAprobado(boolean aprobado) {
-        this.aprobado = aprobado;
+    /**
+     * Si esta cuenta se puede desactivar desde el panel (RF-006).
+     *
+     * <p>Un superadministrador no: desactivarlo dejaria la plataforma sin nadie
+     * que pueda volver a activarlo. La regla vive en el modelo y no en el
+     * repositorio porque describe al usuario, y asi la puede comprobar una
+     * prueba sin levantar el repositorio entero.
+     */
+    public boolean esDesactivable() {
+        return rol != Role.SUPERADMIN;
     }
 
     public List<Card> getTarjetas() {

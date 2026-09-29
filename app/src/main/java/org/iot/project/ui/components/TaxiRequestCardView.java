@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +18,7 @@ import org.iot.project.R;
 import org.iot.project.models.TaxiService;
 import org.iot.project.models.TaxiStatus;
 import org.iot.project.utils.DateFormatter;
+import org.iot.project.utils.Distancia;
 import org.iot.project.utils.PriceFormatter;
 
 /**
@@ -39,6 +41,8 @@ public class TaxiRequestCardView extends MaterialCardView {
     private final TextView horario;
     private final TextView precio;
     private final TextView gratuito;
+    private final TextView distancia;
+    private final MaterialButton aceptar;
     private final MaterialButton valorar;
     private final TextView valorado;
 
@@ -62,11 +66,28 @@ public class TaxiRequestCardView extends MaterialCardView {
         horario = findViewById(R.id.request_schedule);
         precio = findViewById(R.id.request_price);
         gratuito = findViewById(R.id.request_free);
+        distancia = findViewById(R.id.request_distance);
+        aceptar = findViewById(R.id.request_accept);
         valorar = findViewById(R.id.request_rate);
         valorado = findViewById(R.id.request_rated);
     }
 
+    /** La tarjeta del historial del cliente: sin distancia y sin nada que aceptar. */
     public void bind(@NonNull TaxiService servicio) {
+        pintar(servicio, -1d);
+    }
+
+    /**
+     * La tarjeta de una solicitud disponible (RF-089).
+     *
+     * @param distanciaM metros del conductor al punto de recojo, o negativo si
+     *                   no se sabe
+     */
+    public void bind(@NonNull TaxiService servicio, double distanciaM) {
+        pintar(servicio, distanciaM);
+    }
+
+    private void pintar(@NonNull TaxiService servicio, double distanciaM) {
         codigo.setText(servicio.getCodigo());
         origen.setText(servicio.getOrigen());
         destino.setText(servicio.getDestino());
@@ -93,7 +114,23 @@ public class TaxiRequestCardView extends MaterialCardView {
             precio.setText(PriceFormatter.format(servicio.getPrecio()));
         }
 
+        pintarDistancia(distanciaM);
         pintarValoracion(servicio);
+    }
+
+    /**
+     * A que distancia le queda el recojo (RF-089).
+     *
+     * <p>Sin distancia conocida no se enseña nada. Un "a 0 m de ti" inventado
+     * seria peor que el silencio: significaria que ya llego, y no es verdad.
+     */
+    private void pintarDistancia(double distanciaM) {
+        boolean hayDistancia = distanciaM >= 0d;
+        distancia.setVisibility(hayDistancia ? VISIBLE : GONE);
+        if (hayDistancia) {
+            distancia.setText(getContext().getString(R.string.driver_a_distancia,
+                    Distancia.legible(distanciaM)));
+        }
     }
 
     /**
@@ -122,6 +159,19 @@ public class TaxiRequestCardView extends MaterialCardView {
      */
     public void setOnValorar(@Nullable OnClickListener oyente) {
         valorar.setOnClickListener(oyente);
+    }
+
+    /**
+     * Que hacer al pulsar "Aceptar" (RF-090).
+     *
+     * <p>La visibilidad del boton la decide este metodo y no {@code pintar}: el
+     * RecyclerView reutiliza las vistas, asi que quien sabe si la fila se puede
+     * aceptar es quien la usa, no lo que se esta pintando. Con el oyente nulo el
+     * boton desaparece, que es lo que quiere el historial del cliente.
+     */
+    public void setOnAceptar(@Nullable OnClickListener oyente) {
+        aceptar.setOnClickListener(oyente);
+        aceptar.setVisibility(oyente != null ? View.VISIBLE : View.GONE);
     }
 
     /**

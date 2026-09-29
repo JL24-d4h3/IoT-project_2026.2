@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.iot.project.models.Cuenta;
+import org.iot.project.models.Hotel;
 import org.iot.project.models.Role;
 
 /**
@@ -39,9 +40,6 @@ public final class SessionManager {
     public static final String USUARIO_ADMIN = "U2";
     public static final String USUARIO_SUPERADMIN = "U3";
     public static final String CONDUCTOR_ACTIVO = "D1";
-
-    /** Hotel que administra el usuario con rol de administrador. */
-    public static final String HOTEL_ADMINISTRADO = "H1";
 
     private static final MutableLiveData<Cuenta> SESION = new MutableLiveData<>();
 
@@ -118,11 +116,26 @@ public final class SessionManager {
      * administra ninguno.
      *
      * <p>Solo hay un hotel administrado por sesion porque asi es el modelo: un
-     * administrador pertenece a un hotel, no a una lista.
+     * administrador pertenece a un hotel, no a una lista (RF-008).
+     *
+     * <p>La relacion se lee del repositorio y no de {@code MockData} para que el
+     * dia que exista un backend solo cambie el repositorio (§49). Y se lee de
+     * forma sincrona —igual que {@code hoteles().hotel(id)}— porque las cinco
+     * pantallas del administrador la consultan al arrancar y ninguna esta
+     * escrita para esperar una respuesta.
+     *
+     * <p>Puede devolver {@code null} aunque el rol sea el de administrador: una
+     * cuenta recien creada todavia no tiene hotel asignado, y ese estado es real
+     * hasta que un superadministrador se lo asigne (RF-008).
      */
     @Nullable
     public static String getHotelAdministrado() {
-        return getRolActivo() == Role.ADMIN_HOTEL ? HOTEL_ADMINISTRADO : null;
+        if (getRolActivo() != Role.ADMIN_HOTEL) {
+            return null;
+        }
+        Hotel hotel = ServiceLocator.hoteles()
+                .hotelDeAdministrador(getUsuarioIdSeguro());
+        return hotel != null ? hotel.getId() : null;
     }
 
     /**
@@ -141,7 +154,7 @@ public final class SessionManager {
         if (rol == Role.SUPERADMIN) {
             return true;
         }
-        return rol == Role.ADMIN_HOTEL && HOTEL_ADMINISTRADO.equals(hotelId);
+        return rol == Role.ADMIN_HOTEL && hotelId.equals(getHotelAdministrado());
     }
 
     /**

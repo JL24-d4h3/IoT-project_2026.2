@@ -177,7 +177,7 @@ public class ReportesViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             fallo = true;
-            reporte.setValue(UiState.<Reporte>error("Esta cuenta no tiene un hotel asignado."));
+            reporte.setValue(UiState.<Reporte>error("Todavía no tienes un hotel asignado."));
             return;
         }
 

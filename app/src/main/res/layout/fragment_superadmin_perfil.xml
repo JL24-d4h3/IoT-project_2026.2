@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Perfil del superadministrador (§47).
+
+    Es el mismo molde que los perfiles del cliente (§40) y del administrador de
+    hotel, con la diferencia que lo justifica: aquí la identidad no es de qué
+    hotel respondes, es **de qué plataforma respondes**. Por eso la segunda
+    tarjeta no es el hotel sino las cifras de lo que administra —cuántas cuentas,
+    cuántos conductores, cuántos hoteles— y la puerta a la auditoría.
+
+    Como los otros dos, es una pantalla de consulta: no hay campos editables
+    porque no hay a dónde mandar los cambios desde aquí. Lo que sí hace es
+    llevar a donde se cambia cada cosa —la bitácora— y a cerrar la sesión.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:orientation="vertical">
+
+    <org.iot.project.ui.components.AppHeaderView
+        android:id="@+id/sa_perfil_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/sa_perfil_contenido"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_margin"
+                android:paddingTop="@dimen/space_md"
+                android:paddingEnd="@dimen/screen_margin"
+                android:paddingBottom="@dimen/space_lg">
+
+                <!-- ============ Quién eres ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/sa_perfil_iniciales"
+                        style="@style/TextAppearance.App.H2"
+                        android:layout_width="@dimen/avatar_lg"
+                        android:layout_height="@dimen/avatar_lg"
+                        android:background="@drawable/bg_circulo_primario"
+                        android:gravity="center"
+                        android:textColor="@color/colorOnPrimaryContainer"
+                        tools:text="AF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_base"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/sa_perfil_nombre"
+                            style="@style/TextAppearance.App.H2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="Ana Ferreyra Salas" />
+
+                        <TextView
+                            android:id="@+id/sa_perfil_correo_cabecera"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            tools:text="ana.ferreyra@estadia.pe" />
+
+                        <!-- El rol, en una etiqueta. No es decoración: es la
+                             respuesta a "¿con qué cuenta entré?", que es lo
+                             primero que se pregunta quien tiene dos cuentas.
+                             El texto lo pone la pantalla desde Role, para que
+                             no pueda decir algo distinto del rol real. -->
+                        <TextView
+                            android:id="@+id/sa_perfil_rol"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:background="@drawable/bg_chip_neutral"
+                            android:paddingStart="@dimen/space_sm"
+                            android:paddingTop="@dimen/space_xs"
+                            android:paddingEnd="@dimen/space_sm"
+                            android:paddingBottom="@dimen/space_xs"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            tools:text="Superadministrador" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ============ La plataforma que administras ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sa_perfil_plataforma" />
+
+                        <!-- Mientras llegan las cifras: la tarjeta no cambia de
+                             alto, así que no hay salto al aparecer el dato. -->
+                        <org.iot.project.ui.components.LoadingSkeletonView
+                            android:id="@+id/sa_perfil_plataforma_esqueleto"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/sa_perfil_plataforma_error"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/sa_perfil_plataforma_error"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <LinearLayout
+                            android:id="@+id/sa_perfil_plataforma_datos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <!-- Las cifras se leen como "activos de totales" y
+                                 no como un número suelto, igual que en la
+                                 portada: "12 usuarios" no dice si son todos o
+                                 la mitad, y la mitad es lo que importa aquí. -->
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/sa_perfil_fila_usuarios"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/sa_perfil_fila_conductores"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/sa_perfil_fila_hoteles"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/sa_perfil_fila_pendientes"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/sa_perfil_ver_auditoria"
+                                style="@style/Widget.App.Button.Secondary"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/button_height"
+                                android:layout_marginTop="@dimen/space_base"
+                                android:text="@string/sa_ver_toda_la_auditoria" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Tus datos ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/space_md"
+                            android:text="@string/perfil_datos" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/sa_perfil_fila_documento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/sa_perfil_fila_telefono"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <org.iot.project.ui.components.DataRowView
+                            android:id="@+id/sa_perfil_fila_correo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ============ Sesión ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/perfil_sesion" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/sa_perfil_cerrar_sesion"
+                            style="@style/Widget.App.Button.Destructive"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/button_height"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/perfil_cerrar" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/sa_perfil_version"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xl"
+                    android:gravity="center"
+                    tools:text="Versión 1.0" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/sa_perfil_esqueleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/screen_margin"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <org.iot.project.ui.components.LoadingSkeletonView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md" />
+        </LinearLayout>
+
+        <org.iot.project.ui.components.ErrorStateView
+            android:id="@+id/sa_perfil_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

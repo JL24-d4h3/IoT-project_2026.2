@@ -1,13 +1,16 @@
 package org.iot.project.ui.admin.hotel;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -22,6 +25,7 @@ import org.iot.project.databinding.FragmentAdminHotelDatosBinding;
 import org.iot.project.databinding.ItemNearbyPlaceBinding;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.NearbyPlace;
+import org.iot.project.utils.AvisoDePublicacion;
 import org.iot.project.utils.InsetUtils;
 
 import java.util.List;
@@ -97,6 +101,7 @@ public class HotelDatosFragment extends Fragment {
         viewModel.getHotel().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getGuardado().observe(getViewLifecycleOwner(), this::pintarGuardado);
         viewModel.getFoto().observe(getViewLifecycleOwner(), this::pintarFoto);
+        viewModel.getPublicacion().observe(getViewLifecycleOwner(), this::pintarCambioDePublicacion);
         viewModel.cargar();
     }
 
@@ -159,6 +164,100 @@ public class HotelDatosFragment extends Fragment {
 
         pintarFotos(datos);
         pintarLugares(datos.getLugaresCercanos());
+        pintarPublicacion(datos);
+    }
+
+    // ----------------------------------------------------------- Publicación
+
+    /**
+     * Si el hotel se ofrece ya a los clientes, y qué le falta si no (RF-007).
+     *
+     * <p>El botón se enseña deshabilitado cuando el hotel todavía no está
+     * completo, en vez de esconderlo: un botón que no aparece deja al
+     * administrador sin saber por qué no puede publicar, y la frase de al lado es
+     * justo la respuesta. Lo que hace falta para publicar lo dice el modelo
+     * —fotografías y habitaciones—, no esta pantalla; aquí solo se elige cómo
+     * contarlo.
+     */
+    private void pintarPublicacion(@NonNull Hotel datos) {
+        boolean publicado = datos.isPublicado();
+
+        binding.adminPublicacionEstado.setText(publicado
+                ? R.string.sa_hotel_publicado : R.string.sa_hotel_sin_publicar);
+        binding.adminPublicacionEstado.setBackgroundResource(publicado
+                ? R.drawable.bg_badge_success : R.drawable.bg_badge_warning);
+        binding.adminPublicacionEstado.setTextColor(color(publicado
+                ? R.color.colorOnSuccessContainer : R.color.colorOnWarningContainer));
+        binding.adminPublicacionTitulo.setText(publicado
+                ? R.string.admin_publicacion_visible : R.string.admin_publicacion_oculto);
+
+        if (publicado) {
+            binding.adminPublicacionMotivo.setText(R.string.admin_publicacion_retirar_ayuda);
+            binding.adminPublicacionAccion.setEnabled(true);
+            binding.adminPublicacionAccion.setText(R.string.sa_retirar);
+            binding.adminPublicacionAccion.setOnClickListener(
+                    v -> viewModel.cambiarPublicacion(false));
+            return;
+        }
+
+        // Lo que falta lo cuenta el mismo texto que la ficha del
+        // superadministrador; cuando no falta nada, esta pantalla no se calla
+        // —la frase es el sitio donde se lee que ya se puede— y lo dice.
+        CharSequence falta = AvisoDePublicacion.motivo(requireContext(), datos);
+        binding.adminPublicacionMotivo.setText(falta != null
+                ? falta : getString(R.string.admin_publicacion_listo));
+        binding.adminPublicacionAccion.setEnabled(datos.aptoParaPublicar());
+        binding.adminPublicacionAccion.setText(R.string.sa_publicar);
+        binding.adminPublicacionAccion.setOnClickListener(
+                v -> viewModel.cambiarPublicacion(true));
+    }
+
+    /**
+     * El resultado de publicar o de retirar: un aviso de una sola vez.
+     *
+     * <p>No hay nada que repintar aquí. La tarjeta se pinta del hotel, y el hotel
+     * ya llegó cambiado por el canal de siempre; este canal solo existe para
+     * decir que la operación salió bien, y por eso se limpia en cuanto se lee.
+     */
+    private void pintarCambioDePublicacion(@Nullable UiState<Hotel> estado) {
+        if (estado == null) {
+            return;
+        }
+        switch (estado.getStatus()) {
+            case LOADING:
+                // El guardado tarda lo que tarda el repositorio, y un segundo
+                // toque publicaría dos veces lo mismo.
+                binding.adminPublicacionAccion.setEnabled(false);
+                return;
+            case SUCCESS:
+                Hotel datos = estado.getData();
+                if (datos != null) {
+                    // El aviso lo decide el estado del hotel que devuelve la
+                    // operacion y no lo que se pulso: publicar y retirar comparten
+                    // canal, y decir "ya se ofrece" despues de retirarlo seria
+                    // decir lo contrario de lo que acaba de pasar.
+                    avisar(getString(datos.isPublicado()
+                            ? R.string.admin_publicacion_hecha
+                            : R.string.admin_retirada_hecha, datos.getNombre()));
+                }
+                break;
+            case EMPTY:
+            case ERROR:
+            default:
+                // Al fallar, el hotel se queda como estaba: hay que devolverle
+                // el botón a su sitio, que es el que se deshabilitó al empezar.
+                if (hotel != null) {
+                    pintarPublicacion(hotel);
+                }
+                avisar(mensajeDe(estado));
+                break;
+        }
+        viewModel.limpiarPublicacion();
+    }
+
+    @NonNull
+    private ColorStateList color(@ColorRes int color) {
+        return ColorStateList.valueOf(ContextCompat.getColor(requireContext(), color));
     }
 
     /**

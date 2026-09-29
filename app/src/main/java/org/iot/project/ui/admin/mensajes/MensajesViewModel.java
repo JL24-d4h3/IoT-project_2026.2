@@ -47,7 +47,7 @@ public class MensajesViewModel extends ViewModel {
         String hotelId = getHotelId();
         if (hotelId == null) {
             conversaciones.setValue(UiState.<List<ConversacionDeHotel>>error(
-                    "Esta cuenta no tiene un hotel asignado."));
+                    "Todavía no tienes un hotel asignado."));
             return;
         }
         cargado = true;

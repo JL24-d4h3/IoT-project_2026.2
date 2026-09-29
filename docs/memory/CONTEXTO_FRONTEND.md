@@ -146,17 +146,120 @@ No volver a discutirlas sin una razón nueva.
     dejaría la pantalla vacía y sin forma de volver a uno que sí las tenga.
   - El desglose de ingresos por servicio se pinta con `IngresoListView` en la
     portada y en el reporte, para que los dos no puedan dar cifras distintas.
-- **61 pruebas unitarias en verde**, 0 fallos:
+- **Bloque D completo** (§46, RF-085 a RF-111): el conductor tiene portada propia
+  y el servicio de taxi ya se puede cerrar, que es lo que el bloque venía a
+  arreglar — hasta ahora ningún taxi podía llegar a FINALIZADO.
+  - **Las reglas viven en `TaxiService`, no en el repositorio** (§4):
+    `puedeAceptarlo(conductor)`, `avanzarPorConductor(siguiente)` y
+    `validarCodigo(introducido)`. `avanzarPorConductor` **rechaza FINALIZADO**:
+    el servicio se cierra validando el código del cliente y por ninguna otra
+    puerta (RF-110, RT-016). Lo que el servicio no puede saber —si el conductor
+    ya tiene un viaje en curso— lo comprueba el repositorio, que es el único que
+    ve todos los servicios a la vez.
+  - **`TaxiRepository` cambia de lado**: `avanzar(...)` y `confirmarQr(...)`
+    desaparecen (el primero elegía él mismo al conductor, contra RF-090) y
+    entran las seis operaciones del conductor: `perfilDe`, `disponibles`,
+    `serviciosEnCursoDe`, `aceptar`, `avanzarComoConductor`, `validarCodigo`.
+    Todas reciben el `conductorId`, para que nadie pueda cerrar el viaje de otro
+    sabiendo el identificador.
+  - **`disponibles` filtra, no valida**, y devuelve `OfertaDeTaxi`: el servicio
+    **más** su distancia. La distancia no es propiedad del servicio —el mismo
+    viaje está a distinta distancia de cada conductor— y la calcula el
+    repositorio porque es el único que ve al conductor y al servicio juntos. El
+    radio de atención son 100 km, que cae entre los dos extremos medidos: la base
+    de D1 está a 1,9 km de H1 y Lima–Cusco son 569 km.
+  - **La ubicación entra por una costura** (`core/FuenteUbicacion`), hoy con
+    `FuenteUbicacionSimulada`: un conductor libre está en su base
+    (`MockData.BASE_CONDUCTOR`) y con un servicio se acerca al punto de recojo.
+    El día que entre el GPS real se sustituye esa pieza y nada más. Es la
+    decisión que el usuario tomó: **simulado por ahora, con la puerta abierta**,
+    porque al final del curso puede que haya que probar con dos celulares.
+  - **Portada del conductor** (`ui/driver/home/`): una sola pantalla con dos
+    caras que se excluyen, como pide §46. Libre enseña métricas, su ficha con su
+    vehículo y las solicitudes que puede aceptar; ocupada enseña el viaje y
+    **nada más** — ni lista ni métricas, porque un conductor que ya va con
+    alguien no puede quedarse con otro pedido. `DriverHomeViewModel` no publica
+    `UiState.EMPTY` a propósito: sin solicitudes la pantalla sigue teniendo
+    contenido. El contador de pendientes espera a las tres consultas, para que
+    la cara no parpadee.
+  - **`ValidarCodigoSheet` es la única puerta a FINALIZADO** (RF-102 a RF-104,
+    RF-110). El conductor **teclea** el código que le dicta el cliente: no hay
+    cámara ni escaneo simulado. Un código que no es el de ese servicio no cambia
+    nada y la hoja se queda abierta para reintentar.
+  - **Datos sembrados** (§8 del spec): `T3.clienteId` pasa de `"U9"` a `"U1"`
+    —la errata: T3 es el traslado de B2, y B2 es de U1—, T1 pasa de D1 a D2 para
+    que el cliente U1 siga viendo su taxi en camino y D1 quede libre, y se siembra
+    **T4**, la solicitud nueva en Lima (reserva B6, Diego Salas Pinto) que D1
+    puede aceptar. Código para la demostración: **`TAX-2026-0735`**.
+  - `nav_driver.xml` apunta ya a `DriverHomeFragment`; `PanelRolFragment` se queda
+    entonces solo con el superadmin.
+- **Bloque E completo** (§47): el superadministrador tiene panel propio, y con él
+  el ciclo de vida del hotel queda cerrado — **RF-005** (consultar las cuentas
+  registradas), **RF-006** (activarlas y desactivarlas, con los
+  superadministradores fuera de ese interruptor), **RF-007** (registrar un
+  hotel), **RF-008** (asignarle un administrador), **RF-059** (el reporte de
+  reservas del hotel, visto desde la plataforma), **RF-077** y **RF-078**
+  (aprobar a un conductor y consultar en qué estado está) y **RF-118 a RF-120**
+  (la bitácora, que hasta ahora se escribía y nadie podía leer).
+  - **Pantallas nuevas** (`ui/superadmin/`): la portada —`SuperadminHome`— con
+    las cifras de la plataforma y lo que espera decisión; **Usuarios**, con el
+    filtro por rol y el interruptor de cada cuenta; **Conductores**, con la cola
+    "Por aprobar" al principio; **Hoteles** y la **ficha del hotel** —datos,
+    administrador, publicación y reporte—; el **alta de hotel**; **Auditoría**,
+    la bitácora entera, del movimiento más reciente al más antiguo; y el
+    **Perfil**, con la cuenta, la insignia de rol, las cifras de la plataforma
+    y el cerrar sesión.
+  - **La barra es Inicio · Usuarios · Conductores · Hoteles · Perfil.** La
+    auditoría no está en ella: se abre desde la portada —el bloque de últimos
+    movimientos y su botón— y desde el perfil, y lleva flecha de vuelta, como
+    toda pantalla del panel que no es una sección. El perfil entró donde lo
+    tienen los otros dos roles que administran algo, que es el último sitio de
+    la barra, y por el mismo motivo que en ellos: **es donde vive el cerrar
+    sesión**. Antes la única salida era el icono de la cabecera de la portada,
+    así que desde las otras cuatro secciones había que volver a Inicio; ese
+    icono ya no está.
+  - **`nav_superadmin.xml` deja de ser un cartel.** Apuntaba a `PanelRolFragment`,
+    el recordatorio de que a este rol le faltaban las pantallas; ahora apunta a
+    las suyas, y el recordatorio se borra. Con él, los cuatro roles tienen su
+    grafo y su menú completos.
+  - **Publicar es del administrador, retirar es del superadministrador** (la
+    decisión del usuario). El hotel nace **sin publicar y sin administrador**;
+    el administrador carga fotos y habitaciones y lo publica; el
+    superadministrador lo retira del catálogo desde la ficha, con motivo. Un
+    hotel retirado conserva sus reservas, su contenido y su administrador.
+  - **`SessionManager.HOTEL_ADMINISTRADO` ya no existe.** El hotel que administra
+    una cuenta se lee del repositorio (`HotelRepository.hotelDeAdministrador`,
+    que recorre `MockData.HOTELES` y no la lista publicada: el administrador de un
+    hotel sin publicar sigue siendo su administrador, y es quien tiene que
+    publicarlo) y **puede ser `null`**: un administrador recién asignado no tiene
+    hotel hasta que el superadministrador se lo da. Las pantallas del
+    administrador dicen "Todavía no tienes un hotel asignado." en ese caso, y la
+    portada lo cuenta como un estado del hotel, no como un error.
+  - **`Hotel` tiene estado de publicación y administrador** (`publicado`,
+    `administradorId`, `aptoParaPublicar()`): fotos mínimas **y** alguna
+    habitación. El catálogo del cliente esconde los que no están publicados —
+    búsqueda, recomendados, filtro por ciudad y selector de distritos salen de la
+    misma lista publicada—, **salvo `hotel(id)`**, que sigue devolviendo el hotel
+    aunque esté retirado: por eso una reserva anterior se sigue pintando.
+  - **`MockData.HOTELES` es mutable**: el alta añade un hotel a la lista viva, y
+    por eso las pruebas de coherencia tienen que seguir pasando después de un
+    alta, no solo sobre los datos sembrados.
+- **102 pruebas unitarias en verde**, 0 fallos:
 
   | Suite | Pruebas | Cubre |
   |---|---|---|
+  | `MockDataTest` | 27 | Coherencia de los datos sembrados |
+  | `TaxiConductorTest` | 12 | RF-077, RF-090, RF-102, RF-103, RF-110, RF-111 — aceptar, avanzar y validar |
   | `BookingOverlapTest` | 10 | RF-032, RC-012 — solapamiento, día de rotación, canceladas |
-  | `MockDataTest` | 19 | Coherencia de los datos sembrados |
   | `PriceFormatterTest` | 9 | §66 — formato `S/ 1,240` |
+  | `PublicacionHotelTest` | 9 | RF-007, RF-013, RF-014 — un hotel nace sin publicar y sin administrador, y su "Desde" es su habitación más barata |
   | `HotelServiceTest` | 7 | Reglas 5-8, 18-20 — incluido vs adicional, no duplicar |
   | `TaxiStatusTest` | 7 | RF-106 a RF-111 — flujo exacto, sin saltos ni retrocesos |
   | `VentasPorPeriodoTest` | 5 | RF-055 a RF-058 — agrupación diaria, mensual y anual |
+  | `DistanciaTest` | 5 | §5 — haversine y formato legible; fija Lima–Cusco en 569 km |
   | `CrucesDeListaTest` | 4 | "Cruce es una foto, no una ventana" en las cuatro listas |
+  | `FuenteUbicacionSimuladaTest` | 4 | §6 — base del conductor libre, acercamiento y que nadie cae en (0,0) |
+  | `ReglasDeRolTest` | 3 | RF-006 — `User.esDesactivable` deja fuera al superadministrador |
 
 **Verificado en el emulador** (`Pixel_4`, SDK 34), recorriendo la app de verdad,
 no solo compilando: Home · lista de reservas · detalle de reserva · chat (envío
@@ -164,19 +267,137 @@ de mensajes, sin `ConcurrentModificationException`) · flujo de reserva · pago 
 checkout · valoración · la valoración aparece en el detalle y en la ficha del
 hotel. Aritmética comprobada: 4 × 480 + 120 + 45 = S/ 2,085.
 
-**Sin verificar en el emulador: todo el Bloque C.** Compila, el APK se arma, los
-recursos resuelven y las pruebas pasan, pero nadie ha mirado las pantallas del
-administrador en un dispositivo. §11 pide recorrerlas antes de darlas por buenas.
+**Verificado en el emulador, Bloque D**: entrar como conductor (D1) · la portada
+abre en la cara libre con la solicitud de Lima a 1,9 km · aceptar · "Voy en
+camino" → "Inicié el traslado" · la hoja del código rechaza un código falso sin
+cambiar nada y cierra el servicio con `TAX-2026-0735` · la portada vuelve sola a
+la cara libre, ya con el estado vacío · el cliente U1 sigue viendo su taxi en
+camino con D2 y el plano del recorrido.
+
+**El recorrido del Bloque D encontró cuatro cosas que el compilador no ve**,
+todas corregidas:
+1. **El vehículo salía dos veces** en la cara libre: `DriverCardView` ya lleva
+   dentro un `VehicleCardView`, y el layout ponía otro suelto encima.
+2. **El estado le hablaba al conductor como si fuera el pasajero**: "Julio
+   aceptó tu solicitud", leído por Julio. `TaxiStatusView` nació para el cliente
+   (§38), así que ahora tiene `bind(...)` y `bindParaConductor(...)` con las
+   mismas cinco frases contadas desde cada lado.
+3. **La Tarea 10 dejó al conductor sin poder cerrar sesión**: su única salida era
+   `PanelRolFragment`, y la portada lo sustituyó. Se repuso como acción de la
+   cabecera (`ic_logout`), que es el modismo de la casa.
+4. **La errata de T3 rompió la pantalla del cliente**: al pasar T3 a U1, U1
+   quedó con dos servicios sin cerrar y `TaxiViewModel.separar` se quedaba con el
+   de fecha más lejana —una solicitud para el 8 de octubre, todavía sin
+   conductor— mientras su taxi de ahora mismo caía a "Servicios anteriores" como
+   si ya hubiera pasado. Ahora manda el que más avanzado va. El §8.2 del spec
+   pedía justamente que U1 siguiera viendo su taxi en camino.
+
+**Verificado en el emulador, Bloque E**: el recorrido entero de §10.2 del spec,
+de un tirón y sin reiniciar la app (los datos simulados viven en memoria: un
+`force-stop` los devuelve a la semilla, así que los cambios de cuenta se hicieron
+con "Cerrar sesión"). Como cliente, el catálogo enseña los diez hoteles
+publicados; como superadministrador, están los diez, publicados y cada uno con su
+administrador. El alta de **"Hostal Amazonas"** (Iquitos, Punchana) nace **sin
+publicar y sin administrador**, y el cliente no lo ve por ninguna puerta: ni en
+la búsqueda por ciudad, ni escribiendo "Iquitos" en el selector de destinos
+("No encontramos ese destino"), ni ofreciéndose "Punchana" entre los distritos.
+Asignado **Rocío Vargas Lira** (U4) desde la ficha, su portada dice "SIN
+PUBLICAR" y "Para publicarlo faltan fotografías y habitaciones." — sin error—, y
+las otras cuatro pantallas del administrador dicen "Todavía no tienes un hotel
+asignado." Con cuatro fotos y la habitación 101 (Doble estándar, 2 adultos ·
+22 m² · piso 1 · S/ 180) el botón de publicar pasa de apagado a encendido, la
+tarjeta dice "PUBLICADO / Tu hotel se está mostrando a los clientes", y el
+cliente ya lo encuentra **por su ciudad y por su distrito**: "1 alojamiento en
+Iquitos" y "1 alojamiento en Punchana". Retirado desde la ficha del
+superadministrador, el cliente deja de verlo otra vez, **pero la reserva
+`EST-2026-0701` que se había hecho sobre él se sigue pintando** en "Próximas" —
+`hotel(id)` no filtra, que es justo lo que el spec pedía comprobar—. Desactivar
+a un cliente lo deja fuera: al intentar entrar, "Tu cuenta está deshabilitada.
+Escríbenos si crees que es un error."; a un superadministrador **no se le ofrece
+el interruptor**, y la fila de Ana Ferreyra sale sin acción. Habilitado el
+conductor pendiente (D3, Pedro Ccahuana), la bitácora enseña los movimientos de
+la sesión con su autor y su hora.
+
+**Corregido después: el superadministrador no tenía perfil.** Los otros dos
+roles que administran algo tienen una sección Perfil, y en ella el cerrar
+sesión; el superadministrador solo lo tenía en un icono de la cabecera de la
+portada, así que desde Usuarios, Conductores u Hoteles no había salida. Ahora
+los tres son iguales: la barra es **Inicio · Usuarios · Conductores · Hoteles ·
+Perfil**, la sección que cedió el sitio fue la bitácora —que ya se abría desde
+la portada y ahora también desde el perfil, y que ganó la flecha de vuelta— y el
+icono de la cabecera se retiró. Verificado en el emulador: la barra con sus
+cinco rótulos enteros, el perfil con la insignia "Superadministrador", las
+cifras de la plataforma (7 de 7 usuarios, 2 de 3 conductores, 10 de 10 hoteles,
+1 por aprobar), el botón a la auditoría y su vuelta, y el cierre de sesión
+llevando a la pantalla de acceso. Los perfiles del cliente y del administrador
+se volvieron a abrir para comprobar que siguen igual.
+
+**Dos ayudantes salieron del paquete de un rol al escribir ese perfil**, porque
+el nuevo los necesitaba y copiarlos habría dejado dos versiones del mismo
+formato: **`utils/FormatoDeDatos`** (era `ui/admin/AdminFormato`; el documento
+de una persona y el nombre de un servicio a partir de su identificador, que
+ahora comparten los perfiles del administrador y del superadministrador) y
+**`utils/VersionDeLaApp`** (el "Versión 1.0" del pie, que estaba copiado en los
+dos perfiles que ya existían). Y `tools/verificar_recursos.py` ganó una
+comprobación: **cada item de la barra de un rol tiene que ser un destino de su
+grafo**, que es el fallo que no rompe la compilación y que el propio `Roles.java`
+avisa de que ya ocurrió una vez.
+
+**La pantalla de Auditoría, leída entera** (RC-042): 17 movimientos, del más
+reciente al más antiguo, y **ningún detalle lleva contraseñas, tokens ni datos de
+acceso** — nombres, hoteles, códigos de reserva, importes y estados. Lo único que
+dice "password" en la vista es un atributo del volcado de accesibilidad, no un
+texto de la pantalla.
+
+**Los tres movimientos de §10.2 paso 9.** El spec los llama así sin decir cuáles
+son, y la implementación escribe **una entrada por acción**: habilitar a D3
+escribe una (`APROBACION`). Lo que la bitácora enseña al terminar el paso 9 son
+los tres últimos actos del superadministrador —retirar el hotel, habilitar al
+conductor y desactivar la cuenta—, además del resto de la sesión. Se anota la
+lectura literal, que es la que se pudo comprobar.
+
+**El recorrido del Bloque E encontró dos cosas**, las dos corregidas antes de dar
+el bloque por cerrado:
+
+1. **Un hotel nacido del alta se anunciaba "Desde S/ 0".** El alta del
+   superadministrador no pide precio —lo pone el administrador al cargar
+   habitaciones—, pero la tarjeta y el detalle leían el campo guardado, que para
+   ese hotel vale cero; el hotel tenía una habitación de S/ 180 y el catálogo
+   decía S/ 0. `Hotel.getPrecioDesde()` pasa a delegar en
+   `calcularPrecioDesde()`, que ya existía, ya era la regla declarada del modelo
+   "el precio más bajo entre sus habitaciones" y no lo llamaba nadie. De paso
+   quedan de acuerdo las tres cosas que usan ese precio —lo que se enseña, el
+   orden por precio y el filtro por rango—, y cuatro hoteles sembrados cuyo
+   precio guardado no era el de su habitación más barata pasan a anunciar el
+   real: Casa del Mar 480 → 320, San Isidro Business 420 → 340, Posada Cusco
+   Centro 260 → 190 y Arequipa Plaza 230 → 160. Lo protegen dos pruebas nuevas
+   (`PublicacionHotelTest`): con habitaciones manda la más barata, y sin
+   habitaciones se conserva el precio guardado.
+2. **El estado "sin hotel" hablaba de la cuenta, no de quien lee.** Diez
+   pantallas del administrador decían "Esta cuenta no tiene un hotel asignado.",
+   que describe a un tercero; ahora dicen "Todavía no tienes un hotel asignado.",
+   que es lo que el recorrido esperaba leer y lo que ya decía el repositorio
+   cuando alguien pide un hotel que no le toca.
+
+**Sin verificar en el emulador: el resto del Bloque C.** El recorrido del Bloque
+E sí pasó por las pantallas del administrador que su ciclo toca —portada,
+reservas, habitaciones, servicios, perfil y datos del hotel, con hotel y sin
+él—, pero las otras —clientes, cobros, mensajes, reportes, el chat y el detalle
+de reserva del administrador— siguen sin haberse mirado en un dispositivo desde
+que se escribieron. Compilan, los recursos resuelven y las pruebas pasan, que no
+es lo mismo. §11 pide recorrerlas antes de darlas por buenas.
 
 ### Pendiente
 
 - **RF-022 — imágenes de los servicios** (prioridad Media): `Service` solo tiene
   `iconRes`, no un campo de fotografía. Hay que decidir si entra.
-- **Bloque D: conductor** (§46). El QR es la única forma de cerrar un servicio
-  (RF-110, RT-016), así que no debe existir un botón de "finalizar" manual.
-- **Bloque E: superadmin** (§47). `MockData.BITACORA` ya se escribe desde
-  `MockGestionHotelRepository`, pero todavía no hay quién la lea. RF-059 pide
-  que el superadmin consulte los reportes de reservas por hotel.
+- **RF-100 — el administrador consulta el estado del taxi de sus clientes.** Es
+  del **Bloque C**, no del D, y quedó fuera de aquel bloque sin hacer: el
+  administrador no tiene forma de ver si el traslado de un huésped ya salió. El
+  Bloque D le da de dónde sacarlo (`TaxiRepository.serviciosEnCursoDe` y el
+  estado del servicio ya son consultables), pero la pantalla no existe.
+- **Los bloques A a E están hechos.** Lo que queda de la lista de requisitos que
+  el proyecto se propuso cubrir con ellos es lo de arriba: RF-022 y RF-100.
 - Los datos simulados sembrados cubren una estancia que cierra hoy en H1 para
   que la portada del administrador tenga algo que mostrar; hay una prueba que lo
   protege.
@@ -194,6 +415,29 @@ administrador en un dispositivo. §11 pide recorrerlas antes de darlas por buena
 - **Aireado de algunas pantallas**: el usuario lo vio en el seguimiento del taxi
   ("hay algunas cosas que salen muy pegadas") y pidió explícitamente dejarlo para
   después. Sigue pendiente y es deliberado.
+- **La ficha del conductor dice "Conductor asignado" también en su propia
+  portada.** `DriverCardView` se escribió para el cliente (§37: "quien viene a
+  buscarme"), y el Bloque D la reutiliza para que el conductor se vea a sí mismo.
+  En la pantalla del cliente la etiqueta es correcta; en la suya, rara. Se
+  arregla con una etiqueta opcional en el componente, pero eso toca una pantalla
+  del Bloque A que no es de este bloque.
+- **T3 sigue apareciendo bajo "Servicios anteriores" estando SOLICITADO.** Es
+  consecuencia de la errata corregida: U1 tiene dos servicios sin cerrar y la
+  sección es "todo lo que no es el de ahora", pero el título promete otra cosa.
+  Renombrar la sección ("Otros servicios") son unas palabras en un texto del
+  cliente; se dejó como estaba para no tocar el Bloque A por redacción.
+- **La etiqueta "Solicitudes disponibles" de la métrica ocupa dos líneas** y
+  deja la fila de tres cifras algo desigual. Es del mismo aireado que ya está
+  aplazado.
+- **Cuatro pantallas del administrador enseñan el estado de error cuando no hay
+  hotel**, en vez de un estado vacío con su explicación: servicios, perfil,
+  reservas y habitaciones —las que no llevan `EmptyStateView` en su layout—
+  pintan "No pudimos cargar la información" con un "Reintentar" que no arregla
+  nada, porque lo que falta no es que falle una carga: es que todavía no hay
+  hotel. El texto que importa se lee igual ("Todavía no tienes un hotel
+  asignado."), pero el envoltorio miente. Arreglarlo toca `UiState`, que hoy no
+  tiene forma de llevar un mensaje en `empty()` y lo usan las cuatro pantallas de
+  los cuatro roles; se deja como decisión y no como parche de una pantalla.
 
 ---
 

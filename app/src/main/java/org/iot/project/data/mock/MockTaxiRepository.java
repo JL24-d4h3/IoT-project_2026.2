@@ -2,45 +2,61 @@ package org.iot.project.data.mock;
 
 import androidx.annotation.NonNull;
 
+import org.iot.project.core.FuenteUbicacion;
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.SessionManager;
 import org.iot.project.data.repository.TaxiRepository;
 import org.iot.project.models.Booking;
 import org.iot.project.models.Driver;
-import org.iot.project.models.Hotel;
 import org.iot.project.models.LogEntry;
+import org.iot.project.models.OfertaDeTaxi;
 import org.iot.project.models.TaxiService;
 import org.iot.project.models.TaxiStatus;
+import org.iot.project.models.Ubicacion;
 import org.iot.project.models.User;
+import org.iot.project.utils.Distancia;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 /**
  * Implementacion simulada del servicio de taxi.
  *
- * <p>El avance de estado no lo decide este repositorio: se delega en
- * {@link TaxiService#avanzarA(TaxiStatus)}, que es quien conoce el flujo
- * exacto SOLICITADO, ASIGNADO, EN_CAMINO, EN_TRASLADO, FINALIZADO y rechaza
- * cualquier salto (RF-111, RC-016).
+ * <p>Las reglas del flujo no las decide este repositorio: se delegan en
+ * {@link TaxiService}, que es quien conoce los estados exactos —SOLICITADO,
+ * ASIGNADO, EN_CAMINO, EN_TRASLADO, FINALIZADO— y rechaza los saltos
+ * (RF-111, RC-016), quien decide si un conductor puede quedarse con un pedido
+ * (RF-090) y quien comprueba el codigo (RF-103).
+ *
+ * <p>Aqui queda lo que el servicio no puede saber por si solo: que conductor
+ * esta pidiendo, si ya tiene otro viaje en curso, a que distancia le queda el
+ * recojo (RF-088) y donde esta (RF-098, {@link FuenteUbicacion}).
  */
 public class MockTaxiRepository extends MockRepository implements TaxiRepository {
 
-    /**
-     * Donde aparece el conductor la primera vez, medido desde el punto de
-     * recojo. Algo menos de 1,2 km: lo bastante lejos para que el seguimiento
-     * tenga recorrido que enseñar, y lo bastante cerca para entrar entero en el
-     * plano sin salirse por el borde.
-     */
-    private static final double DESPLAZE_INICIAL_LAT = 0.009;
-    private static final double DESPLAZE_INICIAL_LNG = 0.006;
+    /** Umbral de cercania (RF-088). Ver {@link #estaCerca}. */
+    private static final double RADIO_ATENCION_M = 100_000d;
 
-    /** Cuanto de la distancia restante se recorta en cada reporte. */
-    private static final double FRACCION_ACERCAMIENTO = 0.4;
+    /**
+     * De donde salen las coordenadas del conductor (RF-098).
+     *
+     * <p>Se inyecta para poder sustituirla por una fuente real sin tocar este
+     * repositorio; el constructor sin argumentos es el que usa la aplicacion.
+     */
+    private final FuenteUbicacion ubicacion;
 
     private int correlativo = 800;
+
+    public MockTaxiRepository() {
+        this(new FuenteUbicacionSimulada());
+    }
+
+    public MockTaxiRepository(FuenteUbicacion ubicacion) {
+        this.ubicacion = ubicacion;
+    }
 
     @Override
     public void servicioActivo(@NonNull String clienteId,
@@ -102,33 +118,93 @@ public class MockTaxiRepository extends MockRepository implements TaxiRepository
                 "No encontramos este servicio de taxi.");
     }
 
+    // ------------------------------------------------------------------
+    //  Lado del conductor (RF-085 a RF-111)
+    // ------------------------------------------------------------------
+
     @Override
-    public void avanzar(@NonNull String taxiId, @NonNull ResultCallback<TaxiService> callback) {
+    public void perfilDe(@NonNull String conductorId,
+                         @NonNull ResultCallback<Driver> callback) {
+        entregarDato(callback, () -> MockData.conductor(conductorId),
+                "No encontramos esta cuenta de conductor.");
+    }
+
+    @Override
+    public void disponibles(@NonNull String conductorId,
+                            @NonNull ResultCallback<List<OfertaDeTaxi>> callback) {
+        entregarLista(callback, () -> {
+            Driver conductor = MockData.conductor(conductorId);
+            Ubicacion base = conductor == null ? null : ubicacion.posicion(conductor, null);
+            // Sin conductor conocido no hay a quien ofrecerle nada, y sin base no
+            // se puede decir a qué distancia le queda: en ambos casos, vacío. Los
+            // datos sembrados dan siempre las dos cosas.
+            if (base == null) {
+                return Collections.emptyList();
+            }
+
+            List<OfertaDeTaxi> resultado = new ArrayList<>();
+            for (TaxiService servicio : MockData.TAXIS) {
+                if (servicio.puedeAceptarlo(conductor) && estaCerca(servicio, base)) {
+                    resultado.add(new OfertaDeTaxi(servicio, distanciaAlRecojo(servicio, base)));
+                }
+            }
+            // Lo más cercano primero: es lo que el conductor quiere ver arriba.
+            resultado.sort(Comparator.comparingDouble(OfertaDeTaxi::getDistanciaM));
+            return resultado;
+        });
+    }
+
+    @Override
+    public void serviciosEnCursoDe(@NonNull String conductorId,
+                                   @NonNull ResultCallback<List<TaxiService>> callback) {
+        entregarLista(callback, () -> {
+            for (TaxiService servicio : MockData.TAXIS) {
+                Driver asignado = servicio.getDriver();
+                if (asignado != null && asignado.getId().equals(conductorId)
+                        && servicio.getEstado().isActive()) {
+                    return Collections.singletonList(servicio);
+                }
+            }
+            // Vacío es la respuesta correcta, no un fallo: significa que el
+            // conductor está libre y la portada muestra su cara libre.
+            return Collections.emptyList();
+        });
+    }
+
+    @Override
+    public void aceptar(@NonNull String taxiId, @NonNull String conductorId,
+                        @NonNull ResultCallback<TaxiService> callback) {
         ejecutar(callback, () -> {
+            Driver conductor = exigirConductor(conductorId);
             TaxiService servicio = exigirServicio(taxiId);
+
+            if (!servicio.puedeAceptarlo(conductor)) {
+                throw new IllegalStateException(
+                        "Este servicio ya no está disponible. Actualiza la lista.");
+            }
+            if (estaOcupado(conductor.getId())) {
+                throw new IllegalStateException(
+                        "Ya tienes un servicio en curso. Termínalo antes de aceptar otro.");
+            }
+
+            servicio.asignarA(conductor);
+            reportarUbicacion(servicio);
+
+            registrar("CAMBIO_ESTADO_TAXI", "Aceptó el servicio " + servicio.getCodigo()
+                    + " hacia " + servicio.getDestino() + ".");
+            return servicio;
+        });
+    }
+
+    @Override
+    public void avanzarComoConductor(@NonNull String taxiId, @NonNull String conductorId,
+                                     @NonNull ResultCallback<TaxiService> callback) {
+        ejecutar(callback, () -> {
+            TaxiService servicio = exigirServicioDe(taxiId, conductorId);
             TaxiStatus actual = servicio.getEstado();
 
-            if (actual.isFinished()) {
-                throw new IllegalStateException("Este servicio ya finalizó.");
-            }
-
-            TaxiStatus siguiente = actual.next();
-
-            // Al pasar a ASIGNADO hay que darle conductor; sin él el estado no
-            // tiene sentido y la pantalla de seguimiento no tendría a quién
-            // mostrar (RF-108).
-            if (siguiente == TaxiStatus.ASIGNADO) {
-                Driver conductor = conductorDisponible();
-                if (conductor == null) {
-                    throw new IllegalStateException(
-                            "No hay conductores disponibles en este momento. "
-                                    + "Vuelve a intentarlo en unos minutos.");
-                }
-                servicio.asignarA(conductor);
-            } else {
-                servicio.avanzarA(siguiente);
-            }
-
+            // avanzarPorConductor rechaza FINALIZADO (RF-110) y los saltos (RF-111).
+            servicio.avanzarPorConductor(actual.next());
             reportarUbicacion(servicio);
 
             registrar("CAMBIO_ESTADO_TAXI", "El servicio " + servicio.getCodigo()
@@ -139,21 +215,31 @@ public class MockTaxiRepository extends MockRepository implements TaxiRepository
     }
 
     @Override
-    public void confirmarQr(@NonNull String taxiId, @NonNull ResultCallback<TaxiService> callback) {
+    public void validarCodigo(@NonNull String taxiId, @NonNull String conductorId,
+                              @NonNull String codigo,
+                              @NonNull ResultCallback<TaxiService> callback) {
         ejecutar(callback, () -> {
-            TaxiService servicio = exigirServicio(taxiId);
+            TaxiService servicio = exigirServicioDe(taxiId, conductorId);
+
+            // RF-103: se valida antes de tocar el estado. Un código que no es el
+            // de este servicio no deja el traslado a medias.
+            if (!servicio.validarCodigo(codigo)) {
+                throw new IllegalArgumentException(
+                        "Ese código no corresponde a este servicio. "
+                                + "Pídeselo otra vez al cliente.");
+            }
             if (!servicio.debeMostrarQr()) {
                 throw new IllegalStateException(
-                        "El código QR recién aparece cuando el conductor está en camino.");
+                        "El servicio todavía no tiene un código que validar.");
             }
-            // RF-110: escanear el QR cierra el servicio de una vez. El flujo
-            // pasa por EN_TRASLADO antes de FINALIZADO, no se salta estados.
+
+            // RF-110 y RF-111: se llega a FINALIZADO sin saltarse EN_TRASLADO.
             if (servicio.getEstado() == TaxiStatus.EN_CAMINO) {
                 servicio.avanzarA(TaxiStatus.EN_TRASLADO);
             }
             servicio.avanzarA(TaxiStatus.FINALIZADO);
 
-            registrar("CAMBIO_ESTADO_TAXI", "El cliente confirmó el QR del servicio "
+            registrar("CAMBIO_ESTADO_TAXI", "Validó el código del servicio "
                     + servicio.getCodigo() + "; el servicio finalizó.");
             return servicio;
         });
@@ -231,54 +317,64 @@ public class MockTaxiRepository extends MockRepository implements TaxiRepository
     }
 
     /**
-     * Simula el reporte de posicion del conductor (RC-025).
+     * Deja constancia de la posicion del conductor (RF-098, RC-025).
      *
-     * <p>El primer reporte se siembra cerca del punto de recojo: si se partiera
-     * de cero, el conductor apareceria en el golfo de Guinea. Los siguientes
-     * recortan la distancia que queda, porque un conductor que se aleja del
-     * punto de recojo no es un conductor que viene a recogerte — y el plano de
-     * seguimiento (RF-099) dibuja exactamente esa distancia.
+     * <p>Quien decide donde esta es {@code FuenteUbicacion}: aqui solo se
+     * guarda el resultado. El plano de seguimiento del cliente (RF-099) dibuja
+     * exactamente esta posicion, y por eso el conductor se acerca al punto de
+     * recojo en lugar de alejarse.
      */
     private void reportarUbicacion(TaxiService servicio) {
-        if (!servicio.hasRecojo()) {
+        Driver conductor = servicio.getDriver();
+        if (conductor == null || !servicio.hasRecojo()) {
             return;
         }
-        double recojoLat = servicio.getLatRecojo();
-        double recojoLng = servicio.getLngRecojo();
-
-        if (servicio.getUltimaActualizacionUbicacion() == null) {
-            servicio.actualizarUbicacion(
-                    recojoLat + DESPLAZE_INICIAL_LAT,
-                    recojoLng + DESPLAZE_INICIAL_LNG,
-                    LocalDateTime.now());
-            return;
-        }
-
-        double lat = servicio.getLatConductor();
-        double lng = servicio.getLngConductor();
-        servicio.actualizarUbicacion(
-                lat + (recojoLat - lat) * FRACCION_ACERCAMIENTO,
-                lng + (recojoLng - lng) * FRACCION_ACERCAMIENTO,
+        Ubicacion siguiente = ubicacion.posicion(conductor, servicio);
+        servicio.actualizarUbicacion(siguiente.getLatitud(), siguiente.getLongitud(),
                 LocalDateTime.now());
     }
 
     /**
-     * Conductor habilitado con menos servicios acumulados.
+     * Si el conductor puede llegar a este recojo (RF-088).
      *
-     * <p>Se salta los deshabilitados —uno dado de baja no puede recibir
-     * servicios (RF-077)— y los que ya estan en un viaje en curso.
+     * <p>El umbral esta entre los dos extremos que separan "mi ciudad" de "otra
+     * ciudad": en los datos sembrados, Lima y Cusco estan a 569 km, y dos puntos
+     * de la misma ciudad, a menos de 2. Cien kilometros cae holgadamente entre
+     * los dos, y deja margen para un traslado interprovincial corto sin que se
+     * cuele una solicitud al otro extremo del pais.
      */
-    private Driver conductorDisponible() {
-        Driver elegido = null;
-        for (Driver conductor : MockData.CONDUCTORES) {
-            if (!conductor.isHabilitado() || estaOcupado(conductor.getId())) {
-                continue;
-            }
-            if (elegido == null || conductor.getNumServicios() < elegido.getNumServicios()) {
-                elegido = conductor;
-            }
+    private boolean estaCerca(TaxiService servicio, Ubicacion base) {
+        return servicio.hasRecojo()
+                && distanciaAlRecojo(servicio, base) <= RADIO_ATENCION_M;
+    }
+
+    private static double distanciaAlRecojo(TaxiService servicio, Ubicacion base) {
+        return Distancia.metrosEntre(base.getLatitud(), base.getLongitud(),
+                servicio.getLatRecojo(), servicio.getLngRecojo());
+    }
+
+    /** RF-093: el conductor existe en el sistema de gestion de taxistas. */
+    private Driver exigirConductor(String conductorId) {
+        Driver conductor = MockData.conductor(conductorId);
+        if (conductor == null) {
+            throw new IllegalArgumentException("No encontramos esta cuenta de conductor.");
         }
-        return elegido;
+        return conductor;
+    }
+
+    /**
+     * El servicio, exigiendo ademas que sea de este conductor.
+     *
+     * <p>Sin esta comprobacion, un conductor podria avanzar o cerrar el traslado
+     * de otro con solo conocer su identificador.
+     */
+    private TaxiService exigirServicioDe(String taxiId, @NonNull String conductorId) {
+        TaxiService servicio = exigirServicio(taxiId);
+        Driver asignado = servicio.getDriver();
+        if (asignado == null || !asignado.getId().equals(conductorId)) {
+            throw new IllegalStateException("Este servicio no está asignado a ti.");
+        }
+        return servicio;
     }
 
     private boolean estaOcupado(String driverId) {

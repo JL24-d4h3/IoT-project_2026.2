@@ -1,15 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Barra inferior del Superadministrador (§47).
+    Barra inferior del Superadministrador (§47): las cinco secciones.
 
-    Una sola seccion por ahora, asi que la barra no se muestra. Usuarios,
-    hoteles, conductores y reportes se agregan aqui.
+    Auditoría no tiene entrada propia —la bitácora se abre desde la portada,
+    que enseña los últimos movimientos y el acceso a la lista entera, y desde el
+    perfil— ni Aprobaciones tampoco: es el filtro de pendientes dentro de
+    Conductores. Reportes tampoco: el reporte de reservas es de cada hotel y se
+    abre desde su ficha.
+
+    El perfil entra donde lo tienen los otros dos roles que administran algo,
+    que es el último sitio de la barra, y por el mismo motivo que en ellos: es
+    donde vive el cerrar sesión. Antes la única salida del superadministrador
+    estaba en la cabecera de la portada, así que desde las otras cuatro
+    secciones había que volver a Inicio para salir.
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/superadminPanelFragment"
+        android:id="@+id/superadminHomeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_inicio" />
+
+    <item
+        android:id="@+id/superadminUsuariosFragment"
         android:icon="@drawable/ic_person_group"
-        android:title="@string/nav_panel" />
+        android:title="@string/nav_usuarios" />
+
+    <item
+        android:id="@+id/superadminConductoresFragment"
+        android:icon="@drawable/ic_taxi"
+        android:title="@string/nav_conductores" />
+
+    <item
+        android:id="@+id/superadminHotelesFragment"
+        android:icon="@drawable/ic_service_business"
+        android:title="@string/nav_hoteles" />
+
+    <item
+        android:id="@+id/superadminPerfilFragment"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_perfil" />
 
 </menu>

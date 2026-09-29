@@ -5,6 +5,7 @@ import org.iot.project.data.mock.MockBookingRepository;
 import org.iot.project.data.mock.MockChatRepository;
 import org.iot.project.data.mock.MockGestionHotelRepository;
 import org.iot.project.data.mock.MockHotelRepository;
+import org.iot.project.data.mock.MockSuperadminRepository;
 import org.iot.project.data.mock.MockTaxiRepository;
 import org.iot.project.data.mock.MockUserRepository;
 import org.iot.project.data.repository.AccesoRepository;
@@ -12,6 +13,7 @@ import org.iot.project.data.repository.BookingRepository;
 import org.iot.project.data.repository.ChatRepository;
 import org.iot.project.data.repository.GestionHotelRepository;
 import org.iot.project.data.repository.HotelRepository;
+import org.iot.project.data.repository.SuperadminRepository;
 import org.iot.project.data.repository.TaxiRepository;
 import org.iot.project.data.repository.UserRepository;
 
@@ -35,6 +37,7 @@ public final class ServiceLocator {
     private static final ChatRepository CHATS = new MockChatRepository();
     private static final AccesoRepository ACCESO = new MockAccesoRepository();
     private static final GestionHotelRepository GESTION = new MockGestionHotelRepository();
+    private static final SuperadminRepository SUPERADMIN = new MockSuperadminRepository();
 
     private ServiceLocator() {
     }
@@ -66,5 +69,10 @@ public final class ServiceLocator {
     /** Gestion del hotel: habitaciones, servicios, datos y reportes (§42 a §45). */
     public static GestionHotelRepository gestion() {
         return GESTION;
+    }
+
+    /** Panel del superadministrador: cuentas, conductores, hoteles y bitacora (§47). */
+    public static SuperadminRepository superadmin() {
+        return SUPERADMIN;
     }
 }

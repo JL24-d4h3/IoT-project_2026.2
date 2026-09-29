@@ -1,4 +1,4 @@
-package org.iot.project.ui.admin;
+package org.iot.project.utils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -8,12 +8,17 @@ import org.iot.project.models.Service;
 import org.iot.project.models.User;
 
 /**
- * Como se escriben los datos en las pantallas del administrador.
+ * Como se escriben los datos en las pantallas.
  *
  * <p>Existe porque son varias pantallas y las mismas cosas se escriben en mas
  * de una: el documento de una persona, el nombre de un servicio a partir de su
  * identificador. Repetidas en cada pantalla, la primera que se corrigiera
  * dejaria a las otras diciendolo distinto.
+ *
+ * <p>Vive en {@code utils} y no dentro de un rol porque los perfiles de dos
+ * roles distintos —el administrador de hotel y el superadministrador— enseñan
+ * los mismos datos de la misma manera: en el paquete de uno de ellos, el otro
+ * tendria que copiarlo o depender de la interfaz del primero.
  *
  * <p>Lo que se puede resolver desde el modelo se resuelve desde el modelo
  * —{@code Role.getDisplayName()}, {@code PriceFormatter}, {@code DateFormatter},
@@ -22,9 +27,9 @@ import org.iot.project.models.User;
  * de la aplicacion viven en {@code res/values/plurals.xml}, que es donde el
  * idioma los puede conjugar bien.
  */
-public final class AdminFormato {
+public final class FormatoDeDatos {
 
-    private AdminFormato() {
+    private FormatoDeDatos() {
     }
 
     /**

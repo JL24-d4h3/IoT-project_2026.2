@@ -104,7 +104,7 @@ public final class ReservaDeHotel {
      *
      * <p>El relleno lo pone quien llama y no este modelo porque es un texto de
      * la interfaz, y el modelo no tiene —ni debe tener— acceso a los recursos
-     * del idioma. Es la misma convencion que {@code AdminFormato.nombreServicio}.
+     * del idioma. Es la misma convencion que {@code FormatoDeDatos.nombreServicio}.
      */
     @NonNull
     public String getClienteNombre(@NonNull String porDefecto) {

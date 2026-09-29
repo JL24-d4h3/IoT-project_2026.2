@@ -1,6 +1,5 @@
 package org.iot.project.ui.admin.perfil;
 
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,8 +18,9 @@ import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentAdminPerfilBinding;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.User;
-import org.iot.project.ui.admin.AdminFormato;
+import org.iot.project.utils.FormatoDeDatos;
 import org.iot.project.utils.InsetUtils;
+import org.iot.project.utils.VersionDeLaApp;
 
 /**
  * Perfil del administrador de hotel.
@@ -59,7 +59,8 @@ public class AdminPerfilFragment extends Fragment {
         binding.adminPerfilEditarHotel.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.adminHotelFragment));
 
-        binding.adminPerfilVersion.setText(getString(R.string.perfil_version, version()));
+        binding.adminPerfilVersion.setText(getString(R.string.perfil_version,
+                VersionDeLaApp.nombre(requireContext())));
 
         viewModel = new ViewModelProvider(this).get(AdminPerfilViewModel.class);
         viewModel.getPerfil().observe(getViewLifecycleOwner(), this::pintarPerfil);
@@ -113,7 +114,7 @@ public class AdminPerfilFragment extends Fragment {
         binding.adminPerfilRol.setText(usuario.getRol().getDisplayName());
 
         binding.adminPerfilFilaDocumento.bind(R.string.perfil_documento,
-                AdminFormato.documento(usuario), R.string.perfil_sin_dato);
+                FormatoDeDatos.documento(usuario), R.string.perfil_sin_dato);
         binding.adminPerfilFilaTelefono.bind(R.string.perfil_telefono,
                 usuario.getTelefono(), R.string.perfil_sin_dato);
         binding.adminPerfilFilaCorreo.bind(R.string.perfil_correo,
@@ -189,19 +190,6 @@ public class AdminPerfilFragment extends Fragment {
                 .setPositiveButton(R.string.sesion_cerrar,
                         (dialogo, cual) -> SessionManager.cerrarSesion())
                 .show();
-    }
-
-    @NonNull
-    private String version() {
-        try {
-            String nombre = requireContext().getPackageManager()
-                    .getPackageInfo(requireContext().getPackageName(), 0).versionName;
-            return nombre != null ? nombre : "";
-        } catch (PackageManager.NameNotFoundException e) {
-            // No deberia pasar —el paquete es este— pero si pasa, mas vale una
-            // linea de version sin numero que una pantalla que no abre.
-            return "";
-        }
     }
 
     @Override

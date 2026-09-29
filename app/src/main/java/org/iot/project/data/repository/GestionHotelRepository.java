@@ -145,6 +145,16 @@ public interface GestionHotelRepository {
                          double latitud, double longitud,
                          @NonNull ResultCallback<Hotel> callback);
 
+    /**
+     * Publica el hotel o lo retira del catalogo (RF-007).
+     *
+     * <p>Publicar exige que el hotel este completo —fotografias y habitaciones—;
+     * retirar no tiene condiciones. La regla la aplica el repositorio y no quien
+     * llama: un formulario se puede saltar, un repositorio no.
+     */
+    void cambiarPublicacion(@NonNull String hotelId, boolean publicado,
+                            @NonNull ResultCallback<Hotel> callback);
+
     /** Anade una fotografia. Falla si la direccion viene vacia (RF-012). */
     void agregarFoto(@NonNull String hotelId, @NonNull String url,
                      @NonNull ResultCallback<Hotel> callback);

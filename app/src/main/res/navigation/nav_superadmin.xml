@@ -2,19 +2,101 @@
 <!--
     Grafo del rol Superadministrador (§47).
 
-    Es el unico rol que puede aprobar hoteles y habilitar conductores (RF-077),
-    de ahi que su panel sea el unico con acceso a esas dos colas.
+    Cinco secciones en la barra inferior: Inicio, Usuarios, Conductores, Hoteles
+    y Perfil. §47 pide seis cosas y una barra aguanta cinco (§49), así que las
+    que sobran viven dentro de las que hay: aprobar conductores (RF-077) es un
+    filtro de Conductores, los reportes de reservas (RF-059) son un bloque de la
+    ficha de cada hotel —el requisito los pide "por hotel"— y la bitácora se
+    abre desde la portada, que es donde se leen los últimos movimientos, y
+    también desde el perfil.
+
+    Perfil está en la barra porque es donde los otros dos roles que administran
+    algo tienen el suyo y donde está su cerrar sesión: sin él, las cuatro
+    secciones de gestión no tenían salida de la sesión.
+
+    El superadministrador no aprueba hoteles: RF-007 pide registrarlos y RF-008
+    asignarles un administrador. Quien publica es el administrador del hotel,
+    cuando termina de cargar su contenido; el interruptor de publicacion de la
+    ficha es la correccion del superadministrador —retirar un hotel que no
+    deberia estar en el catalogo y devolverlo cuando el motivo se resolvio—.
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_superadmin"
-    app:startDestination="@id/superadminPanelFragment">
+    app:startDestination="@id/superadminHomeFragment">
+
+    <!-- ==================== Barra inferior ==================== -->
 
     <fragment
-        android:id="@+id/superadminPanelFragment"
-        android:name="org.iot.project.ui.common.PanelRolFragment"
-        android:label="@string/titulo_panel_superadmin"
-        tools:layout="@layout/fragment_panel_rol" />
+        android:id="@+id/superadminHomeFragment"
+        android:name="org.iot.project.ui.superadmin.home.SuperadminHomeFragment"
+        android:label="@string/nav_inicio"
+        tools:layout="@layout/fragment_superadmin_home" />
+
+    <fragment
+        android:id="@+id/superadminUsuariosFragment"
+        android:name="org.iot.project.ui.superadmin.usuarios.SuperadminUsuariosFragment"
+        android:label="@string/nav_usuarios"
+        tools:layout="@layout/fragment_superadmin_usuarios" />
+
+    <!--
+        A dónde llevan los avisos de la portada. Cada uno es la sección donde
+        está lo que falta, y por eso son destinos de la barra y no pantallas
+        sueltas: el superadministrador llega a ellos por los dos caminos.
+    -->
+
+    <fragment
+        android:id="@+id/superadminConductoresFragment"
+        android:name="org.iot.project.ui.superadmin.conductores.SuperadminConductoresFragment"
+        android:label="@string/nav_conductores"
+        tools:layout="@layout/fragment_superadmin_conductores" />
+
+    <fragment
+        android:id="@+id/superadminHotelesFragment"
+        android:name="org.iot.project.ui.superadmin.hoteles.SuperadminHotelesFragment"
+        android:label="@string/nav_hoteles"
+        tools:layout="@layout/fragment_superadmin_hoteles" />
+
+    <fragment
+        android:id="@+id/superadminPerfilFragment"
+        android:name="org.iot.project.ui.superadmin.perfil.SuperadminPerfilFragment"
+        android:label="@string/nav_perfil"
+        tools:layout="@layout/fragment_superadmin_perfil" />
+
+    <!-- ==================== Fuera de la barra ==================== -->
+
+    <!--
+        La bitácora. Se abre desde dos sitios de la portada —el bloque de
+        últimos movimientos y su botón— y desde el botón del perfil, porque es
+        la sección que dejó de caber en la barra al entrar Perfil.
+    -->
+    <fragment
+        android:id="@+id/superadminBitacoraFragment"
+        android:name="org.iot.project.ui.superadmin.bitacora.SuperadminBitacoraFragment"
+        android:label="@string/nav_auditoria"
+        tools:layout="@layout/fragment_superadmin_bitacora" />
+
+    <fragment
+        android:id="@+id/superadminHotelFragment"
+        android:name="org.iot.project.ui.superadmin.hoteles.SuperadminHotelFragment"
+        android:label="@string/sa_titulo_ficha_hotel"
+        tools:layout="@layout/fragment_superadmin_hotel">
+
+        <argument
+            android:name="hotelId"
+            app:argType="string" />
+    </fragment>
+
+    <!--
+        El alta (RF-007). Se abre desde Hoteles y vuelve a ella: el hotel recién
+        registrado tiene que verse en la lista, que es donde está el paso que
+        sigue —asignarle un administrador—, y no en una pantalla de "listo".
+    -->
+    <fragment
+        android:id="@+id/superadminAltaHotelFragment"
+        android:name="org.iot.project.ui.superadmin.hoteles.AltaHotelFragment"
+        android:label="@string/sa_titulo_alta_hotel"
+        tools:layout="@layout/fragment_superadmin_alta_hotel" />
 
 </navigation>

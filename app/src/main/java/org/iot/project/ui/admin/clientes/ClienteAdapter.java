@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.iot.project.R;
 import org.iot.project.databinding.ItemClienteAdminBinding;
 import org.iot.project.models.ClienteDeHotel;
-import org.iot.project.ui.admin.AdminFormato;
 import org.iot.project.utils.DateFormatter;
+import org.iot.project.utils.FormatoDeDatos;
 import org.iot.project.utils.PriceFormatter;
 
 /**
@@ -102,7 +102,7 @@ public class ClienteAdapter extends ListAdapter<ClienteDeHotel, ClienteAdapter.F
          */
         @NonNull
         private CharSequence contacto(@NonNull ClienteDeHotel cliente) {
-            CharSequence documento = AdminFormato.documento(cliente.getCliente());
+            CharSequence documento = FormatoDeDatos.documento(cliente.getCliente());
             String correo = cliente.getCliente().getEmail();
             boolean hayCorreo = correo != null && !correo.trim().isEmpty();
 

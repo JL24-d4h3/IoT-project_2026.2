@@ -57,11 +57,28 @@ public class TaxiStatusView extends LinearLayout {
         linea = findViewById(R.id.status_timeline);
     }
 
+    /** La voz del cliente: es quien mira este seguimiento en la app (§38). */
     public void bind(@NonNull TaxiService servicio) {
+        pintar(servicio, notaDe(servicio));
+    }
+
+    /**
+     * La voz del conductor (§46).
+     *
+     * <p>Los mismos cinco pasos, contados desde el otro lado. No es un detalle
+     * de redaccion: con las frases del cliente, la portada del conductor le
+     * contaba su propio viaje en tercera persona —"Julio va en camino al punto
+     * de recojo", leido por Julio— y le hablaba como si fuera el pasajero.
+     */
+    public void bindParaConductor(@NonNull TaxiService servicio) {
+        pintar(servicio, notaDelConductor(servicio));
+    }
+
+    private void pintar(@NonNull TaxiService servicio, CharSequence nota) {
         TaxiStatus actual = servicio.getEstado();
 
         insignia.setText(actual.getDisplayName());
-        nota.setText(notaDe(servicio));
+        this.nota.setText(nota);
 
         linea.removeAllViews();
         TaxiStatus[] pasos = TaxiStatus.values();
@@ -91,6 +108,31 @@ public class TaxiStatusView extends LinearLayout {
                         servicio.getDestino());
             case FINALIZADO:
                 return getContext().getString(R.string.taxi_nota_finalizado);
+        }
+        return "";
+    }
+
+    /**
+     * Lo mismo que {@link #notaDe}, desde el lado del conductor.
+     *
+     * <p>Los cinco estados tienen su frase aunque la portada del conductor solo
+     * enseñe tres: el dia que se enseñe otro, el texto ya esta, y un
+     * {@code switch} sin su caso obliga a decidirlo entonces en vez de dejar un
+     * hueco en silencio.
+     */
+    private CharSequence notaDelConductor(@NonNull TaxiService servicio) {
+        switch (servicio.getEstado()) {
+            case SOLICITADO:
+                return getContext().getString(R.string.taxi_nota_conductor_solicitado);
+            case ASIGNADO:
+                return getContext().getString(R.string.taxi_nota_conductor_asignado);
+            case EN_CAMINO:
+                return getContext().getString(R.string.taxi_nota_conductor_en_camino);
+            case EN_TRASLADO:
+                return getContext().getString(R.string.taxi_nota_conductor_en_traslado,
+                        servicio.getDestino());
+            case FINALIZADO:
+                return getContext().getString(R.string.taxi_nota_conductor_finalizado);
         }
         return "";
     }

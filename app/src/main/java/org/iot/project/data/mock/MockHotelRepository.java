@@ -54,7 +54,7 @@ public class MockHotelRepository extends MockRepository implements HotelReposito
             }
         }, () -> {
             List<Hotel> resultado = new ArrayList<>();
-            for (Hotel hotel : MockData.HOTELES) {
+            for (Hotel hotel : MockData.hotelesPublicados()) {
                 if (coincide(hotel, query)) {
                     resultado.add(hotel);
                 }
@@ -175,7 +175,7 @@ public class MockHotelRepository extends MockRepository implements HotelReposito
     @Override
     public void recomendados(int limite, @NonNull ResultCallback<List<Hotel>> callback) {
         entregarLista(callback, () -> {
-            List<Hotel> ordenados = new ArrayList<>(MockData.HOTELES);
+            List<Hotel> ordenados = new ArrayList<>(MockData.hotelesPublicados());
             ordenados.sort(Comparator
                     .comparingDouble(Hotel::getRating).reversed()
                     .thenComparing(Comparator.comparingInt(Hotel::getNumReviews).reversed()));
@@ -188,7 +188,7 @@ public class MockHotelRepository extends MockRepository implements HotelReposito
                          @NonNull ResultCallback<List<Hotel>> callback) {
         entregarLista(callback, () -> {
             List<Hotel> resultado = new ArrayList<>();
-            for (Hotel hotel : MockData.HOTELES) {
+            for (Hotel hotel : MockData.hotelesPublicados()) {
                 if (hotel.getCiudad().equalsIgnoreCase(ciudad)) {
                     resultado.add(hotel);
                 }
@@ -332,7 +332,7 @@ public class MockHotelRepository extends MockRepository implements HotelReposito
     @Override
     public double precioMaximo() {
         double maximo = 0d;
-        for (Hotel hotel : MockData.HOTELES) {
+        for (Hotel hotel : MockData.hotelesPublicados()) {
             maximo = Math.max(maximo, hotel.getPrecioDesde());
         }
         // Se redondea hacia arriba a la centena para que el extremo del
@@ -343,6 +343,22 @@ public class MockHotelRepository extends MockRepository implements HotelReposito
     @Override
     public Hotel hotel(@NonNull String hotelId) {
         return MockData.hotel(hotelId);
+    }
+
+    /**
+     * Recorre {@code MockData.HOTELES} y no {@code hotelesPublicados()}: un
+     * administrador cuyo hotel esta sin publicar sigue siendo su administrador,
+     * y es justo quien tiene que publicarlo.
+     */
+    @Override
+    @Nullable
+    public Hotel hotelDeAdministrador(@NonNull String usuarioId) {
+        for (Hotel hotel : MockData.HOTELES) {
+            if (usuarioId.equals(hotel.getAdministradorId())) {
+                return hotel;
+            }
+        }
+        return null;
     }
 
     private static <T> List<T> recortar(List<T> lista, int limite) {

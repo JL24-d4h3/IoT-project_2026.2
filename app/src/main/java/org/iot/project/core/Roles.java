@@ -34,7 +34,7 @@ public final class Roles {
 
     private static final Roles SUPERADMIN = new Roles(
             R.navigation.nav_superadmin, R.menu.menu_bottom_nav_superadmin,
-            R.id.superadminPanelFragment);
+            R.id.superadminHomeFragment);
 
     private Roles(int grafo, int menu, int inicio) {
         this.grafo = grafo;

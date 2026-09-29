@@ -160,6 +160,28 @@
                 tools:visibility="visible" />
         </LinearLayout>
 
+        <!-- RF-089. Solo la trae la solicitud vista por el conductor: en el
+             historial del cliente no hay ninguna distancia que enseñar. -->
+        <TextView
+            android:id="@+id/request_distance"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            tools:text="A 1,9 km de ti" />
+
+        <!-- RF-090. Nace oculto y lo enciende setOnAceptar: la misma tarjeta
+             sirve para el historial del cliente, donde no hay nada que aceptar. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/request_accept"
+            style="@style/Widget.App.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/driver_aceptar"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <!-- RF-105. Un traslado terminado se puede valorar una sola vez: por eso
              el boton y la nota ya puesta se excluyen, y la nota no es un adorno
              —sin ella el cliente no sabria por que ya no puede calificar. -->
