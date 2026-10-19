@@ -3,6 +3,7 @@ package org.iot.project;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +23,7 @@ import org.iot.project.utils.InsetUtils;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Objects;
 
 /**
  * Unica Activity de la aplicacion: aloja el grafo de navegacion y la barra
@@ -60,10 +62,19 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private NavController navController;
+    private String identidadAplicada;
+    private static final String CLAVE_UID = "sesionUid";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Tras morir el proceso no restaurar pantallas protegidas antes de Auth.
+        String uidGuardado = savedInstanceState == null ? null : savedInstanceState.getString(CLAVE_UID);
+        boolean estadoPublico = uidGuardado == null;
+        boolean mismaSesion = SessionManager.haySesion()
+                && Objects.equals(uidGuardado, SessionManager.getIdentidadId());
+        Bundle estadoSeguro = estadoPublico || mismaSesion ? savedInstanceState : null;
+        super.onCreate(estadoSeguro);
+        identidadAplicada = estadoSeguro == null ? null : estadoSeguro.getString(CLAVE_UID);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -107,7 +118,25 @@ public class MainActivity extends AppCompatActivity {
 
         // Al registrarlo se recibe el valor actual, si lo hay: tras una rotacion
         // la sesion sigue viva y la interfaz se vuelve a poner sola.
+        SessionManager.inicializar();
         SessionManager.sesion().observe(this, this::aplicarSesion);
+        SessionManager.restaurando().observe(this, cargando -> {
+            boolean visible = Boolean.TRUE.equals(cargando);
+            binding.sessionLoading.setVisibility(visible ? View.VISIBLE : View.GONE);
+            binding.navHost.setVisibility(visible ? View.INVISIBLE : View.VISIBLE);
+        });
+        SessionManager.aviso().observe(this, mensaje -> {
+            if (mensaje != null) {
+                Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show();
+                SessionManager.limpiarAviso();
+            }
+        });
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(CLAVE_UID, identidadAplicada);
     }
 
     /**
@@ -125,7 +154,10 @@ public class MainActivity extends AppCompatActivity {
         // quien decide si hay barra mira que el menu tenga secciones.
         aplicarMenu(roles);
 
-        if (navController.getGraph().getId() != grafo) {
+        String identidad = cuenta == null ? null : cuenta.getIdentidadId();
+        boolean cambioDeCuenta = !Objects.equals(identidadAplicada, identidad);
+        identidadAplicada = identidad;
+        if (navController.getGraph().getId() != grafo || cambioDeCuenta) {
             navController.setGraph(grafo);
         } else {
             actualizarBarra(navController.getCurrentDestination());

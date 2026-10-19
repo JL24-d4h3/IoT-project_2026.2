@@ -6,9 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -25,19 +24,15 @@ import org.iot.project.databinding.FragmentLoginBinding;
 import org.iot.project.models.Cuenta;
 import org.iot.project.utils.InsetUtils;
 
-import java.util.List;
-
 /**
  * Pantalla de acceso (§74).
  *
  * <p>Es la puerta de RF-004: de aqui sale el rol, y el rol decide que interfaz
- * se carga. No hay autenticacion real —esta entrega es solo front end—, asi que
- * la contrasena no se comprueba; lo que si ocurre de verdad es que una cuenta
- * deshabilitada no entra (RF-009).
+ * se carga tras autenticar las credenciales y comprobar el perfil (RF-009).
  *
  * <p>Las validaciones de campo viven aqui y no en el ViewModel porque son un
  * asunto de presentacion: quien sabe cual es el campo mal y como se marca es la
- * pantalla. El ViewModel solo se ocupa de resolver la cuenta.
+ * pantalla. El ViewModel delega la autenticacion al repositorio.
  */
 public class LoginFragment extends Fragment {
 
@@ -49,15 +44,9 @@ public class LoginFragment extends Fragment {
      */
     public static final String CLAVE_CORREO_REGISTRADO = "correoRegistrado";
 
-    /**
-     * Lo que se escribe en el campo de contrasena al elegir una cuenta de
-     * ejemplo. No se comprueba contra nada: sirve para que el formulario quede
-     * coherente a la vista, no para entrar.
-     */
-    private static final String CONTRASENA_DE_EJEMPLO = "demo1234";
-
     private FragmentLoginBinding binding;
     private LoginViewModel viewModel;
+    private OnBackPressedCallback bloqueoRetroceso;
 
     @Nullable
     @Override
@@ -73,8 +62,15 @@ public class LoginFragment extends Fragment {
         InsetUtils.applySystemBarsPadding(binding.getRoot());
 
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
+        bloqueoRetroceso = new OnBackPressedCallback(viewModel.estaCargando()) {
+            @Override
+            public void handleOnBackPressed() {
+                // La solicitud debe terminar antes de abandonar el acceso.
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher()
+                .addCallback(getViewLifecycleOwner(), bloqueoRetroceso);
         viewModel.getAcceso().observe(getViewLifecycleOwner(), this::pintarAcceso);
-        viewModel.getEjemplos().observe(getViewLifecycleOwner(), this::pintarEjemplos);
 
         binding.loginEntrar.setOnClickListener(v -> enviar());
         binding.loginContrasena.setOnEditorActionListener((campo, accion, evento) -> {
@@ -90,7 +86,6 @@ public class LoginFragment extends Fragment {
                 Navigation.findNavController(v).navigate(R.id.registroFragment));
 
         rellenarCorreoRegistrado(vista);
-        viewModel.cargarEjemplos();
     }
 
     /**
@@ -116,6 +111,9 @@ public class LoginFragment extends Fragment {
     // ----------------------------------------------------------------- Enviar
 
     private void enviar() {
+        if (viewModel.estaCargando()) {
+            return;
+        }
         binding.loginCorreoCampo.setError(null);
         binding.loginContrasenaCampo.setError(null);
         binding.loginAviso.setVisibility(View.GONE);
@@ -139,10 +137,8 @@ public class LoginFragment extends Fragment {
             return;
         }
 
-        // La contrasena no se lee siquiera a una variable: se comprueba que se
-        // haya escrito algo, que es lo unico que esta pantalla puede hacer con
-        // ella, y se queda en el campo (RC-042, RT-038).
-        viewModel.entrar(correo);
+        String contrasena = binding.loginContrasena.getText().toString();
+        viewModel.entrar(correo, contrasena);
     }
 
     private void marcarError(@NonNull TextInputLayout campo,
@@ -158,15 +154,18 @@ public class LoginFragment extends Fragment {
     // ------------------------------------------------------------------ Pinta
 
     private void pintarAcceso(@Nullable UiState<Cuenta> estado) {
+        bloqueoRetroceso.setEnabled(estado != null && estado.isLoading());
         if (estado == null) {
             return;
         }
+        habilitarFormulario(!estado.isLoading());
         switch (estado.getStatus()) {
             case LOADING:
                 binding.loginEntrar.setEnabled(false);
                 binding.loginEntrar.setText(R.string.acceso_entrando);
                 break;
             case SUCCESS:
+                binding.loginContrasena.setText(null);
                 Cuenta cuenta = estado.requireData();
                 // Primero se deja el estado en blanco y despues se entra: al
                 // publicar la sesion se cambia el grafo entero, y si el
@@ -189,57 +188,18 @@ public class LoginFragment extends Fragment {
                 ? mensaje : getString(R.string.estado_error_mensaje));
     }
 
-    // ------------------------------------------------------- Cuentas de ejemplo
-
-    private void pintarEjemplos(@Nullable UiState<List<Cuenta>> estado) {
-        binding.loginDemoLista.removeAllViews();
-        boolean hay = estado != null && estado.isSuccess() && !estado.requireData().isEmpty();
-        binding.loginDemoBloque.setVisibility(hay ? View.VISIBLE : View.GONE);
-        if (!hay) {
-            return;
-        }
-
-        LayoutInflater inflador = LayoutInflater.from(requireContext());
-        List<Cuenta> cuentas = estado.requireData();
-        for (int i = 0; i < cuentas.size(); i++) {
-            Cuenta cuenta = cuentas.get(i);
-            View fila = inflador.inflate(R.layout.view_cuenta_demo,
-                    binding.loginDemoLista, false);
-            ((TextView) fila.findViewById(R.id.cuenta_demo_nombre))
-                    .setText(cuenta.getNombreCompleto());
-            ((TextView) fila.findViewById(R.id.cuenta_demo_rol))
-                    .setText(cuenta.getRol().getDisplayName());
-
-            // Elegir un ejemplo rellena el formulario y lo envia; no salta
-            // ninguna comprobacion. Es lo que hace que el atajo no pueda llevar
-            // a nadie a una interfaz que su cuenta no tenga derecho a ver.
-            fila.setOnClickListener(v -> entrarDeEjemplo(cuenta));
-            binding.loginDemoLista.addView(fila);
-
-            if (i < cuentas.size() - 1) {
-                binding.loginDemoLista.addView(separador());
-            }
-        }
-    }
-
-    private void entrarDeEjemplo(@NonNull Cuenta cuenta) {
-        binding.loginCorreo.setText(cuenta.getEmail());
-        binding.loginContrasena.setText(CONTRASENA_DE_EJEMPLO);
-        enviar();
-    }
-
-    private View separador() {
-        View linea = new View(requireContext());
-        linea.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                getResources().getDimensionPixelSize(R.dimen.divider_thickness)));
-        linea.setBackgroundColor(requireContext().getColor(R.color.colorDivider));
-        return linea;
+    private void habilitarFormulario(boolean habilitado) {
+        binding.loginCorreoCampo.setEnabled(habilitado);
+        binding.loginContrasenaCampo.setEnabled(habilitado);
+        binding.loginOlvide.setEnabled(habilitado);
+        binding.loginCrear.setEnabled(habilitado);
     }
 
     @Override
     public void onDestroyView() {
+        binding.loginContrasena.setText(null);
         super.onDestroyView();
         binding = null;
+        bloqueoRetroceso = null;
     }
 }

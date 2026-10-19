@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -27,18 +28,17 @@ import org.iot.project.utils.InsetUtils;
 /**
  * Registro de cliente (RF-001, RF-002, §74).
  *
- * <p>La contrasena se pide dos veces y se comprueba aqui, en la pantalla: es lo
- * unico que se puede hacer con ella. No viaja al ViewModel ni al repositorio,
- * porque no habria donde guardarla sin inventar un almacen de secretos
- * (RC-042, RT-038).
+ * <p>La pantalla valida la confirmacion y pasa la contrasena durante la
+ * solicitud de alta. Los campos de contrasena no se guardan al recrear la vista.
  */
 public class RegistroFragment extends Fragment {
 
-    /** Largo minimo de contrasena. La comprueba la pantalla, no el backend. */
+    /** Validacion local; Firebase aplica tambien su politica de contrasenas. */
     private static final int LARGO_MINIMO_CONTRASENA = 8;
 
     private FragmentRegistroBinding binding;
     private RegistroViewModel viewModel;
+    private OnBackPressedCallback bloqueoRetroceso;
 
     /** La cuenta que se acaba de crear, para poder devolver su correo al acceso. */
     private Cuenta cuentaCreada;
@@ -55,8 +55,18 @@ public class RegistroFragment extends Fragment {
     public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applySystemBarsPadding(binding.getRoot());
+        binding.registroContrasena.setSaveEnabled(false);
+        binding.registroContrasenaRepetir.setSaveEnabled(false);
 
         viewModel = new ViewModelProvider(this).get(RegistroViewModel.class);
+        bloqueoRetroceso = new OnBackPressedCallback(viewModel.estaCargando()) {
+            @Override
+            public void handleOnBackPressed() {
+                // La solicitud debe terminar antes de abandonar el registro.
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher()
+                .addCallback(getViewLifecycleOwner(), bloqueoRetroceso);
         viewModel.getAlta().observe(getViewLifecycleOwner(), this::pintar);
 
         binding.registroCrear.setOnClickListener(v -> enviar());
@@ -75,6 +85,9 @@ public class RegistroFragment extends Fragment {
     // ----------------------------------------------------------------- Enviar
 
     private void enviar() {
+        if (viewModel.estaCargando() || cuentaCreada != null) {
+            return;
+        }
         limpiarErrores();
 
         String nombres = texto(binding.registroNombres);
@@ -106,15 +119,15 @@ public class RegistroFragment extends Fragment {
             return;
         }
 
-        viewModel.registrar(nombres, apellidos, correo, telefono);
+        String contrasena = binding.registroContrasena.getText().toString();
+        viewModel.registrar(nombres, apellidos, correo, telefono, contrasena);
     }
 
     /**
-     * Comprueba las dos contrasenas sin sacarlas del formulario.
+     * Comprueba las dos contrasenas antes de enviarlas al repositorio.
      *
      * <p>Se leen a variables locales que mueren al terminar el metodo: no se
-     * guardan en un campo, no se pasan a nadie y no se registran en ningun
-     * sitio.
+     * guardan en un campo ni se registran en ningun sitio.
      */
     private boolean contrasenasValidas() {
         String contrasena = binding.registroContrasena.getText() == null
@@ -163,16 +176,19 @@ public class RegistroFragment extends Fragment {
     // ------------------------------------------------------------------ Pinta
 
     private void pintar(@Nullable UiState<Cuenta> estado) {
+        bloqueoRetroceso.setEnabled(estado != null && estado.isLoading());
         if (estado == null) {
             return;
         }
+        habilitarFormulario(!estado.isLoading() && !estado.isSuccess());
         switch (estado.getStatus()) {
             case LOADING:
                 binding.registroCrear.setEnabled(false);
                 binding.registroCrear.setText(R.string.registro_creando);
                 break;
             case SUCCESS:
-                binding.registroCrear.setEnabled(true);
+                limpiarContrasenas();
+                binding.registroCrear.setEnabled(false);
                 binding.registroCrear.setText(R.string.registro_crear);
                 mostrarExito(estado.requireData());
                 break;
@@ -199,6 +215,21 @@ public class RegistroFragment extends Fragment {
                 ? mensaje : getString(R.string.estado_error_mensaje));
     }
 
+    private void habilitarFormulario(boolean habilitado) {
+        binding.registroNombresCampo.setEnabled(habilitado);
+        binding.registroApellidosCampo.setEnabled(habilitado);
+        binding.registroCorreoCampo.setEnabled(habilitado);
+        binding.registroTelefonoCampo.setEnabled(habilitado);
+        binding.registroContrasenaCampo.setEnabled(habilitado);
+        binding.registroContrasenaRepetirCampo.setEnabled(habilitado);
+        binding.registroIniciar.setEnabled(habilitado);
+    }
+
+    private void limpiarContrasenas() {
+        binding.registroContrasena.setText(null);
+        binding.registroContrasenaRepetir.setText(null);
+    }
+
     // ------------------------------------------------------------- Volver
 
     /**
@@ -222,7 +253,10 @@ public class RegistroFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        limpiarContrasenas();
+        cuentaCreada = null;
         super.onDestroyView();
         binding = null;
+        bloqueoRetroceso = null;
     }
 }

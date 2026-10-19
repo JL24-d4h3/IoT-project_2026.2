@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -42,6 +43,7 @@ public class AltaHotelFragment extends Fragment {
 
     private FragmentSuperadminAltaHotelBinding binding;
     private AltaHotelViewModel viewModel;
+    private OnBackPressedCallback bloqueoRetroceso;
 
     @Nullable
     @Override
@@ -59,6 +61,14 @@ public class AltaHotelFragment extends Fragment {
         binding.saHeader.mostrarVolver(v -> salir());
 
         viewModel = new ViewModelProvider(this).get(AltaHotelViewModel.class);
+        bloqueoRetroceso = new OnBackPressedCallback(viewModel.estaCargando()) {
+            @Override
+            public void handleOnBackPressed() {
+                // Se espera el resultado para no repetir un alta que sigue en curso.
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher()
+                .addCallback(getViewLifecycleOwner(), bloqueoRetroceso);
         viewModel.getAlta().observe(getViewLifecycleOwner(), this::pintar);
 
         binding.saAltaGuardar.setOnClickListener(v -> guardar());
@@ -79,6 +89,9 @@ public class AltaHotelFragment extends Fragment {
      * en que quien la sabe esta al telefono.
      */
     private void guardar() {
+        if (viewModel.estaCargando()) {
+            return;
+        }
         limpiarErrores();
 
         String nombre = texto(binding.saAltaNombreCampo, binding.saAltaNombre,
@@ -96,6 +109,18 @@ public class AltaHotelFragment extends Fragment {
 
         if (nombre == null || ciudad == null || distrito == null || direccion == null
                 || latitud == null || longitud == null) {
+            return;
+        }
+        boolean coordenadasValidas = true;
+        if (Math.abs(latitud) > 90d) {
+            binding.saAltaLatitudCampo.setError(getString(R.string.sa_alta_latitud_fuera_rango));
+            coordenadasValidas = false;
+        }
+        if (Math.abs(longitud) > 180d) {
+            binding.saAltaLongitudCampo.setError(getString(R.string.sa_alta_longitud_fuera_rango));
+            coordenadasValidas = false;
+        }
+        if (!coordenadasValidas) {
             return;
         }
         viewModel.registrar(nombre, ciudad, distrito, direccion, latitud, longitud);
@@ -143,7 +168,12 @@ public class AltaHotelFragment extends Fragment {
             return null;
         }
         try {
-            return Double.parseDouble(valor.replace(',', '.'));
+            double coordenada = Double.parseDouble(valor.replace(',', '.'));
+            if (!Double.isFinite(coordenada)) {
+                campo.setError(getString(R.string.sa_alta_coordenada_invalida));
+                return null;
+            }
+            return coordenada;
         } catch (NumberFormatException e) {
             campo.setError(getString(R.string.sa_alta_coordenada_invalida));
             return null;
@@ -153,6 +183,11 @@ public class AltaHotelFragment extends Fragment {
     // ------------------------------------------------------------------ Estado
 
     private void pintar(@Nullable UiState<Hotel> estado) {
+        boolean cargando = estado != null && estado.isLoading();
+        bloqueoRetroceso.setEnabled(cargando);
+        habilitarFormulario(!cargando);
+        binding.saAltaGuardar.setText(cargando
+                ? R.string.sa_alta_guardando_red : R.string.sa_alta_guardar);
         if (estado == null) {
             return;
         }
@@ -163,7 +198,7 @@ public class AltaHotelFragment extends Fragment {
                 binding.saAltaGuardar.setEnabled(false);
                 break;
             case SUCCESS:
-                binding.saAltaGuardar.setEnabled(true);
+                binding.saAltaGuardar.setEnabled(false);
                 volverCon(estado.requireData());
                 break;
             case EMPTY:
@@ -197,7 +232,20 @@ public class AltaHotelFragment extends Fragment {
     }
 
     private void salir() {
+        if (viewModel != null && viewModel.estaCargando()) {
+            return;
+        }
         Navigation.findNavController(requireView()).popBackStack();
+    }
+
+    private void habilitarFormulario(boolean habilitado) {
+        binding.saAltaNombreCampo.setEnabled(habilitado);
+        binding.saAltaCiudadCampo.setEnabled(habilitado);
+        binding.saAltaDistritoCampo.setEnabled(habilitado);
+        binding.saAltaDireccionCampo.setEnabled(habilitado);
+        binding.saAltaLatitudCampo.setEnabled(habilitado);
+        binding.saAltaLongitudCampo.setEnabled(habilitado);
+        binding.saHeader.getBotonVolver().setEnabled(habilitado);
     }
 
     private void avisar(@Nullable String mensaje) {
@@ -211,5 +259,6 @@ public class AltaHotelFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        bloqueoRetroceso = null;
     }
 }

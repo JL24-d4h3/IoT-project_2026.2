@@ -20,10 +20,8 @@ import org.iot.project.utils.InsetUtils;
 /**
  * Recuperacion de contrasena (§74).
  *
- * <p>La pantalla dice que se envio el enlace y no simula un buzon: no hay
- * backend que mande nada, y ensenar una bandeja de entrada inventada seria
- * mentir sobre lo que hace la aplicacion. El texto del exito esta redactado
- * para ser cierto exista o no la cuenta.
+ * <p>El repositorio solicita el enlace a Firebase Authentication. La respuesta
+ * no confirma si existe una cuenta con el correo indicado.
  */
 public class RecuperacionFragment extends Fragment {
 
@@ -63,6 +61,9 @@ public class RecuperacionFragment extends Fragment {
     }
 
     private void enviar() {
+        if (viewModel.estaCargando()) {
+            return;
+        }
         binding.recuperarCorreoCampo.setError(null);
         binding.recuperarAviso.setVisibility(View.GONE);
 
@@ -87,13 +88,15 @@ public class RecuperacionFragment extends Fragment {
         if (estado == null) {
             return;
         }
+        binding.recuperarCorreoCampo.setEnabled(!estado.isLoading() && !estado.isSuccess());
+        binding.recuperarCancelar.setEnabled(!estado.isLoading());
         switch (estado.getStatus()) {
             case LOADING:
                 binding.recuperarEnviar.setEnabled(false);
                 binding.recuperarEnviar.setText(R.string.recuperar_enviando);
                 break;
             case SUCCESS:
-                binding.recuperarEnviar.setEnabled(true);
+                binding.recuperarEnviar.setEnabled(false);
                 binding.recuperarEnviar.setText(R.string.recuperar_enviar);
                 binding.recuperarExitoMensaje.setText(
                         getString(R.string.recuperar_listo_mensaje, estado.requireData()));

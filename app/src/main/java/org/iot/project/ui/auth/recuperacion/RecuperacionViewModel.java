@@ -12,7 +12,7 @@ import org.iot.project.core.UiState;
 /**
  * Recuperacion de contrasena (§74).
  *
- * <p>El resultado de exito es el correo al que se habria enviado el enlace, no
+ * <p>El resultado de exito es el correo al que se solicito enviar el enlace, no
  * una confirmacion de que la cuenta existe: el repositorio contesta lo mismo
  * para cualquier correo, para que este formulario no sirva para averiguar quien
  * esta registrado.
@@ -25,7 +25,16 @@ public class RecuperacionViewModel extends ViewModel {
         return envio;
     }
 
+    public boolean estaCargando() {
+        UiState<String> estado = envio.getValue();
+        return estado != null && estado.isLoading();
+    }
+
     public void recuperar(@NonNull String correo) {
+        UiState<String> estado = envio.getValue();
+        if (estado != null && (estado.isLoading() || estado.isSuccess())) {
+            return;
+        }
         envio.setValue(UiState.loading());
         ServiceLocator.acceso().recuperarContrasena(correo, new ResultCallback<String>() {
             @Override

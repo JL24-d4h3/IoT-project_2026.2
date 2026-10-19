@@ -3,12 +3,15 @@ package org.iot.project.ui.superadmin.hoteles;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.UiState;
 import org.iot.project.models.Hotel;
+
+import java.util.UUID;
 
 /**
  * Alta de un hotel (RF-007).
@@ -28,16 +31,36 @@ import org.iot.project.models.Hotel;
 public class AltaHotelViewModel extends ViewModel {
 
     private final MutableLiveData<UiState<Hotel>> alta = new MutableLiveData<>();
+    private final String borradorId;
+
+    public AltaHotelViewModel(@NonNull SavedStateHandle estadoGuardado) {
+        String id = estadoGuardado.get("hotelBorradorId");
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+            estadoGuardado.set("hotelBorradorId", id);
+        }
+        borradorId = id;
+    }
 
     public LiveData<UiState<Hotel>> getAlta() {
         return alta;
+    }
+
+    public boolean estaCargando() {
+        UiState<Hotel> estado = alta.getValue();
+        return estado != null && estado.isLoading();
     }
 
     /** Arma el borrador y lo registra. La validacion la hace el repositorio. */
     public void registrar(@NonNull String nombre, @NonNull String ciudad,
                           @NonNull String distrito, @NonNull String direccion,
                           double latitud, double longitud) {
-        Hotel borrador = new Hotel("", nombre, distrito, ciudad);
+        UiState<Hotel> estado = alta.getValue();
+        if (estado != null && (estado.isLoading() || estado.isSuccess())) {
+            return;
+        }
+        // El mismo alta conserva su identificador al reintentar o recrear la vista.
+        Hotel borrador = new Hotel(borradorId, nombre, distrito, ciudad);
         borrador.setDireccion(direccion);
         borrador.setUbicacion(latitud, longitud);
 

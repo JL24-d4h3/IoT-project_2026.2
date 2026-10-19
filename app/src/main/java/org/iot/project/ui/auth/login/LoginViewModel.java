@@ -10,41 +10,35 @@ import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.UiState;
 import org.iot.project.models.Cuenta;
 
-import java.util.List;
-
 /**
  * Acceso a la aplicacion (§74).
  *
- * <p>No comprueba la contrasena, y no es un olvido: sin backend no hay nada con
- * lo que compararla, y guardar secretos en el cliente es justo lo que RC-042 y
- * RT-038 prohiben. Lo que si resuelve de verdad es lo que viene despues: con el
- * correo se identifica la cuenta y su rol, y ese rol decide la interfaz que se
- * carga (RF-004).
+ * <p>El repositorio autentica las credenciales y devuelve el perfil autorizado.
+ * La contrasena solo se pasa durante la solicitud; nunca forma parte del
+ * estado de la pantalla.
  */
 public class LoginViewModel extends ViewModel {
 
     private final MutableLiveData<UiState<Cuenta>> acceso = new MutableLiveData<>();
-    private final MutableLiveData<UiState<List<Cuenta>>> ejemplos = new MutableLiveData<>();
 
     public LiveData<UiState<Cuenta>> getAcceso() {
         return acceso;
     }
 
-    public LiveData<UiState<List<Cuenta>>> getEjemplos() {
-        return ejemplos;
+    public boolean estaCargando() {
+        UiState<Cuenta> estado = acceso.getValue();
+        return estado != null && estado.isLoading();
     }
 
     /**
-     * Intenta entrar con un correo.
-     *
-     * <p>No recibe la contrasena a proposito. La pantalla comprueba que se haya
-     * escrito algo —un campo obligatorio vacio hay que avisarlo— y la descarta
-     * ahi mismo: lo que no tiene que ocurrir es que un secreto que nadie va a
-     * usar quede guardado en el estado de esta pantalla.
+     * Autentica una sola solicitud a la vez sin conservar las credenciales.
      */
-    public void entrar(@NonNull String correo) {
+    public void entrar(@NonNull String correo, @NonNull String contrasena) {
+        if (estaCargando()) {
+            return;
+        }
         acceso.setValue(UiState.loading());
-        ServiceLocator.acceso().cuentaPorEmail(correo, new ResultCallback<Cuenta>() {
+        ServiceLocator.acceso().iniciarSesion(correo, contrasena, new ResultCallback<Cuenta>() {
             @Override
             public void onExito(@NonNull Cuenta datos) {
                 acceso.setValue(UiState.success(datos));
@@ -53,23 +47,6 @@ public class LoginViewModel extends ViewModel {
             @Override
             public void onError(@NonNull String mensaje) {
                 acceso.setValue(UiState.error(mensaje));
-            }
-        });
-    }
-
-    /** Carga las cuentas de ejemplo con las que se puede entrar sin escribir el correo. */
-    public void cargarEjemplos() {
-        ejemplos.setValue(UiState.loading());
-        ServiceLocator.acceso().cuentasDeDemostracion(new ResultCallback<List<Cuenta>>() {
-            @Override
-            public void onExito(@NonNull List<Cuenta> datos) {
-                ejemplos.setValue(datos.isEmpty() ? UiState.<List<Cuenta>>empty()
-                        : UiState.success(datos));
-            }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
-                ejemplos.setValue(UiState.error(mensaje));
             }
         });
     }

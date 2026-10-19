@@ -6,16 +6,22 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.iot.project.models.Cuenta;
-import org.iot.project.models.Hotel;
 import org.iot.project.models.Role;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+
+import org.iot.project.data.firebase.FirebaseErrores;
+import org.iot.project.data.firebase.PerfilFirebase;
 
 /**
  * Sesion activa: con que cuenta se entro y, por tanto, que rol esta en uso.
  *
- * <p>No hay autenticacion real (el entregable es solo front end), asi que el
- * rol lo decide la cuenta con la que se entra o el selector de demostracion de
- * la pantalla de acceso. Lo que si es real es la consecuencia: el rol decide
- * que grafo de navegacion se carga y, por tanto, que ve el usuario (RF-004).
+ * <p>Publica una cuenta solo despues de autenticarla y comprobar su perfil
+ * contra el servidor. El rol y el hotel proceden del perfil protegido.
  *
  * <p>La sesion se publica como {@link LiveData} porque cambiarla no es un
  * detalle interno: al iniciar o cerrar sesion hay que cambiar el grafo entero
@@ -41,9 +47,65 @@ public final class SessionManager {
     public static final String USUARIO_SUPERADMIN = "U3";
     public static final String CONDUCTOR_ACTIVO = "D1";
 
-    private static final MutableLiveData<Cuenta> SESION = new MutableLiveData<>();
+    private static final MutableLiveData<Cuenta> SESION = new MutableLiveData<>(null);
+    private static final MutableLiveData<Boolean> RESTAURANDO = new MutableLiveData<>(false);
+    private static final MutableLiveData<String> AVISO = new MutableLiveData<>(null);
+    private static boolean inicializada;
+    private static long version;
+    private static ListenerRegistration perfilListener;
 
     private SessionManager() {
+    }
+
+    /** Se registra una sola vez por proceso; un alta no dispara restauracion. */
+    public static void inicializar() {
+        if (inicializada) {
+            return;
+        }
+        inicializada = true;
+        FirebaseAuth.getInstance().addAuthStateListener(auth -> {
+            FirebaseUser usuario = auth.getCurrentUser();
+            Cuenta cuenta = SESION.getValue();
+            if (usuario == null || (cuenta != null
+                    && !cuenta.getIdentidadId().equals(usuario.getUid()))) {
+                quitarPerfilListener();
+                SESION.setValue(null);
+            }
+        });
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            return;
+        }
+        long solicitud = ++version;
+        RESTAURANDO.setValue(true);
+        ServiceLocator.acceso().restaurarSesion(new ResultCallback<Cuenta>() {
+            @Override
+            public void onExito(@NonNull Cuenta cuenta) {
+                if (solicitud == version) {
+                    iniciarSesion(cuenta);
+                }
+            }
+
+            @Override
+            public void onError(@NonNull String mensaje) {
+                if (solicitud == version) {
+                    SESION.setValue(null);
+                    RESTAURANDO.setValue(false);
+                    AVISO.setValue(mensaje);
+                }
+            }
+        });
+    }
+
+    public static LiveData<Boolean> restaurando() {
+        return RESTAURANDO;
+    }
+
+    public static LiveData<String> aviso() {
+        return AVISO;
+    }
+
+    public static void limpiarAviso() {
+        AVISO.setValue(null);
     }
 
     /** La cuenta en sesion, o {@code null} mientras nadie haya entrado. */
@@ -55,15 +117,63 @@ public final class SessionManager {
     /**
      * Inicia sesion con una cuenta.
      *
-     * <p>Se llama desde el hilo principal: el resultado del acceso y el toque en
-     * el selector de demostracion llegan los dos por ahi.
+     * <p>Se llama desde el hilo principal tras cargar el perfil autorizado.
      */
     public static void iniciarSesion(@NonNull Cuenta cuenta) {
+        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+        if (usuario == null || !usuario.getUid().equals(cuenta.getIdentidadId())) {
+            return;
+        }
+        version++;
+        quitarPerfilListener();
+        AVISO.setValue(null);
         SESION.setValue(cuenta);
+        RESTAURANDO.setValue(false);
+        observarPerfil(usuario.getUid(), version);
     }
 
     public static void cerrarSesion() {
+        version++;
+        quitarPerfilListener();
         SESION.setValue(null);
+        RESTAURANDO.setValue(false);
+        ServiceLocator.acceso().cerrarSesion();
+    }
+
+    private static void observarPerfil(String uid, long solicitud) {
+        perfilListener = FirebaseFirestore.getInstance().collection("usuarios").document(uid)
+                .addSnapshotListener((documento, error) -> {
+                    FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+                    if (solicitud != version || usuario == null || !uid.equals(usuario.getUid())) {
+                        return;
+                    }
+                    if (error != null) {
+                        if (error.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED
+                                || error.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                            cerrarSesion();
+                            AVISO.setValue(FirebaseErrores.mensaje(error));
+                        }
+                        return;
+                    }
+                    // Una copia local antigua nunca vuelve a habilitar un perfil.
+                    if (documento == null || documento.getMetadata().isFromCache()
+                            || documento.getMetadata().hasPendingWrites()) {
+                        return;
+                    }
+                    try {
+                        SESION.setValue(PerfilFirebase.cuenta(uid, usuario.getEmail(), documento.getData()));
+                    } catch (IllegalArgumentException fallo) {
+                        cerrarSesion();
+                        AVISO.setValue(FirebaseErrores.mensaje(fallo));
+                    }
+                });
+    }
+
+    private static void quitarPerfilListener() {
+        if (perfilListener != null) {
+            perfilListener.remove();
+            perfilListener = null;
+        }
     }
 
     public static boolean haySesion() {
@@ -118,11 +228,8 @@ public final class SessionManager {
      * <p>Solo hay un hotel administrado por sesion porque asi es el modelo: un
      * administrador pertenece a un hotel, no a una lista (RF-008).
      *
-     * <p>La relacion se lee del repositorio y no de {@code MockData} para que el
-     * dia que exista un backend solo cambie el repositorio (§49). Y se lee de
-     * forma sincrona —igual que {@code hoteles().hotel(id)}— porque las cinco
-     * pantallas del administrador la consultan al arrancar y ninguna esta
-     * escrita para esperar una respuesta.
+     * <p>La asignacion se cargo desde el perfil del servidor antes de abrir la
+     * interfaz; no se busca por identidades de demostracion.
      *
      * <p>Puede devolver {@code null} aunque el rol sea el de administrador: una
      * cuenta recien creada todavia no tiene hotel asignado, y ese estado es real
@@ -133,9 +240,8 @@ public final class SessionManager {
         if (getRolActivo() != Role.ADMIN_HOTEL) {
             return null;
         }
-        Hotel hotel = ServiceLocator.hoteles()
-                .hotelDeAdministrador(getUsuarioIdSeguro());
-        return hotel != null ? hotel.getId() : null;
+        Cuenta cuenta = SESION.getValue();
+        return cuenta != null ? cuenta.getHotelId() : null;
     }
 
     /**
@@ -158,17 +264,12 @@ public final class SessionManager {
     }
 
     /**
-     * Identificador del usuario en sesion, con el cliente de demostracion como
-     * valor por defecto. Evita comprobaciones de nulo en las pantallas ya
-     * construidas, que son todas del cliente.
-     *
-     * <p>Un conductor no es un {@code User}: si se llamara a esto con un
-     * conductor en sesion, devolveria el cliente de demostracion. Quien tenga
-     * que atender a un conductor debe usar {@link #getConductorId()}.
+     * UID del cliente/administrador, o cadena vacia sin sesion de usuario.
+     * Nunca sustituye una sesion ausente por la identidad de otra persona.
      */
     @NonNull
     public static String getUsuarioIdSeguro() {
         String identidad = getUsuarioId();
-        return identidad != null ? identidad : USUARIO_CLIENTE;
+        return identidad != null ? identidad : "";
     }
 }

@@ -18,10 +18,8 @@ import org.iot.project.models.User;
  * <p>El cliente queda habilitado al terminar el registro (RF-002): no hay paso
  * de aprobacion, y por eso el alta devuelve la cuenta ya utilizable.
  *
- * <p>No recibe contrasena. Esta pantalla la pide, comprueba que tenga el largo
- * minimo y que las dos coincidan, y la descarta ahi mismo: guardarla obligaria
- * a inventar un almacen de secretos en una entrega que es solo front end
- * (RC-042, RT-038).
+ * <p>La contrasena se pasa al repositorio para crear la cuenta, sin almacenarla
+ * en el estado de la pantalla. El alta vuelve al acceso para iniciar sesion.
  */
 public class RegistroViewModel extends ViewModel {
 
@@ -31,14 +29,24 @@ public class RegistroViewModel extends ViewModel {
         return alta;
     }
 
+    public boolean estaCargando() {
+        UiState<Cuenta> estado = alta.getValue();
+        return estado != null && estado.isLoading();
+    }
+
     public void registrar(@NonNull String nombres, @NonNull String apellidos,
-                          @NonNull String correo, @NonNull String telefono) {
+                          @NonNull String correo, @NonNull String telefono,
+                          @NonNull String contrasena) {
+        UiState<Cuenta> estado = alta.getValue();
+        if (estado != null && (estado.isLoading() || estado.isSuccess())) {
+            return;
+        }
         User borrador = new User("", nombres.trim(), apellidos.trim(), Role.CLIENTE);
         borrador.setEmail(correo.trim());
         borrador.setTelefono(telefono.trim());
 
         alta.setValue(UiState.loading());
-        ServiceLocator.acceso().registrar(borrador, new ResultCallback<Cuenta>() {
+        ServiceLocator.acceso().registrar(borrador, contrasena, new ResultCallback<Cuenta>() {
             @Override
             public void onExito(@NonNull Cuenta datos) {
                 alta.setValue(UiState.success(datos));

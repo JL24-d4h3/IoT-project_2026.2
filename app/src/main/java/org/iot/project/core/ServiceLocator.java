@@ -1,13 +1,13 @@
 package org.iot.project.core;
 
-import org.iot.project.data.mock.MockAccesoRepository;
+import org.iot.project.data.firebase.FirebaseAccesoRepository;
+import org.iot.project.data.firebase.FirebaseUserRepository;
 import org.iot.project.data.mock.MockBookingRepository;
 import org.iot.project.data.mock.MockChatRepository;
 import org.iot.project.data.mock.MockGestionHotelRepository;
 import org.iot.project.data.mock.MockHotelRepository;
 import org.iot.project.data.mock.MockSuperadminRepository;
 import org.iot.project.data.mock.MockTaxiRepository;
-import org.iot.project.data.mock.MockUserRepository;
 import org.iot.project.data.repository.AccesoRepository;
 import org.iot.project.data.repository.BookingRepository;
 import org.iot.project.data.repository.ChatRepository;
@@ -21,8 +21,8 @@ import org.iot.project.data.repository.UserRepository;
  * Punto unico de acceso a los repositorios.
  *
  * <p>Es la pieza que permite que las pantallas dependan de una interfaz y no
- * de la implementacion: hoy devuelve los simulados, y el dia que exista un
- * backend de verdad solo cambia esta clase, no los ViewModel ni los Fragments.
+ * de la implementacion. Acceso y perfiles usan Firebase; el resto de modulos
+ * conserva sus repositorios simulados hasta su migracion.
  *
  * <p>Las instancias se crean una sola vez y se comparten, porque los
  * repositorios simulados guardan estado en memoria: si cada pantalla creara el
@@ -33,9 +33,9 @@ public final class ServiceLocator {
     private static final HotelRepository HOTELES = new MockHotelRepository();
     private static final BookingRepository RESERVAS = new MockBookingRepository();
     private static final TaxiRepository TAXIS = new MockTaxiRepository();
-    private static final UserRepository USUARIOS = new MockUserRepository();
+    private static final UserRepository USUARIOS = new FirebaseUserRepository();
     private static final ChatRepository CHATS = new MockChatRepository();
-    private static final AccesoRepository ACCESO = new MockAccesoRepository();
+    private static final AccesoRepository ACCESO = new FirebaseAccesoRepository();
     private static final GestionHotelRepository GESTION = new MockGestionHotelRepository();
     private static final SuperadminRepository SUPERADMIN = new MockSuperadminRepository();
 

@@ -1,6 +1,7 @@
 package org.iot.project.models;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Lo que el acceso necesita saber para dejar entrar a alguien (RF-004).
@@ -10,8 +11,8 @@ import androidx.annotation.NonNull;
  * tiene por que saber cual de los dos modelos tiene delante: con esto, los
  * cuatro roles llegan a la pantalla de acceso de la misma forma.
  *
- * <p>No lleva contrasena ni ningun dato secreto (RC-042, RT-038): esta entrega
- * es solo front end y no hay credencial que comprobar.
+ * <p>No contiene contrasenas ni tokens. La identidad es el UID autenticado;
+ * el rol y el hotel asignado provienen del perfil protegido en el servidor.
  */
 public final class Cuenta {
 
@@ -19,13 +20,26 @@ public final class Cuenta {
     private final String identidadId;
     private final String nombreCompleto;
     private final String email;
+    private final String hotelId;
 
     public Cuenta(@NonNull Role rol, @NonNull String identidadId,
                   @NonNull String nombreCompleto, @NonNull String email) {
+        this(rol, identidadId, nombreCompleto, email, null);
+    }
+
+    public Cuenta(@NonNull Role rol, @NonNull String identidadId,
+                  @NonNull String nombreCompleto, @NonNull String email,
+                  @Nullable String hotelId) {
         this.rol = rol;
         this.identidadId = identidadId;
         this.nombreCompleto = nombreCompleto;
         this.email = email;
+        this.hotelId = hotelId;
+    }
+
+    @Nullable
+    public String getHotelId() {
+        return hotelId;
     }
 
     @NonNull
