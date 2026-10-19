@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_servicios_anadir">Añadir servicio</string>
+    <string name="admin_servicio_de_pago">De pago</string>
+    <string name="admin_servicio_guardando">Guardando…</string>
+    <string name="admin_servicio_precio_maximo">El precio no puede superar S/ 1000000.</string>
+    <string name="admin_servicios_limite">El hotel admite hasta 12 servicios. Puedes editar o retirar los existentes.</string>
+    <string name="admin_servicios_sin_cupo">No hay servicios disponibles para añadir. Puedes editar los que ya ofrece el hotel.</string>
+    <string name="admin_servicio_no_encontrado">Este servicio ya no está disponible o no está configurado en tu hotel.</string>
+    <string name="admin_servicio_catalogo_cambio">El servicio elegido ya está configurado. Elige otro del catálogo.</string>
+    <string name="admin_servicio_sesion_cambiada">Tu sesión o tu hotel asignado cambiaron. Cierra este formulario y vuelve a abrir Servicios.</string>
+    <string name="admin_servicio_guardado_confirmacion">Se guardó el servicio %1$s.</string>
+    <string name="admin_servicio_retirado_confirmacion">Se retiró el servicio %1$s.</string>
+</resources>

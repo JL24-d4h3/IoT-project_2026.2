@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_crear_hotel">Crear hotel</string>
+    <string name="sa_alta_guardando_red">Registrando hotel…</string>
+    <string name="sa_alta_latitud_fuera_rango">La latitud debe estar entre -90 y 90.</string>
+    <string name="sa_alta_longitud_fuera_rango">La longitud debe estar entre -180 y 180.</string>
+    <string name="sa_asignando_red">Asignando administrador…</string>
+    <string name="sa_publicando_red">Publicando hotel…</string>
+    <string name="sa_retirando_red">Retirando del catálogo…</string>
+    <string name="sa_publicacion_administrador_requerido">Asigna un administrador activo antes de publicar el hotel.</string>
+    <string name="sa_ventas_pendiente_conexion">El reporte de reservas todavía no está conectado.</string>
+    <string name="sa_asignar_libres_mensaje">No hay otra cuenta de administrador activa disponible para este hotel.</string>
+</resources>

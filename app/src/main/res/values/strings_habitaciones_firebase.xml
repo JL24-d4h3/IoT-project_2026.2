@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_habitaciones_crear">Crear habitación</string>
+    <string name="admin_habitacion_guardando">Guardando habitación…</string>
+    <string name="admin_habitacion_editar_titulo">Editar habitación</string>
+    <string name="admin_habitacion_no_encontrada">Esta habitación ya no está en tu hotel. Cierra el formulario y actualiza la lista.</string>
+    <string name="admin_habitacion_adultos_rango">Indica entre 1 y 20 adultos.</string>
+    <string name="admin_habitacion_ninos_rango">Indica entre 0 y 20 niños.</string>
+    <string name="admin_habitacion_piso_rango">Indica un piso entre -10 y 200.</string>
+    <string name="admin_habitacion_area_rango">El área no puede superar los 10 000 m².</string>
+    <string name="admin_habitacion_precio_rango">El precio no puede superar S/ 1 000 000 por noche.</string>
+    <string name="admin_habitaciones_limite">Tu hotel ya tiene el máximo de 10 habitaciones.</string>
+    <string name="admin_habitacion_creada">Habitación %1$s creada en tu hotel.</string>
+    <string name="admin_habitacion_asignacion_cambio">Tu asignación cambió. Cierra el formulario y vuelve a abrir Habitaciones.</string>
+</resources>

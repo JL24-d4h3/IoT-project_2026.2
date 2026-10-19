@@ -1,0 +1,521 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function esPropio(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function perfilActual() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function esSuperadmin() {
+      return request.auth != null
+        && perfilActual().activo == true
+        && perfilActual().rol == 'SUPERADMIN';
+    }
+
+    function esTexto(valor) {
+      return valor is string && valor.matches('.*\\S.*');
+    }
+
+    function hotelDelPerfil(datos) {
+      return datos.get('hotelId', null);
+    }
+
+    function administradorDelHotel(datos) {
+      return datos.get('administradorId', null);
+    }
+
+    function textoOpcional(datos, campo) {
+      return !(campo in datos) || datos[campo] == null || datos[campo] is string;
+    }
+
+    function perfilValido(datos) {
+      return datos.keys().hasAll([
+          'nombres', 'apellidos', 'email', 'rol', 'activo',
+          'creadoEn', 'actualizadoEn'
+        ])
+        && datos.keys().hasOnly([
+          'nombres', 'apellidos', 'email', 'telefono', 'direccion', 'fotoUrl',
+          'rol', 'activo', 'hotelId', 'creadoEn', 'actualizadoEn'
+        ])
+        && datos.nombres is string
+        && datos.apellidos is string
+        && datos.email is string
+        && datos.rol in ['CLIENTE', 'ADMIN_HOTEL', 'SUPERADMIN']
+        && datos.activo is bool
+        && textoOpcional(datos, 'telefono')
+        && textoOpcional(datos, 'direccion')
+        && textoOpcional(datos, 'fotoUrl')
+        && textoOpcional(datos, 'hotelId')
+        && datos.creadoEn is timestamp
+        && datos.actualizadoEn is timestamp;
+    }
+
+    match /usuarios/{uid} {
+      // La app necesita leer su estado para explicar una cuenta inactiva.
+      allow get: if esPropio(uid) || esSuperadmin();
+      allow list: if esSuperadmin();
+
+      // El correo identifica a la cuenta; nunca le concede un rol elevado.
+      allow create: if esPropio(uid)
+        && perfilValido(request.resource.data)
+        && request.resource.data.rol == 'CLIENTE'
+        && request.resource.data.activo == true
+        && 'email' in request.auth.token
+        && request.resource.data.email == request.auth.token.email
+        && (!('hotelId' in request.resource.data)
+          || request.resource.data.hotelId == null)
+        && request.resource.data.creadoEn == request.time
+        && request.resource.data.actualizadoEn == request.time;
+
+      allow update: if (esPropio(uid)
+        && resource.data.activo == true
+        && perfilValido(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'nombres', 'apellidos', 'telefono', 'direccion', 'fotoUrl', 'actualizadoEn'
+        ])
+        && request.resource.data.actualizadoEn == request.time)
+        || (esSuperadmin() && asignacionDeUsuarioValida(uid));
+
+      allow delete: if false;
+    }
+
+    function asignacionDeUsuarioValida(uid) {
+      let anterior = hotelDelPerfil(resource.data);
+      let siguiente = hotelDelPerfil(request.resource.data);
+      return resource.data.rol == 'ADMIN_HOTEL'
+        && perfilValido(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'hotelId', 'actualizadoEn'
+        ])
+        && request.resource.data.actualizadoEn == request.time
+        && anterior != siguiente
+        && (siguiente == null || (resource.data.activo == true
+          && getAfter(/databases/$(database)/documents/hoteles/$(siguiente)).data.administradorId == uid))
+        && (anterior == null
+          || getAfter(/databases/$(database)/documents/hoteles/$(anterior)).data.administradorId != uid);
+    }
+
+    function textoAcotado(valor, maximo) {
+      return esTexto(valor) && valor.size() <= maximo;
+    }
+
+    function idValido(valor) {
+      return textoAcotado(valor, 200) && !valor.matches('.*[/].*');
+    }
+
+    function fotoValida(valor) {
+      return valor is string && valor.size() <= 2048
+        && valor.matches('https?://[^/\\s]+[^\\s]*');
+    }
+
+    function fotoEn(lista, indice) {
+      return lista.size() <= indice || fotoValida(lista[indice]);
+    }
+
+    // Rules no tiene bucles: cada posicion permitida se valida explicitamente.
+    function fotosHotelValidas(lista) {
+      return lista is list && lista.size() <= 12
+        && lista.toSet().size() == lista.size()
+        && fotoEn(lista, 0)
+        && fotoEn(lista, 1)
+        && fotoEn(lista, 2)
+        && fotoEn(lista, 3)
+        && fotoEn(lista, 4)
+        && fotoEn(lista, 5)
+        && fotoEn(lista, 6)
+        && fotoEn(lista, 7)
+        && fotoEn(lista, 8)
+        && fotoEn(lista, 9)
+        && fotoEn(lista, 10)
+        && fotoEn(lista, 11);
+    }
+
+    function fotosHabitacionValidas(lista) {
+      return lista is list && lista.size() <= 4
+        && lista.toSet().size() == lista.size()
+        && fotoEn(lista, 0)
+        && fotoEn(lista, 1)
+        && fotoEn(lista, 2)
+        && fotoEn(lista, 3);
+    }
+
+    function habitacionValida(datos, hotelId) {
+      return datos is map
+        && datos.keys().hasAll([
+          'id', 'hotelId', 'tipo', 'numero', 'piso', 'capacidadAdultos',
+          'capacidadNinos', 'areaM2', 'precioNoche', 'disponible', 'fotos'
+        ])
+        && datos.keys().hasOnly([
+          'id', 'hotelId', 'tipo', 'numero', 'piso', 'capacidadAdultos',
+          'capacidadNinos', 'areaM2', 'precioNoche', 'disponible', 'fotos'
+        ])
+        && idValido(datos.id) && datos.hotelId == hotelId
+        && textoAcotado(datos.tipo, 80) && textoAcotado(datos.numero, 80)
+        && datos.piso is int && datos.piso >= -10 && datos.piso <= 200
+        && datos.capacidadAdultos is int && datos.capacidadAdultos >= 1 && datos.capacidadAdultos <= 20
+        && datos.capacidadNinos is int && datos.capacidadNinos >= 0 && datos.capacidadNinos <= 20
+        && datos.areaM2 is number && datos.areaM2 > 0 && datos.areaM2 <= 10000
+        && datos.precioNoche is number && datos.precioNoche > 0 && datos.precioNoche <= 1000000
+        && datos.disponible is bool && fotosHabitacionValidas(datos.fotos);
+    }
+
+    function habitacionEnMismaPosicion(nuevas, anteriores, nueva, anterior) {
+      return (anteriores.size() > 0 && anteriores[0] == anterior && nuevas[0] == nueva)
+        || (anteriores.size() > 1 && anteriores[1] == anterior && nuevas[1] == nueva)
+        || (anteriores.size() > 2 && anteriores[2] == anterior && nuevas[2] == nueva)
+        || (anteriores.size() > 3 && anteriores[3] == anterior && nuevas[3] == nueva)
+        || (anteriores.size() > 4 && anteriores[4] == anterior && nuevas[4] == nueva)
+        || (anteriores.size() > 5 && anteriores[5] == anterior && nuevas[5] == nueva)
+        || (anteriores.size() > 6 && anteriores[6] == anterior && nuevas[6] == nueva)
+        || (anteriores.size() > 7 && anteriores[7] == anterior && nuevas[7] == nueva)
+        || (anteriores.size() > 8 && anteriores[8] == anterior && nuevas[8] == nueva)
+        || (anteriores.size() > 9 && anteriores[9] == anterior && nuevas[9] == nueva);
+    }
+
+    function claveHabitacionEn(lista, indice, numero) {
+      return lista.size() > indice
+        ? (numero ? lista[indice].numero.trim().lower() : lista[indice].id) : '';
+    }
+
+    function habitacionesUnicas(lista, numero) {
+      let claves = [
+        claveHabitacionEn(lista, 0, numero), claveHabitacionEn(lista, 1, numero),
+        claveHabitacionEn(lista, 2, numero), claveHabitacionEn(lista, 3, numero),
+        claveHabitacionEn(lista, 4, numero), claveHabitacionEn(lista, 5, numero),
+        claveHabitacionEn(lista, 6, numero), claveHabitacionEn(lista, 7, numero),
+        claveHabitacionEn(lista, 8, numero), claveHabitacionEn(lista, 9, numero)
+      ];
+      // Las posiciones ausentes comparten un unico centinela; los IDs/numeros validos no estan vacios.
+      return claves.toSet().size() == lista.size() + (lista.size() < 10 ? 1 : 0);
+    }
+
+    // Diferencias nativas: no contar y comprobar diez posiciones en cada alta.
+    // Se conserva la misma regla de un alta al final o una edicion sin reordenar.
+    function habitacionesValidas(nuevas, anteriores, hotelId) {
+      let agregadas = nuevas.removeAll(anteriores);
+      let retiradas = anteriores.removeAll(nuevas);
+      return nuevas is list && anteriores is list && nuevas.size() <= 10
+        && agregadas.size() == 1 && habitacionValida(agregadas[0], hotelId)
+        && ((retiradas.size() == 0 && nuevas == anteriores.concat(agregadas))
+          || (retiradas.size() == 1 && nuevas.size() == anteriores.size()
+            && agregadas[0].id == retiradas[0].id
+            && agregadas[0].hotelId == retiradas[0].hotelId
+            && nuevas.removeAll(agregadas) == anteriores.removeAll(retiradas)
+            && habitacionEnMismaPosicion(nuevas, anteriores, agregadas[0], retiradas[0])))
+        && habitacionesUnicas(nuevas, false) && habitacionesUnicas(nuevas, true);
+    }
+
+    // IDs reales del catalogo de la app; no son S1/S2 ni nombres libres.
+    function servicioDelCatalogo(serviceId) {
+      return serviceId in [
+        'WIFI', 'DESAYUNO', 'RESTAURANTE', 'BAR', 'PISCINA', 'GIMNASIO', 'SPA',
+        'ESTACIONAMIENTO', 'AIRE_ACONDICIONADO', 'LAVANDERIA',
+        'TRASLADO_AEROPUERTO', 'MASCOTAS', 'SALA_REUNIONES', 'RECEPCION_24H'
+      ];
+    }
+
+    function servicioValido(datos) {
+      return datos is map
+        && datos.keys().hasAll(['serviceId', 'included', 'price'])
+        && datos.keys().hasOnly(['serviceId', 'included', 'price'])
+        && servicioDelCatalogo(datos.serviceId) && datos.included is bool
+        && datos.price is number && datos.price >= 0 && datos.price <= 1000000
+        && ((datos.included == true && datos.price == 0)
+          || (datos.included == false && datos.price > 0));
+    }
+
+    function servicioEn(lista, indice) {
+      return lista.size() <= indice || servicioValido(lista[indice]);
+    }
+
+    function claveServicioEn(lista, indice) {
+      return lista.size() > indice ? lista[indice].serviceId : '';
+    }
+
+    function serviciosUnicos(lista) {
+      let claves = [
+        claveServicioEn(lista, 0), claveServicioEn(lista, 1),
+        claveServicioEn(lista, 2), claveServicioEn(lista, 3),
+        claveServicioEn(lista, 4), claveServicioEn(lista, 5),
+        claveServicioEn(lista, 6), claveServicioEn(lista, 7),
+        claveServicioEn(lista, 8), claveServicioEn(lista, 9),
+        claveServicioEn(lista, 10), claveServicioEn(lista, 11)
+      ];
+      return claves.toSet().size() == lista.size() + (lista.size() < 12 ? 1 : 0);
+    }
+
+    function serviciosValidos(lista) {
+      return lista is list && lista.size() <= 12
+        && servicioEn(lista, 0)
+        && servicioEn(lista, 1)
+        && servicioEn(lista, 2)
+        && servicioEn(lista, 3)
+        && servicioEn(lista, 4)
+        && servicioEn(lista, 5)
+        && servicioEn(lista, 6)
+        && servicioEn(lista, 7)
+        && servicioEn(lista, 8)
+        && servicioEn(lista, 9)
+        && servicioEn(lista, 10)
+        && servicioEn(lista, 11)
+        && serviciosUnicos(lista);
+    }
+
+    function lugarValido(datos) {
+      return datos is map
+        && datos.keys().hasAll(['nombre', 'tipo', 'distanciaKm'])
+        && datos.keys().hasOnly(['nombre', 'tipo', 'distanciaKm'])
+        && textoAcotado(datos.nombre, 120) && textoAcotado(datos.tipo, 120)
+        && datos.distanciaKm is number && datos.distanciaKm > 0 && datos.distanciaKm <= 1000;
+    }
+
+    function lugarEn(lista, indice) {
+      return lista.size() <= indice || lugarValido(lista[indice]);
+    }
+
+    function lugaresValidos(lista) {
+      return lista is list && lista.size() <= 10
+        && lugarEn(lista, 0)
+        && lugarEn(lista, 1)
+        && lugarEn(lista, 2)
+        && lugarEn(lista, 3)
+        && lugarEn(lista, 4)
+        && lugarEn(lista, 5)
+        && lugarEn(lista, 6)
+        && lugarEn(lista, 7)
+        && lugarEn(lista, 8)
+        && lugarEn(lista, 9);
+    }
+
+    function hotelValido(datos) {
+      return datos.keys().hasAll([
+          'nombre', 'ciudad', 'distrito', 'direccion', 'latitud', 'longitud',
+          'publicado', 'administradorId', 'creadoPor', 'creadoEn', 'actualizadoEn', 'ultimoEventoId'
+        ])
+        && datos.keys().hasOnly([
+          'nombre', 'ciudad', 'distrito', 'direccion', 'latitud', 'longitud',
+          'publicado', 'administradorId', 'creadoPor', 'creadoEn', 'actualizadoEn', 'ultimoEventoId',
+          'descripcion', 'fotos', 'habitaciones', 'servicios', 'lugaresCercanos', 'precioDesde',
+          'rating', 'numReviews', 'montoMinimoTaxi'
+        ])
+        && textoAcotado(datos.nombre, 120) && textoAcotado(datos.ciudad, 120)
+        && textoAcotado(datos.distrito, 120)
+        && datos.direccion is string && datos.direccion.size() <= 240
+        && datos.get('descripcion', '') is string && datos.get('descripcion', '').size() <= 5000
+        && datos.latitud is number && datos.latitud >= -90 && datos.latitud <= 90
+        && datos.longitud is number && datos.longitud >= -180 && datos.longitud <= 180
+        && (datos.latitud != 0 || datos.longitud != 0)
+        && datos.publicado is bool
+        && (datos.administradorId == null || idValido(datos.administradorId))
+        && idValido(datos.creadoPor) && idValido(datos.ultimoEventoId)
+        && datos.creadoEn is timestamp && datos.actualizadoEn is timestamp
+        && datos.get('fotos', []) is list && datos.get('fotos', []).size() <= 12
+        && datos.get('habitaciones', []) is list && datos.get('habitaciones', []).size() <= 10
+        && datos.get('servicios', []) is list && datos.get('servicios', []).size() <= 12
+        && datos.get('lugaresCercanos', []) is list && datos.get('lugaresCercanos', []).size() <= 10
+        && datos.get('precioDesde', 0) is number
+        && datos.get('precioDesde', 0) >= 0 && datos.get('precioDesde', 0) <= 1000000
+        // Metadatos de otros modulos: se aceptan si ya existen, pero los
+        // affectedKeys de edicion/publicacion no permiten modificarlos.
+        && datos.get('rating', 0) is number
+        && (datos.get('rating', 0) == 0 || (datos.get('rating', 0) >= 1 && datos.get('rating', 0) <= 10))
+        && datos.get('numReviews', 0) is int && datos.get('numReviews', 0) >= 0
+        && datos.get('numReviews', 0) <= 2147483647
+        && datos.get('montoMinimoTaxi', 0) is number
+        && datos.get('montoMinimoTaxi', 0) >= 0 && datos.get('montoMinimoTaxi', 0) <= 1000000;
+    }
+
+    function precioDesdeValido(datos) {
+      let lista = datos.get('habitaciones', []);
+      let precio = datos.get('precioDesde', 0);
+      return (lista.size() == 0 && precio == 0)
+        || (lista.size() > 0 && precio > 0
+        && ((lista.size() > 0 && precio == lista[0].precioNoche)
+          || (lista.size() > 1 && precio == lista[1].precioNoche)
+          || (lista.size() > 2 && precio == lista[2].precioNoche)
+          || (lista.size() > 3 && precio == lista[3].precioNoche)
+          || (lista.size() > 4 && precio == lista[4].precioNoche)
+          || (lista.size() > 5 && precio == lista[5].precioNoche)
+          || (lista.size() > 6 && precio == lista[6].precioNoche)
+          || (lista.size() > 7 && precio == lista[7].precioNoche)
+          || (lista.size() > 8 && precio == lista[8].precioNoche)
+          || (lista.size() > 9 && precio == lista[9].precioNoche))
+        && (lista.size() <= 0 || precio <= lista[0].precioNoche)
+        && (lista.size() <= 1 || precio <= lista[1].precioNoche)
+        && (lista.size() <= 2 || precio <= lista[2].precioNoche)
+        && (lista.size() <= 3 || precio <= lista[3].precioNoche)
+        && (lista.size() <= 4 || precio <= lista[4].precioNoche)
+        && (lista.size() <= 5 || precio <= lista[5].precioNoche)
+        && (lista.size() <= 6 || precio <= lista[6].precioNoche)
+        && (lista.size() <= 7 || precio <= lista[7].precioNoche)
+        && (lista.size() <= 8 || precio <= lista[8].precioNoche)
+        && (lista.size() <= 9 || precio <= lista[9].precioNoche));
+    }
+
+    function eventoDelHotelValido(hotelId, accion, datos) {
+      let eventoId = datos.ultimoEventoId;
+      let evento = getAfter(/databases/$(database)/documents/auditoria/$(eventoId)).data;
+      return !exists(/databases/$(database)/documents/auditoria/$(eventoId))
+        && evento.actorUid == request.auth.uid && evento.hotelId == hotelId
+        && evento.evento == 'ACCION_ADMINISTRATIVA' && evento.accion == accion
+        && evento.administradorId == datos.administradorId && evento.timestamp == request.time;
+    }
+
+    function administraHotelConDatos(hotelId, datos) {
+      return request.auth != null
+        && perfilActual().activo == true && perfilActual().rol == 'ADMIN_HOTEL'
+        && hotelDelPerfil(perfilActual()) == hotelId && datos.administradorId == request.auth.uid;
+    }
+
+    function administraHotel(hotelId) {
+      return administraHotelConDatos(hotelId, resource.data);
+    }
+
+    function clienteActivo() {
+      return request.auth != null && perfilActual().activo == true && perfilActual().rol == 'CLIENTE';
+    }
+
+    function hotelPublicable(hotelId, datos) {
+      return datos.get('fotos', []) is list && datos.get('fotos', []).size() >= 4
+        && datos.get('habitaciones', []) is list && datos.get('habitaciones', []).size() >= 1
+        && datos.administradorId != null
+        && getAfter(/databases/$(database)/documents/usuarios/$(datos.administradorId)).data.rol == 'ADMIN_HOTEL'
+        && getAfter(/databases/$(database)/documents/usuarios/$(datos.administradorId)).data.activo == true
+        && getAfter(/databases/$(database)/documents/usuarios/$(datos.administradorId)).data.hotelId == hotelId;
+    }
+
+    function asignacionDeHotelValida(hotelId) {
+      let anterior = administradorDelHotel(resource.data);
+      let siguiente = administradorDelHotel(request.resource.data);
+      return hotelValido(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'administradorId', 'actualizadoEn', 'ultimoEventoId'
+        ])
+        && request.resource.data.actualizadoEn == request.time && anterior != siguiente
+        && (siguiente == null || (
+          getAfter(/databases/$(database)/documents/usuarios/$(siguiente)).data.rol == 'ADMIN_HOTEL'
+          && getAfter(/databases/$(database)/documents/usuarios/$(siguiente)).data.activo == true
+          && getAfter(/databases/$(database)/documents/usuarios/$(siguiente)).data.hotelId == hotelId))
+        && (anterior == null
+          || hotelDelPerfil(getAfter(/databases/$(database)/documents/usuarios/$(anterior)).data) != hotelId)
+        && (!request.resource.data.publicado || hotelPublicable(hotelId, request.resource.data));
+    }
+
+    function esCambioDeContenido(anterior, siguiente) {
+      return siguiente.diff(anterior).affectedKeys().hasAny([
+        'descripcion', 'nombre', 'direccion', 'latitud', 'longitud', 'fotos',
+        'habitaciones', 'servicios', 'lugaresCercanos', 'precioDesde'
+      ]);
+    }
+
+    function contenidoModificadoValido(hotelId) {
+      let nuevos = request.resource.data;
+      let cambios = nuevos.diff(resource.data).affectedKeys();
+      return cambios.hasOnly([
+          'descripcion', 'nombre', 'direccion', 'latitud', 'longitud', 'fotos',
+          'habitaciones', 'servicios', 'lugaresCercanos', 'precioDesde',
+          'actualizadoEn', 'ultimoEventoId'
+        ])
+        && esCambioDeContenido(resource.data, nuevos)
+        // Se valida como maximo un array por escritura para acotar expresiones.
+        && cambios.intersection(['fotos', 'habitaciones', 'servicios', 'lugaresCercanos'].toSet()).size() <= 1
+        && (!cambios.hasAny(['fotos']) || fotosHotelValidas(nuevos.get('fotos', [])))
+        && (!cambios.hasAny(['habitaciones']) || habitacionesValidas(
+          nuevos.get('habitaciones', []), resource.data.get('habitaciones', []), hotelId))
+        && (!cambios.hasAny(['servicios']) || serviciosValidos(nuevos.get('servicios', [])))
+        && (!cambios.hasAny(['lugaresCercanos']) || lugaresValidos(nuevos.get('lugaresCercanos', [])))
+        && precioDesdeValido(nuevos)
+        && (!nuevos.publicado || hotelPublicable(hotelId, nuevos));
+    }
+
+    function publicacionValida(hotelId) {
+      let nuevos = request.resource.data;
+      return nuevos.diff(resource.data).affectedKeys().hasOnly(['publicado', 'actualizadoEn', 'ultimoEventoId'])
+        && nuevos.publicado is bool && nuevos.publicado != resource.data.publicado
+        && nuevos.actualizadoEn == request.time && idValido(nuevos.ultimoEventoId)
+        && (!nuevos.publicado || (hotelValido(nuevos) && hotelPublicable(hotelId, nuevos)));
+    }
+
+    match /hoteles/{hotelId} {
+      allow get: if esSuperadmin() || administraHotel(hotelId)
+        || (clienteActivo() && resource.data.publicado == true);
+      // Las reglas no filtran: el cliente debe consultar where publicado == true.
+      allow list: if esSuperadmin() || (clienteActivo() && resource.data.publicado == true);
+
+      allow create: if esSuperadmin() && hotelValido(request.resource.data)
+        && request.resource.data.publicado == false && request.resource.data.administradorId == null
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time && request.resource.data.actualizadoEn == request.time
+        // El alta nace vacia; el contenido solo lo configura su administrador.
+        && request.resource.data.get('fotos', []).size() == 0
+        && request.resource.data.get('habitaciones', []).size() == 0
+        && request.resource.data.get('servicios', []).size() == 0
+        && request.resource.data.get('lugaresCercanos', []).size() == 0
+        && request.resource.data.get('precioDesde', 0) == 0
+        && request.resource.data.get('rating', 0) == 0
+        && request.resource.data.get('numReviews', 0) == 0
+        && request.resource.data.get('montoMinimoTaxi', 0) == 0
+        && eventoDelHotelValido(hotelId, 'ALTA_HOTEL', request.resource.data);
+
+      allow update: if (esSuperadmin() && asignacionDeHotelValida(hotelId)
+          && eventoDelHotelValido(hotelId, 'ASIGNAR_ADMINISTRADOR', request.resource.data))
+        || (administraHotel(hotelId) && hotelValido(request.resource.data)
+          && request.resource.data.actualizadoEn == request.time
+          && contenidoModificadoValido(hotelId)
+          && eventoDelHotelValido(hotelId, 'ACTUALIZAR_HOTEL', request.resource.data))
+        || ((esSuperadmin() || administraHotel(hotelId)) && publicacionValida(hotelId)
+          && eventoDelHotelValido(hotelId,
+            request.resource.data.publicado ? 'PUBLICAR_HOTEL' : 'RETIRAR_HOTEL', request.resource.data));
+      allow delete: if false;
+    }
+
+    function auditoriaExistenteValida(datos, hotel) {
+      let anterior = get(/databases/$(database)/documents/hoteles/$(datos.hotelId)).data;
+      return (datos.accion == 'ASIGNAR_ADMINISTRADOR' && esSuperadmin()
+          && administradorDelHotel(anterior) != hotel.administradorId)
+        || (datos.accion == 'ACTUALIZAR_HOTEL'
+          && administraHotelConDatos(datos.hotelId, anterior) && esCambioDeContenido(anterior, hotel))
+        || (datos.accion == 'PUBLICAR_HOTEL' && anterior.publicado == false && hotel.publicado == true
+          && (esSuperadmin() || administraHotelConDatos(datos.hotelId, anterior)))
+        || (datos.accion == 'RETIRAR_HOTEL' && anterior.publicado == true && hotel.publicado == false
+          && (esSuperadmin() || administraHotelConDatos(datos.hotelId, anterior)));
+    }
+
+    function auditoriaValida(eventoId, datos) {
+      let hotel = getAfter(/databases/$(database)/documents/hoteles/$(datos.hotelId)).data;
+      return datos.keys().hasAll([
+          'actorUid', 'actorNombre', 'evento', 'accion', 'detalle', 'hotelId', 'administradorId', 'timestamp'
+        ])
+        && datos.keys().hasOnly([
+          'actorUid', 'actorNombre', 'evento', 'accion', 'detalle', 'hotelId', 'administradorId', 'timestamp'
+        ])
+        && datos.actorUid == request.auth.uid && esTexto(datos.actorNombre)
+        && esTexto(datos.detalle) && idValido(datos.hotelId) && datos.evento == 'ACCION_ADMINISTRATIVA'
+        && datos.accion in ['ALTA_HOTEL', 'ASIGNAR_ADMINISTRADOR', 'ACTUALIZAR_HOTEL', 'PUBLICAR_HOTEL', 'RETIRAR_HOTEL']
+        && (datos.administradorId == null || idValido(datos.administradorId))
+        && datos.timestamp == request.time && hotel.ultimoEventoId == eventoId
+        && hotel.administradorId == datos.administradorId && hotel.actualizadoEn == request.time
+        && ((datos.accion == 'ALTA_HOTEL' && esSuperadmin()
+          && !exists(/databases/$(database)/documents/hoteles/$(datos.hotelId))
+          && hotel.creadoEn == request.time && hotel.creadoPor == request.auth.uid
+          && hotel.publicado == false && datos.administradorId == null)
+          || (exists(/databases/$(database)/documents/hoteles/$(datos.hotelId))
+            && auditoriaExistenteValida(datos, hotel)));
+    }
+
+    match /auditoria/{eventoId} {
+      allow get, list: if esSuperadmin();
+      allow create: if request.auth != null && auditoriaValida(eventoId, request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Las demas colecciones se abriran al migrar cada modulo con sus reglas.
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}
