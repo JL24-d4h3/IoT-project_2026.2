@@ -58,11 +58,19 @@ public class HomeFragment extends Fragment {
         configurarNavegacion();
         observar();
 
-        // Solo se carga la primera vez. Al girar la pantalla, el ViewModel
-        // conserva los datos y no se vuelve a pedir.
-        if (viewModel.getRecomendados().getValue() == null) {
-            viewModel.cargar();
-        }
+        // La carga se inicia una sola vez en onResume para revalidar el catalogo.
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        viewModel.cargar();
+    }
+
+    @Override
+    public void onPause() {
+        viewModel.suspender();
+        super.onPause();
     }
 
     private void configurarLista() {
@@ -149,6 +157,8 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        binding.listHotels.setAdapter(null);
+        adaptador = null;
         binding = null;
     }
 }

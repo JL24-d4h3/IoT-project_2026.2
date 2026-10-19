@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavBackStackEntry;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -17,7 +18,9 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
+import org.iot.project.core.SessionManager;
 import org.iot.project.databinding.FragmentSuperadminHotelesBinding;
+import org.iot.project.models.Role;
 import org.iot.project.utils.InsetUtils;
 
 import java.util.List;
@@ -62,8 +65,8 @@ public class SuperadminHotelesFragment extends Fragment {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applyTopPadding(binding.saHeader);
         binding.saHeader.setTitulo(R.string.nav_hoteles);
-        binding.saHeader.mostrarAccion(R.drawable.ic_add, R.string.cd_registrar_hotel,
-                v -> abrirAlta());
+        binding.saHeader.ocultarAccion();
+        binding.saHotelesCrear.setOnClickListener(v -> abrirAlta());
 
         adaptador = new HotelSaAdapter(this::abrirFicha);
         binding.saHotelesLista.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -99,8 +102,13 @@ public class SuperadminHotelesFragment extends Fragment {
     }
 
     private void abrirAlta() {
-        Navigation.findNavController(requireView())
-                .navigate(R.id.superadminAltaHotelFragment);
+        NavController controlador = Navigation.findNavController(requireView());
+        if (SessionManager.getRolActivo() != Role.SUPERADMIN
+                || controlador.getCurrentDestination() == null
+                || controlador.getCurrentDestination().getId() != R.id.superadminHotelesFragment) {
+            return;
+        }
+        controlador.navigate(R.id.superadminAltaHotelFragment);
     }
 
     /**
@@ -121,8 +129,14 @@ public class SuperadminHotelesFragment extends Fragment {
         String nombre = propia.getSavedStateHandle().get(CLAVE_HOTEL_REGISTRADO);
         propia.getSavedStateHandle().remove(CLAVE_HOTEL_REGISTRADO);
         if (nombre != null && !nombre.isEmpty()) {
-            Snackbar.make(binding.getRoot(), getString(R.string.sa_alta_hecha, nombre),
-                    Snackbar.LENGTH_LONG).show();
+            viewModel.refrescarTrasAlta();
+            Snackbar aviso = Snackbar.make(binding.getRoot(), getString(R.string.sa_alta_hecha, nombre),
+                    Snackbar.LENGTH_LONG);
+            View barra = requireActivity().findViewById(R.id.bottom_nav);
+            if (barra != null && barra.getVisibility() == View.VISIBLE) {
+                aviso.setAnchorView(barra);
+            }
+            aviso.show();
         }
     }
 

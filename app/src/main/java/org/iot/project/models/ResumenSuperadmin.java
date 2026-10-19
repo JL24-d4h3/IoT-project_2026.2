@@ -72,7 +72,8 @@ public final class ResumenSuperadmin {
 
     /** Conductores que esperan aprobacion (RF-077). */
     public int getConductoresPendientes() {
-        return conductoresTotales - conductoresHabilitados;
+        return conductoresTotales < 0 || conductoresHabilitados < 0
+                ? -1 : conductoresTotales - conductoresHabilitados;
     }
 
     /** Hoteles que todavia no se ofrecen al cliente. */

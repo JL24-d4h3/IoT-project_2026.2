@@ -89,8 +89,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_sm"
+                    android:saveEnabled="false"
                     app:singleSelection="true"
                     app:selectionRequired="true" />
+
+                <TextView
+                    android:id="@+id/servicio_catalogo_vacio"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/admin_servicios_sin_cupo"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <!-- ============ Cómo se ofrece ============ -->
@@ -106,6 +116,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
+                android:saveEnabled="false"
                 app:singleSelection="true"
                 app:selectionRequired="true" />
 
@@ -127,8 +138,36 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal"
+                    android:saveEnabled="false"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <ProgressBar
+                android:id="@+id/servicio_progreso"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/servicio_error"
+                style="@style/TextAppearance.App.BodySecondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:textColor="@color/colorOnErrorContainer"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/servicio_reintentar"
+                style="@style/Widget.App.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/accion_reintentar"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/servicio_guardar"

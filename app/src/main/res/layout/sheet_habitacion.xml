@@ -181,7 +181,7 @@
                         android:id="@+id/habitacion_piso"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="number"
+                        android:inputType="numberSigned"
                         android:maxLength="3"
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -204,6 +204,15 @@
                     android:maxLength="8"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/habitacion_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_base"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/colorError"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/habitacion_guardar"

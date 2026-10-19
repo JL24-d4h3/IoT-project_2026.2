@@ -78,6 +78,7 @@ public class SearchFragment extends Fragment {
         configurarFormulario();
         configurarResultados();
         observar();
+        viewModel.prepararDestinos();
     }
 
     @Override
@@ -450,6 +451,8 @@ public class SearchFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        binding.listResults.setAdapter(null);
+        adaptador = null;
         binding = null;
     }
 }

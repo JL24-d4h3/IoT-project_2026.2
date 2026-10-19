@@ -53,6 +53,10 @@ public interface SuperadminRepository {
     void asignarAdministrador(@NonNull String hotelId, @NonNull String usuarioId,
                               @NonNull ResultCallback<Hotel> callback);
 
+    /** Publica un hotel completo o lo retira del catalogo del cliente. */
+    void cambiarPublicacion(@NonNull String hotelId, boolean publicado,
+                            @NonNull ResultCallback<Hotel> callback);
+
     /** RF-118 a RF-120: la bitacora, del movimiento mas reciente al mas antiguo. */
     void bitacora(@NonNull ResultCallback<List<LogEntry>> callback);
 }

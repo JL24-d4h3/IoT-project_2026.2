@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -60,14 +61,22 @@ public class LugarSheet extends BottomSheetDialogFragment {
 
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, HotelDatosViewModel.class);
 
-        binding.lugarCerrar.setOnClickListener(v -> dismiss());
+        binding.lugarCerrar.setOnClickListener(v -> {
+            if (!viewModel.estaEscribiendo()) {
+                viewModel.limpiarLugar();
+                dismiss();
+            }
+        });
         binding.lugarGuardar.setOnClickListener(v -> guardar());
 
-        // Se limpia antes de observar: LiveData entrega su último valor al
-        // registrarse, y sin esto una hoja recién abierta vería el éxito del
-        // lugar anterior y se cerraría sola.
-        viewModel.limpiarLugar();
         viewModel.getLugar().observe(getViewLifecycleOwner(), this::pintar);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> pintarEspera());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        pintarEspera();
     }
 
     // ------------------------------------------------------------------ Guardar
@@ -82,6 +91,7 @@ public class LugarSheet extends BottomSheetDialogFragment {
      * que es donde vive la regla.
      */
     private void guardar() {
+        if (!viewModel.puedeModificar()) return;
         binding.lugarNombreCampo.setError(null);
         binding.lugarTipoCampo.setError(null);
         binding.lugarDistanciaCampo.setError(null);
@@ -116,7 +126,7 @@ public class LugarSheet extends BottomSheetDialogFragment {
         }
         try {
             double numero = Double.parseDouble(valor.replace(',', '.'));
-            if (numero <= 0d) {
+            if (!Double.isFinite(numero) || numero <= 0d) {
                 binding.lugarDistanciaCampo.setError(
                         getString(R.string.admin_hotel_lugar_distancia_cero));
                 return null;
@@ -145,25 +155,41 @@ public class LugarSheet extends BottomSheetDialogFragment {
     // ------------------------------------------------------------------ Estado
 
     private void pintar(@Nullable UiState<Hotel> estado) {
+        pintarEspera();
         if (estado == null) {
             return;
         }
         switch (estado.getStatus()) {
             case LOADING:
-                binding.lugarGuardar.setEnabled(false);
                 break;
             case SUCCESS:
-                binding.lugarGuardar.setEnabled(true);
                 // Sin aviso aquí: la hoja se cierra y el Snackbar se iría con
                 // ella. El lugar aparece en la lista de detrás.
                 dismiss();
+                viewModel.limpiarLugar();
                 break;
             case EMPTY:
             case ERROR:
             default:
-                binding.lugarGuardar.setEnabled(true);
                 avisar(estado.getMessage());
+                viewModel.limpiarLugar();
                 break;
+        }
+    }
+
+    private void pintarEspera() {
+        if (binding == null || viewModel == null) return;
+        boolean bloqueado = Boolean.TRUE.equals(viewModel.getOcupado().getValue());
+        setCancelable(!bloqueado);
+        binding.lugarCerrar.setEnabled(!bloqueado);
+        binding.lugarGuardar.setEnabled(viewModel.puedeModificar());
+        binding.lugarNombreCampo.setEnabled(!bloqueado);
+        binding.lugarTipoCampo.setEnabled(!bloqueado);
+        binding.lugarDistanciaCampo.setEnabled(!bloqueado);
+        if (getDialog() instanceof BottomSheetDialog) {
+            BottomSheetDialog dialogo = (BottomSheetDialog) getDialog();
+            dialogo.setCanceledOnTouchOutside(!bloqueado);
+            dialogo.getBehavior().setDraggable(!bloqueado);
         }
     }
 

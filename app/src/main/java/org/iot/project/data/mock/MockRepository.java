@@ -59,7 +59,14 @@ public abstract class MockRepository {
                 callback.onExito(Collections.emptyList());
                 return;
             }
-            List<T> resultado = proveedor.obtener();
+            List<T> resultado;
+            try {
+                resultado = proveedor.obtener();
+            } catch (IllegalStateException | IllegalArgumentException error) {
+                callback.onError(error.getMessage() != null
+                        ? error.getMessage() : "No pudimos completar la consulta.");
+                return;
+            }
             callback.onExito(resultado != null ? resultado : Collections.<T>emptyList());
         });
     }
@@ -79,7 +86,14 @@ public abstract class MockRepository {
                 callback.onError(MockConfig.mensajeDeError());
                 return;
             }
-            T resultado = proveedor.obtener();
+            T resultado;
+            try {
+                resultado = proveedor.obtener();
+            } catch (IllegalStateException | IllegalArgumentException error) {
+                callback.onError(error.getMessage() != null
+                        ? error.getMessage() : mensajeSiNoExiste);
+                return;
+            }
             if (resultado == null) {
                 callback.onError(mensajeSiNoExiste);
                 return;

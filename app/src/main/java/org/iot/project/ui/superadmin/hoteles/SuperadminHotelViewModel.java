@@ -10,27 +10,26 @@ import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.UiState;
 import org.iot.project.models.Hotel;
-import org.iot.project.models.Periodicidad;
 import org.iot.project.models.PeriodoDeVentas;
+import org.iot.project.models.Role;
 import org.iot.project.models.User;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Ficha de un hotel para el superadministrador (§47): sus datos, su
  * administrador, su publicacion y sus ventas (RF-059).
  *
- * <p>Son tres consultas de dos repositorios distintos y se piden a la vez: la
- * ficha se pinta entera o no se pinta. El reporte sale de {@code gestion()}, que
- * ya autoriza al superadministrador por la excepcion deliberada de
- * {@code puedeGestionar}: el reporte de reservas de un hotel es el mismo que ve
- * su administrador (RF-059) y no hay razon para escribirlo dos veces.
+ * <p>El hotel y las cuentas de administrador se consultan en paralelo. El
+ * reporte tiene una migracion independiente. La asignacion y la publicacion
+ * esperan la confirmacion del servidor antes de recargar la ficha.
  */
 public class SuperadminHotelViewModel extends ViewModel {
 
     /** Consultas que hay que reunir antes de poder pintar la ficha. */
-    private static final int PIEZAS = 3;
+    private static final int PIEZAS = 2;
 
     /** Que se acaba de hacer, para que la pantalla sepa que decir. */
     public enum Operacion {
@@ -90,7 +89,7 @@ public class SuperadminHotelViewModel extends ViewModel {
 
         /** Si el hotel reune lo minimo para ofrecerse al cliente (RF-013, RF-014). */
         public boolean esPublicable() {
-            return hotel.aptoParaPublicar();
+            return hotel.aptoParaPublicar() && !sinAsignar && administrador != null;
         }
     }
 
@@ -102,12 +101,14 @@ public class SuperadminHotelViewModel extends ViewModel {
 
     private Hotel hotel;
     private List<User> cuentas;
-    private List<PeriodoDeVentas> ventas;
 
     private int tanda;
     private int recibidas;
     private boolean fallo;
     private boolean cargando;
+    private boolean modificando;
+    @Nullable
+    private Operacion operacionPendiente;
 
     public LiveData<UiState<Contenido>> getContenido() {
         return contenido;
@@ -115,6 +116,26 @@ public class SuperadminHotelViewModel extends ViewModel {
 
     public LiveData<UiState<Cambio>> getCambio() {
         return cambio;
+    }
+
+    public boolean estaModificando() {
+        return modificando;
+    }
+
+    @Nullable
+    public Operacion getOperacionPendiente() {
+        return operacionPendiente;
+    }
+
+    public boolean puedeAsignar() {
+        UiState<Contenido> actual = contenido.getValue();
+        return !cargando && !modificando && actual != null && actual.isSuccess();
+    }
+
+    public boolean puedeCambiarPublicacion() {
+        UiState<Contenido> actual = contenido.getValue();
+        return puedeAsignar() && actual != null && actual.getData() != null
+                && (actual.getData().hotel.isPublicado() || actual.getData().esPublicable());
     }
 
     /**
@@ -131,12 +152,15 @@ public class SuperadminHotelViewModel extends ViewModel {
             cargando = false;
             contenido.setValue(UiState.loading());
             cambio.setValue(null);
+        } else if (!cargando && !modificando) {
+            // La lista puede haberse actualizado desde la ultima visita a esta ficha.
+            contenido.setValue(UiState.loading());
         }
         cargar();
     }
 
     public void cargar() {
-        if (cargando || hotelId == null) {
+        if (cargando || modificando || hotelId == null) {
             return;
         }
         UiState<Contenido> actual = contenido.getValue();
@@ -159,7 +183,6 @@ public class SuperadminHotelViewModel extends ViewModel {
         fallo = false;
         hotel = null;
         cuentas = null;
-        ventas = null;
 
         ServiceLocator.hoteles().obtener(hotelId, new ResultCallback<Hotel>() {
             @Override
@@ -197,30 +220,9 @@ public class SuperadminHotelViewModel extends ViewModel {
             }
         });
 
-        // RF-059: el mismo reporte que ve el administrador del hotel. Un solo
-        // periodo —el mes— porque la ficha enseña un resumen y el reporte con
-        // sus tres granularidades ya existe en la pantalla del hotel.
-        ServiceLocator.gestion().ventas(hotelId, Periodicidad.MES,
-                new ResultCallback<List<PeriodoDeVentas>>() {
-                    @Override
-                    public void onExito(@NonNull List<PeriodoDeVentas> datos) {
-                        if (mia != tanda) {
-                            return;
-                        }
-                        ventas = datos;
-                        pieza();
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        if (mia == tanda) {
-                            fallar(mensaje);
-                        }
-                    }
-                });
     }
 
-    /** Una de las tres consultas ya llego. */
+    /** Una de las consultas esenciales ya llego. */
     private void pieza() {
         if (fallo) {
             return;
@@ -231,8 +233,7 @@ public class SuperadminHotelViewModel extends ViewModel {
         }
         Hotel listo = hotel;
         List<User> activas = cuentas;
-        List<PeriodoDeVentas> reporte = ventas;
-        if (listo == null || activas == null || reporte == null) {
+        if (listo == null || activas == null) {
             fallar("No pudimos cargar la ficha del hotel.");
             return;
         }
@@ -242,7 +243,7 @@ public class SuperadminHotelViewModel extends ViewModel {
                 Administradores.nombreDe(listo, activas),
                 Administradores.sinAsignar(listo),
                 candidatosPara(listo, activas),
-                reporte)));
+                Collections.emptyList())));
     }
 
     /**
@@ -255,7 +256,11 @@ public class SuperadminHotelViewModel extends ViewModel {
     private static List<User> candidatosPara(@NonNull Hotel hotel, @NonNull List<User> activas) {
         List<User> libres = new ArrayList<>();
         for (User cuenta : activas) {
-            if (!cuenta.getId().equals(hotel.getAdministradorId())) {
+            String asignado = cuenta.getHotelId();
+            boolean disponible = asignado == null || asignado.trim().isEmpty()
+                    || hotel.getId().equals(asignado);
+            if (cuenta.isActivo() && cuenta.getRol() == Role.ADMIN_HOTEL && disponible
+                    && !cuenta.getId().equals(hotel.getAdministradorId())) {
                 libres.add(cuenta);
             }
         }
@@ -283,48 +288,76 @@ public class SuperadminHotelViewModel extends ViewModel {
      * la pantalla diciendo dos cosas distintas del mismo hotel.
      */
     public void asignar(@NonNull String usuarioId) {
-        if (hotelId == null) {
+        if (hotelId == null || !puedeAsignar()) {
             return;
         }
-        ServiceLocator.superadmin().asignarAdministrador(hotelId, usuarioId,
+        String solicitado = hotelId;
+        modificando = true;
+        operacionPendiente = Operacion.ASIGNAR;
+        cambio.setValue(UiState.loading());
+        ServiceLocator.superadmin().asignarAdministrador(solicitado, usuarioId,
                 new ResultCallback<Hotel>() {
                     @Override
                     public void onExito(@NonNull Hotel dato) {
-                        cambio.setValue(UiState.success(new Cambio(dato, Operacion.ASIGNAR)));
+                        modificando = false;
+                        operacionPendiente = null;
+                        if (!solicitado.equals(hotelId)) {
+                            cambio.setValue(null);
+                            cargar();
+                            return;
+                        }
                         recargarSinEsqueleto();
+                        cambio.setValue(UiState.success(new Cambio(dato, Operacion.ASIGNAR)));
                     }
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        modificando = false;
+                        operacionPendiente = null;
+                        if (!solicitado.equals(hotelId)) {
+                            cambio.setValue(null);
+                            cargar();
+                            return;
+                        }
                         cambio.setValue(UiState.error(mensaje));
                     }
                 });
     }
 
-    /**
-     * Publicar o retirar el hotel.
-     *
-     * <p>Lo normal es que publique su administrador, y por eso el interruptor
-     * de aqui es la correccion del superadministrador: retirar un hotel que no
-     * deberia estar en el catalogo, y devolverlo cuando el motivo se resolvio.
-     * Las condiciones para publicar no las inventa esta pantalla: las aplica el
-     * repositorio, que es quien las sabe.
-     */
+    /** Publica o retira con las mismas guardas de carga que la asignacion. */
     public void cambiarPublicacion(boolean publicado) {
-        if (hotelId == null) {
+        if (hotelId == null || !puedeCambiarPublicacion()) {
             return;
         }
-        final Operacion operacion = publicado ? Operacion.PUBLICAR : Operacion.RETIRAR;
-        ServiceLocator.gestion().cambiarPublicacion(hotelId, publicado,
+        String solicitado = hotelId;
+        Operacion operacion = publicado ? Operacion.PUBLICAR : Operacion.RETIRAR;
+        modificando = true;
+        operacionPendiente = operacion;
+        cambio.setValue(UiState.loading());
+        ServiceLocator.superadmin().cambiarPublicacion(solicitado, publicado,
                 new ResultCallback<Hotel>() {
                     @Override
                     public void onExito(@NonNull Hotel dato) {
-                        cambio.setValue(UiState.success(new Cambio(dato, operacion)));
+                        modificando = false;
+                        operacionPendiente = null;
+                        if (!solicitado.equals(hotelId)) {
+                            cambio.setValue(null);
+                            cargar();
+                            return;
+                        }
                         recargarSinEsqueleto();
+                        cambio.setValue(UiState.success(new Cambio(dato, operacion)));
                     }
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        modificando = false;
+                        operacionPendiente = null;
+                        if (!solicitado.equals(hotelId)) {
+                            cambio.setValue(null);
+                            cargar();
+                            return;
+                        }
                         cambio.setValue(UiState.error(mensaje));
                     }
                 });

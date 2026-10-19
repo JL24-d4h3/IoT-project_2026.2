@@ -6,10 +6,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
@@ -51,20 +51,11 @@ public class HotelDatosFragment extends Fragment {
     private FragmentAdminHotelDatosBinding binding;
     private HotelDatosViewModel viewModel;
     private FotoHotelAdapter adaptadorFotos;
+    private OnBackPressedCallback bloqueoRetroceso;
 
     /** El hotel que hay pintado, para abrir la hoja de datos con lo que se ve. */
     @Nullable
     private Hotel hotel;
-
-    /**
-     * Qué aviso toca cuando la operación sobre las fotografías salga bien.
-     *
-     * <p>Se guarda al pulsar y no se deduce del resultado porque las dos
-     * operaciones comparten canal en el ViewModel y devuelven el mismo hotel:
-     * desde el resultado no hay forma de saber si la tira creció o menguó.
-     */
-    @StringRes
-    private int avisoFoto = R.string.admin_hotel_foto_agregada;
 
     @Nullable
     @Override
@@ -83,7 +74,11 @@ public class HotelDatosFragment extends Fragment {
         // Vuelve aunque la barra inferior siga visible: esta pantalla no es una
         // de sus secciones, y sin flecha la única salida sería adivinar qué
         // pestaña lleva de vuelta al perfil.
-        binding.adminHotelHeader.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
+        binding.adminHotelHeader.mostrarVolver(v -> {
+            if (viewModel == null || !viewModel.estaEscribiendo()) {
+                Navigation.findNavController(v).navigateUp();
+            }
+        });
 
         adaptadorFotos = new FotoHotelAdapter();
         adaptadorFotos.setAlQuitar(this::quitarFoto);
@@ -98,11 +93,25 @@ public class HotelDatosFragment extends Fragment {
         // El ViewModel es el del grafo y no el del fragmento: las dos hojas viven
         // en otros fragmentos y tienen que dejar el hotel cambiado aquí.
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, HotelDatosViewModel.class);
+        bloqueoRetroceso = new OnBackPressedCallback(viewModel.estaEscribiendo()) {
+            @Override
+            public void handleOnBackPressed() {
+                // Se espera el resultado antes de abandonar una escritura.
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), bloqueoRetroceso);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> actualizarAcciones());
         viewModel.getHotel().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getGuardado().observe(getViewLifecycleOwner(), this::pintarGuardado);
         viewModel.getFoto().observe(getViewLifecycleOwner(), this::pintarFoto);
         viewModel.getPublicacion().observe(getViewLifecycleOwner(), this::pintarCambioDePublicacion);
         viewModel.cargar();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.refrescarAlVolver();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -133,6 +142,7 @@ public class HotelDatosFragment extends Fragment {
                 pintarError(estado.getMessage());
                 break;
         }
+        actualizarAcciones();
     }
 
     private void pintarError(@Nullable String mensaje) {
@@ -220,6 +230,7 @@ public class HotelDatosFragment extends Fragment {
      * decir que la operación salió bien, y por eso se limpia en cuanto se lee.
      */
     private void pintarCambioDePublicacion(@Nullable UiState<Hotel> estado) {
+        actualizarAcciones();
         if (estado == null) {
             return;
         }
@@ -317,6 +328,7 @@ public class HotelDatosFragment extends Fragment {
     }
 
     private void agregarFoto() {
+        if (!viewModel.puedeModificar()) return;
         binding.adminHotelFotoCampo.setError(null);
         CharSequence contenido = binding.adminHotelFoto.getText();
         String url = contenido != null ? contenido.toString().trim() : "";
@@ -324,12 +336,11 @@ public class HotelDatosFragment extends Fragment {
             binding.adminHotelFotoCampo.setError(getString(R.string.admin_hotel_foto_obligatoria));
             return;
         }
-        avisoFoto = R.string.admin_hotel_foto_agregada;
         viewModel.agregarFoto(url);
     }
 
     private void quitarFoto(@NonNull String url) {
-        avisoFoto = R.string.admin_hotel_foto_quitada;
+        if (!viewModel.puedeModificar()) return;
         viewModel.quitarFoto(url);
     }
 
@@ -341,6 +352,7 @@ public class HotelDatosFragment extends Fragment {
      * el hotel acabaría con dos iguales sin que nadie lo haya pedido.
      */
     private void pintarFoto(@Nullable UiState<Hotel> estado) {
+        actualizarAcciones();
         if (estado == null) {
             return;
         }
@@ -353,7 +365,8 @@ public class HotelDatosFragment extends Fragment {
             case SUCCESS:
                 binding.adminHotelFotoAgregar.setEnabled(true);
                 binding.adminHotelFoto.setText("");
-                avisar(getString(avisoFoto));
+                avisar(getString(viewModel.fueFotoAgregada()
+                        ? R.string.admin_hotel_foto_agregada : R.string.admin_hotel_foto_quitada));
                 break;
             case EMPTY:
             case ERROR:
@@ -389,28 +402,34 @@ public class HotelDatosFragment extends Fragment {
 
     private void abrirHojaDatos() {
         Hotel actual = hotel;
-        if (actual == null) {
+        if (actual == null || !viewModel.puedeModificar() || getChildFragmentManager().isStateSaved()
+                || getChildFragmentManager().findFragmentByTag(HotelSheet.TAG) != null) {
             // Sin hotel cargado no hay nada que editar, y en ese estado la
             // pantalla ni siquiera tiene el botón a la vista.
             return;
         }
-        HotelSheet.para(actual).show(getChildFragmentManager(), HotelSheet.TAG);
+        viewModel.limpiarGuardado();
+        HotelSheet.para(actual).showNow(getChildFragmentManager(), HotelSheet.TAG);
     }
 
     private void abrirHojaLugar() {
-        if (hotel == null) {
+        if (hotel == null || !viewModel.puedeModificar() || getChildFragmentManager().isStateSaved()
+                || getChildFragmentManager().findFragmentByTag(LugarSheet.TAG) != null) {
             return;
         }
-        LugarSheet.nueva().show(getChildFragmentManager(), LugarSheet.TAG);
+        viewModel.limpiarLugar();
+        LugarSheet.nueva().showNow(getChildFragmentManager(), LugarSheet.TAG);
     }
 
     // ------------------------------------------------------------------ Avisos
 
     /** El resultado de guardar el formulario de datos (RF-010). */
     private void pintarGuardado(@Nullable UiState<Hotel> estado) {
+        actualizarAcciones();
         if (estado == null) {
             return;
         }
+        boolean hojaAbierta = getChildFragmentManager().findFragmentByTag(HotelSheet.TAG) != null;
         switch (estado.getStatus()) {
             case LOADING:
                 return;
@@ -420,14 +439,35 @@ public class HotelDatosFragment extends Fragment {
             case EMPTY:
             case ERROR:
             default:
-                avisar(mensajeDe(estado));
+                if (!hojaAbierta) avisar(mensajeDe(estado));
                 break;
         }
-        viewModel.limpiarGuardado();
+        // La hoja debe recibir SUCCESS para cerrarse antes de consumirlo.
+        if (!hojaAbierta) viewModel.limpiarGuardado();
     }
 
     private void avisar(@NonNull String mensaje) {
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
+        Snackbar aviso = Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG);
+        View barra = requireActivity().findViewById(R.id.bottom_nav);
+        if (barra != null && barra.getVisibility() == View.VISIBLE) aviso.setAnchorView(barra);
+        aviso.show();
+    }
+
+    private void actualizarAcciones() {
+        if (binding == null || viewModel == null) return;
+        boolean habilitado = hotel != null && viewModel.puedeModificar();
+        binding.adminHotelEditar.setEnabled(habilitado);
+        binding.adminHotelFotoAgregar.setEnabled(habilitado);
+        binding.adminHotelFotoCampo.setEnabled(habilitado);
+        binding.adminHotelLugarAgregar.setEnabled(habilitado);
+        binding.adminPublicacionAccion.setEnabled(habilitado
+                && (hotel.isPublicado() || hotel.aptoParaPublicar()));
+        binding.adminHotelHeader.getBotonVolver().setEnabled(!viewModel.estaEscribiendo());
+        if (bloqueoRetroceso != null) bloqueoRetroceso.setEnabled(viewModel.estaEscribiendo());
+        if (hotel != null && adaptadorFotos != null) {
+            adaptadorFotos.mostrar(hotel.getFotos(), habilitado && hotel.getFotos().size() > Hotel.MIN_FOTOS);
+            adaptadorFotos.notifyDataSetChanged();
+        }
     }
 
     @NonNull
@@ -440,6 +480,10 @@ public class HotelDatosFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        binding.adminHotelFotosLista.setAdapter(null);
+        adaptadorFotos = null;
+        hotel = null;
+        bloqueoRetroceso = null;
         binding = null;
     }
 }

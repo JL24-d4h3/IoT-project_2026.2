@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -76,16 +77,25 @@ public class HotelSheet extends BottomSheetDialogFragment {
 
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, HotelDatosViewModel.class);
 
-        binding.hotelCerrar.setOnClickListener(v -> dismiss());
+        binding.hotelCerrar.setOnClickListener(v -> {
+            if (!viewModel.estaEscribiendo()) {
+                viewModel.limpiarGuardado();
+                dismiss();
+            }
+        });
         binding.hotelGuardar.setOnClickListener(v -> guardar());
 
         rellenar();
 
-        // Se limpia antes de observar: LiveData entrega su último valor al
-        // registrarse, y sin esto una hoja recién abierta vería el éxito del
-        // guardado anterior y se cerraría sola.
-        viewModel.limpiarGuardado();
+        // La hoja recreada conserva LOADING y tambien un resultado ya recibido.
         viewModel.getGuardado().observe(getViewLifecycleOwner(), this::pintar);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> pintarEspera());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        pintarEspera();
     }
 
     /** Pone en los campos lo que el hotel tiene ahora. */
@@ -123,6 +133,7 @@ public class HotelSheet extends BottomSheetDialogFragment {
      * las coordenadas caigan dentro del mundo, lo decide el repositorio.
      */
     private void guardar() {
+        if (!viewModel.puedeModificar()) return;
         binding.hotelNombreCampo.setError(null);
         binding.hotelDireccionCampo.setError(null);
         binding.hotelLatitudCampo.setError(null);
@@ -176,7 +187,7 @@ public class HotelSheet extends BottomSheetDialogFragment {
         }
         try {
             double numero = Double.parseDouble(valor.replace(',', '.'));
-            if (numero < minimo || numero > maximo) {
+            if (!Double.isFinite(numero) || numero < minimo || numero > maximo) {
                 marco.setError(getString(R.string.admin_hotel_coordenada_rango));
                 return null;
             }
@@ -190,25 +201,43 @@ public class HotelSheet extends BottomSheetDialogFragment {
     // ------------------------------------------------------------------ Estado
 
     private void pintar(@Nullable UiState<Hotel> estado) {
+        pintarEspera();
         if (estado == null) {
             return;
         }
         switch (estado.getStatus()) {
             case LOADING:
-                binding.hotelGuardar.setEnabled(false);
                 break;
             case SUCCESS:
-                binding.hotelGuardar.setEnabled(true);
                 // Sin aviso aquí: la hoja se cierra y el Snackbar se iría con
                 // ella. La pantalla de detrás avisa y ya está repintada.
                 dismiss();
+                viewModel.limpiarGuardado();
                 break;
             case EMPTY:
             case ERROR:
             default:
-                binding.hotelGuardar.setEnabled(true);
                 avisar(estado.getMessage());
+                viewModel.limpiarGuardado();
                 break;
+        }
+    }
+
+    private void pintarEspera() {
+        if (binding == null || viewModel == null) return;
+        boolean bloqueado = Boolean.TRUE.equals(viewModel.getOcupado().getValue());
+        setCancelable(!bloqueado);
+        binding.hotelCerrar.setEnabled(!bloqueado);
+        binding.hotelGuardar.setEnabled(viewModel.puedeModificar());
+        binding.hotelNombreCampo.setEnabled(!bloqueado);
+        binding.hotelDescripcionCampo.setEnabled(!bloqueado);
+        binding.hotelDireccionCampo.setEnabled(!bloqueado);
+        binding.hotelLatitudCampo.setEnabled(!bloqueado);
+        binding.hotelLongitudCampo.setEnabled(!bloqueado);
+        if (getDialog() instanceof BottomSheetDialog) {
+            BottomSheetDialog dialogo = (BottomSheetDialog) getDialog();
+            dialogo.setCanceledOnTouchOutside(!bloqueado);
+            dialogo.getBehavior().setDraggable(!bloqueado);
         }
     }
 

@@ -26,6 +26,19 @@
         android:layout_height="wrap_content"
         android:background="@color/colorSurface" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/admin_servicios_agregar"
+        style="@style/Widget.App.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginBottom="@dimen/space_sm"
+        android:enabled="false"
+        android:text="@string/admin_servicios_anadir"
+        app:icon="@drawable/ic_add" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -143,15 +156,6 @@
                             tools:visibility="visible" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- ============ Agregar ============ -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/admin_servicios_agregar"
-                    style="@style/Widget.App.Button.Primary"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/button_height"
-                    android:layout_marginTop="@dimen/space_lg"
-                    android:text="@string/admin_servicios_agregar" />
 
                 <!--
                     Cuando el hotel ya tiene todo el catálogo, el botón

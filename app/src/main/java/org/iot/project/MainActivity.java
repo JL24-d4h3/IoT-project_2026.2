@@ -21,6 +21,7 @@ import org.iot.project.models.Cuenta;
 import org.iot.project.utils.InsetUtils;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Objects;
@@ -51,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
      * del cliente —reserva, pago, chat— siguen sin revisar y por eso no estan.
      */
     private static final Set<Integer> PANTALLAS_COMPLETAS = Collections.unmodifiableSet(
-            new HashSet<>(Collections.singletonList(R.id.adminChatFragment)));
+            new HashSet<>(Arrays.asList(R.id.adminChatFragment, R.id.superadminAltaHotelFragment)));
 
     /**
      * Una barra con una sola seccion no navega a ningun sitio: solo ocupa
@@ -63,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private NavController navController;
     private String identidadAplicada;
+    private String hotelAplicado;
     private static final String CLAVE_UID = "sesionUid";
+    private static final String CLAVE_HOTEL = "sesionHotelId";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -75,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
         Bundle estadoSeguro = estadoPublico || mismaSesion ? savedInstanceState : null;
         super.onCreate(estadoSeguro);
         identidadAplicada = estadoSeguro == null ? null : estadoSeguro.getString(CLAVE_UID);
+        hotelAplicado = estadoSeguro == null ? null : estadoSeguro.getString(CLAVE_HOTEL);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -137,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(CLAVE_UID, identidadAplicada);
+        outState.putString(CLAVE_HOTEL, hotelAplicado);
     }
 
     /**
@@ -155,9 +160,12 @@ public class MainActivity extends AppCompatActivity {
         aplicarMenu(roles);
 
         String identidad = cuenta == null ? null : cuenta.getIdentidadId();
+        String hotelId = cuenta == null ? null : cuenta.getHotelId();
         boolean cambioDeCuenta = !Objects.equals(identidadAplicada, identidad);
+        boolean cambioDeHotel = !Objects.equals(hotelAplicado, hotelId);
         identidadAplicada = identidad;
-        if (navController.getGraph().getId() != grafo || cambioDeCuenta) {
+        hotelAplicado = hotelId;
+        if (navController.getGraph().getId() != grafo || cambioDeCuenta || cambioDeHotel) {
             navController.setGraph(grafo);
         } else {
             actualizarBarra(navController.getCurrentDestination());

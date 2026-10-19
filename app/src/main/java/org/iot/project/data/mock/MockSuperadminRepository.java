@@ -237,6 +237,29 @@ public class MockSuperadminRepository extends MockRepository implements Superadm
     }
 
     @Override
+    public void cambiarPublicacion(@NonNull String hotelId, boolean publicado,
+                                   @NonNull ResultCallback<Hotel> callback) {
+        ejecutar(callback, () -> {
+            Hotel hotel = exigirHotel(hotelId);
+            if (publicado) {
+                if (!hotel.aptoParaPublicar()) {
+                    throw new IllegalArgumentException("Completa al menos cuatro fotografías y una habitación antes de publicar.");
+                }
+                User administrador = exigirUsuario(hotel.getAdministradorId());
+                if (administrador.getRol() != Role.ADMIN_HOTEL || !administrador.isActivo()) {
+                    throw new IllegalArgumentException("Asigna un administrador activo antes de publicar.");
+                }
+            }
+            if (hotel.isPublicado() != publicado) {
+                hotel.setPublicado(publicado);
+                registrar(LogEntry.Evento.ACCION_ADMINISTRATIVA,
+                        (publicado ? "Se publicó " : "Se retiró ") + hotel.getNombre() + ".");
+            }
+            return hotel;
+        });
+    }
+
+    @Override
     public void bitacora(@NonNull ResultCallback<List<LogEntry>> callback) {
         entregarLista(callback, MockSuperadminRepository::ordenadosDeLaBitacora);
     }

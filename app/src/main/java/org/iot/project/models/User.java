@@ -23,6 +23,7 @@ public class User {
     private String telefono;
     private String direccion;
     private String fotoUrl;
+    private String hotelId;
     private final Role rol;
     private boolean activo = true;
 
@@ -111,6 +112,15 @@ public class User {
     public User withFoto(String url) {
         this.fotoUrl = url;
         return this;
+    }
+
+    /** Asignacion administrativa del servidor, o null si todavia no existe. */
+    public String getHotelId() {
+        return hotelId;
+    }
+
+    public void setHotelId(String hotelId) {
+        this.hotelId = hotelId;
     }
 
     public Role getRol() {

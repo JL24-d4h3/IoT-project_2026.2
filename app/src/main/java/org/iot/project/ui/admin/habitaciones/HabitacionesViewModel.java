@@ -10,9 +10,11 @@ import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
+import org.iot.project.data.firebase.HotelFirebase;
 import org.iot.project.models.Room;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Estado de la gestión de habitaciones (RF-014 a RF-018).
@@ -38,6 +40,13 @@ public class HabitacionesViewModel extends ViewModel {
      * pantalla avisaría de un guardado que hizo la hoja.
      */
     private final MutableLiveData<UiState<Room>> guardado = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> ocupado = new MutableLiveData<>(false);
+    private final MutableLiveData<Room> creada = new MutableLiveData<>();
+    private boolean cargando;
+    private boolean escribiendo;
+    private String hotelCargado;
+    private String cuentaCargada;
+    private long solicitud;
 
     public LiveData<UiState<List<Room>>> getHabitaciones() {
         return habitaciones;
@@ -51,6 +60,27 @@ public class HabitacionesViewModel extends ViewModel {
         return guardado;
     }
 
+    public LiveData<Boolean> getOcupado() { return ocupado; }
+
+    public LiveData<Room> getCreada() { return creada; }
+
+    public void consumirCreada() { creada.setValue(null); }
+
+    public boolean estaGuardando() { return escribiendo; }
+
+    public boolean puedeGuardar() {
+        UiState<List<Room>> actual = habitaciones.getValue();
+        return !cargando && !escribiendo && hotelCargado != null
+                && mismaSesion(cuentaCargada, hotelCargado)
+                && actual != null && (actual.isSuccess() || actual.isEmpty());
+    }
+
+    public boolean puedeCrear() {
+        UiState<List<Room>> actual = habitaciones.getValue();
+        return puedeGuardar() && (actual.getData() == null
+                || actual.getData().size() < HotelFirebase.MAX_HABITACIONES);
+    }
+
     @Nullable
     public String getHotelId() {
         return SessionManager.getHotelAdministrado();
@@ -60,34 +90,52 @@ public class HabitacionesViewModel extends ViewModel {
         // Al rotar, el ViewModel sobrevive con la lista cargada: volver a pasar
         // por el esqueleto dejaría la pantalla en blanco un instante sin motivo.
         UiState<List<Room>> actual = habitaciones.getValue();
-        if (actual != null && actual.isSuccess()) {
+        if (actual != null && (actual.isSuccess() || actual.isEmpty())
+                && hotelCargado != null && mismaSesion(cuentaCargada, hotelCargado)) {
             return;
         }
         recargar();
     }
 
+    public void refrescarAlVolver() {
+        recargar();
+    }
+
     public void recargar() {
+        if (cargando || escribiendo) return;
         String hotelId = getHotelId();
         if (hotelId == null) {
             habitaciones.setValue(UiState.<List<Room>>error(
                     "Todavía no tienes un hotel asignado."));
             return;
         }
+        cargando = true;
+        String uid = SessionManager.getUsuarioId();
+        long peticion = ++solicitud;
+        ocupado.setValue(true);
         habitaciones.setValue(UiState.<List<Room>>loading());
         ServiceLocator.gestion().habitaciones(hotelId, new ResultCallback<List<Room>>() {
             @Override
             public void onExito(@NonNull List<Room> datos) {
+                if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                cargando = false;
+                hotelCargado = hotelId;
+                cuentaCargada = uid;
                 // Un hotel sin habitaciones registradas es un estado con nombre
                 // propio, no una lista vacía: la pantalla tiene que decir que no
                 // hay ninguna y ofrecer registrarla. Sin esta traducción llegaría
                 // como éxito y se pintaría una lista en blanco.
                 habitaciones.setValue(datos.isEmpty()
                         ? UiState.<List<Room>>empty() : UiState.success(datos));
+                ocupado.setValue(false);
             }
 
             @Override
             public void onError(@NonNull String mensaje) {
+                if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                cargando = false;
                 habitaciones.setValue(UiState.error(mensaje));
+                ocupado.setValue(false);
             }
         });
     }
@@ -125,16 +173,37 @@ public class HabitacionesViewModel extends ViewModel {
      * ya vive en el repositorio.
      */
     public void guardarHabitacion(@NonNull Room borrador) {
+        if (!puedeGuardar()) return;
+        if (!borrador.getHotelId().equals(getHotelId())) {
+            guardado.setValue(UiState.error("Tu asignación cambió. Vuelve a abrir la habitación."));
+            return;
+        }
+        boolean esNueva = buscarHabitacion(borrador.getId()) == null;
+        if (esNueva && !puedeCrear()) {
+            guardado.setValue(UiState.error("El hotel admite hasta 10 habitaciones."));
+            return;
+        }
+        String uid = SessionManager.getUsuarioId();
+        String hotelId = borrador.getHotelId();
+        long peticion = ++solicitud;
+        escribiendo = true;
+        ocupado.setValue(true);
         guardado.setValue(UiState.<Room>loading());
         ServiceLocator.gestion().guardarHabitacion(borrador, new ResultCallback<Room>() {
             @Override
             public void onExito(@NonNull Room datos) {
+                if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                escribiendo = false;
                 guardado.setValue(UiState.success(datos));
+                if (esNueva) creada.setValue(datos);
                 recargar();
             }
 
             @Override
             public void onError(@NonNull String mensaje) {
+                if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                escribiendo = false;
+                ocupado.setValue(false);
                 guardado.setValue(UiState.error(mensaje));
             }
         });
@@ -142,7 +211,8 @@ public class HabitacionesViewModel extends ViewModel {
 
     /** Limpia el resultado del guardado al terminar de atenderlo. */
     public void limpiarGuardado() {
-        guardado.setValue(null);
+        UiState<Room> actual = guardado.getValue();
+        if (actual == null || !actual.isLoading()) guardado.setValue(null);
     }
 
     /**
@@ -154,21 +224,31 @@ public class HabitacionesViewModel extends ViewModel {
      * daría una lista que dice un orden que ya no es el suyo.
      */
     public void cambiarDisponibilidad(@NonNull String roomId, boolean disponible) {
+        if (!puedeGuardar()) return;
         String hotelId = getHotelId();
         if (hotelId == null) {
             return;
         }
+        String uid = SessionManager.getUsuarioId();
+        long peticion = ++solicitud;
+        escribiendo = true;
+        ocupado.setValue(true);
         operacion.setValue(UiState.<Room>loading());
         ServiceLocator.gestion().cambiarDisponibilidad(hotelId, roomId, disponible,
                 new ResultCallback<Room>() {
                     @Override
                     public void onExito(@NonNull Room datos) {
+                        if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                        escribiendo = false;
                         operacion.setValue(UiState.success(datos));
                         recargar();
                     }
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        if (!aceptarRespuesta(peticion, uid, hotelId)) return;
+                        escribiendo = false;
+                        ocupado.setValue(false);
                         operacion.setValue(UiState.error(mensaje));
                     }
                 });
@@ -177,5 +257,32 @@ public class HabitacionesViewModel extends ViewModel {
     /** Limpia el resultado de la operación al terminar de atenderlo. */
     public void limpiarOperacion() {
         operacion.setValue(null);
+    }
+
+    private boolean mismaSesion(@Nullable String uid, @NonNull String hotelId) {
+        return uid != null && uid.equals(SessionManager.getUsuarioId())
+                && Objects.equals(hotelId, getHotelId());
+    }
+
+    /** Nunca entrega resultados de una cuenta o asignación anterior. */
+    private boolean aceptarRespuesta(long peticion, String uid, String hotelId) {
+        if (peticion != solicitud) return false;
+        if (mismaSesion(uid, hotelId)) return true;
+        cargando = false;
+        escribiendo = false;
+        hotelCargado = null;
+        cuentaCargada = null;
+        guardado.setValue(null);
+        operacion.setValue(null);
+        creada.setValue(null);
+        habitaciones.setValue(UiState.error("Tu asignación cambió. Vuelve a abrir Habitaciones."));
+        ocupado.setValue(false);
+        return false;
+    }
+
+    @Override
+    protected void onCleared() {
+        solicitud++;
+        super.onCleared();
     }
 }

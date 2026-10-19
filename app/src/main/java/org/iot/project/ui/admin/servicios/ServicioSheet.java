@@ -1,6 +1,8 @@
 package org.iot.project.ui.admin.servicios;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,11 +11,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.chip.ChipGroup;
-import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
+import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
 import org.iot.project.core.ViewModelGrafo;
 import org.iot.project.databinding.SheetServicioAdminBinding;
@@ -22,46 +25,35 @@ import org.iot.project.models.HotelService;
 import org.iot.project.models.Service;
 import org.iot.project.ui.components.FilterChipView;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Agregar o editar un servicio del hotel (§45).
- *
- * <p>Tiene dos modos y la diferencia no es cosmética: al <b>agregar</b> hay que
- * elegir cuál del catálogo, y al <b>editar</b> ya está elegido y no se puede
- * cambiar —el repositorio asocia por identificador de servicio, así que cambiar
- * de servicio es quitar uno y poner otro—. Por eso en modo edición el catálogo
- * no se enseña: ofrecer una lista que no se puede usar es peor que no ofrecerla.
- */
+/** Catalogo y forma de cobro, con borrador restaurado por valores e identidad. */
 public class ServicioSheet extends BottomSheetDialogFragment {
-
     public static final String TAG = "servicio";
-
     private static final String ARG_SERVICE_ID = "serviceId";
+    private static final String CLAVE_ELEGIDO = "servicioElegido";
+    private static final String CLAVE_INCLUIDO = "servicioIncluido";
+    private static final String CLAVE_PRECIO = "servicioPrecioBorrador";
+    private static final String CLAVE_BORRADOR = "servicioBorradorPreparado";
+    private static final String CLAVE_UID = "servicioCuenta";
+    private static final String CLAVE_HOTEL = "servicioHotel";
 
     private SheetServicioAdminBinding binding;
     private ServiciosViewModel viewModel;
-
-    /** El servicio que se está editando, o {@code null} si se está agregando. */
-    @Nullable
-    private Service enEdicion;
-
-    /** Si se está rellenando el formulario, no el usuario. Ver {@link #escribir}. */
-    private boolean rellenando = false;
-
-    /** El servicio elegido en el catálogo mientras se agrega. */
-    @Nullable
-    private Service elegido;
-
-    /** El identificador del chip "incluido", para distinguirlo del otro. */
+    private String editandoId;
+    private String elegidoId;
+    private String cuentaFormulario;
+    private String hotelFormulario;
+    private String precioBorrador = "";
+    private boolean incluido = true;
+    private boolean borradorPreparado;
+    private boolean preparada;
+    private boolean rellenando;
     private int idChipIncluido;
+    private int idChipPago;
+    private AlertDialog dialogoQuitar;
 
-    /**
-     * La hoja, en uno de sus dos modos.
-     *
-     * @param servicio el servicio a editar, o {@code null} para agregar uno
-     */
     @NonNull
     public static ServicioSheet para(@Nullable Service servicio) {
         ServicioSheet hoja = new ServicioSheet();
@@ -71,314 +63,297 @@ public class ServicioSheet extends BottomSheetDialogFragment {
         return hoja;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle estado) {
+        super.onCreate(estado);
+        editandoId = getArguments() == null ? null : getArguments().getString(ARG_SERVICE_ID);
+        if (estado != null) {
+            elegidoId = estado.getString(CLAVE_ELEGIDO);
+            incluido = estado.getBoolean(CLAVE_INCLUIDO, true);
+            precioBorrador = estado.getString(CLAVE_PRECIO, "");
+            borradorPreparado = estado.getBoolean(CLAVE_BORRADOR);
+            cuentaFormulario = estado.getString(CLAVE_UID);
+            hotelFormulario = estado.getString(CLAVE_HOTEL);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle estado) {
+        super.onSaveInstanceState(estado);
+        estado.putString(CLAVE_ELEGIDO, elegidoId);
+        estado.putBoolean(CLAVE_INCLUIDO, incluido);
+        estado.putString(CLAVE_PRECIO, precioBorrador);
+        estado.putBoolean(CLAVE_BORRADOR, borradorPreparado);
+        estado.putString(CLAVE_UID, cuentaFormulario);
+        estado.putString(CLAVE_HOTEL, hotelFormulario);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflador, @Nullable ViewGroup contenedor,
-                             @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle estado) {
         binding = SheetServicioAdminBinding.inflate(inflador, contenedor, false);
         return binding.getRoot();
     }
 
     @Override
-    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(vista, savedInstanceState);
-
-        // El ViewModel es el del grafo: la hoja no tiene hotel propio y lo que
-        // cambia al guardar es el de la pantalla que la abrió.
+    public void onViewCreated(@NonNull View vista, @Nullable Bundle estado) {
+        super.onViewCreated(vista, estado);
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, ServiciosViewModel.class);
-
-        binding.servicioCerrar.setOnClickListener(v -> dismiss());
+        if (cuentaFormulario == null) cuentaFormulario = SessionManager.getUsuarioId();
+        if (hotelFormulario == null) hotelFormulario = viewModel.getHotelId();
+        preparada = false;
+        binding.servicioCerrar.setOnClickListener(v -> {
+            if (!viewModel.estaGuardando()) {
+                viewModel.limpiarOperacion();
+                dismiss();
+            }
+        });
         binding.servicioGuardar.setOnClickListener(v -> guardar());
         binding.servicioQuitar.setOnClickListener(v -> confirmarQuitar());
-
+        binding.servicioReintentar.setOnClickListener(v -> viewModel.recargar());
+        binding.servicioPrecio.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable s) {
+                if (!rellenando) precioBorrador = s.toString();
+            }
+        });
         configurarForma();
-        prepararModo();
-
-        // Se limpia antes de observar. LiveData entrega su ultimo valor al
-        // registrarse, asi que sin esto una hoja recien abierta veria el exito
-        // de la operacion anterior y se cerraria sola.
-        viewModel.limpiarOperacion();
+        viewModel.getHotel().observe(getViewLifecycleOwner(), this::preparar);
         viewModel.getOperacion().observe(getViewLifecycleOwner(), this::pintarOperacion);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> pintarEspera());
+        viewModel.cargar();
     }
 
-    // ------------------------------------------------------------------ Modos
+    @Override public void onStart() { super.onStart(); pintarEspera(); }
 
-    private void prepararModo() {
-        Bundle argumentos = getArguments();
-        String serviceId = argumentos != null ? argumentos.getString(ARG_SERVICE_ID) : null;
-        enEdicion = serviceId == null ? null : buscarEnCatalogo(serviceId);
-
-        if (enEdicion == null) {
-            abrirComoAgregar();
-        } else {
-            abrirComoEditar(enEdicion);
+    private void preparar(@Nullable UiState<Hotel> estado) {
+        if (binding == null) return;
+        if (!mismaCuenta()) {
+            preparada = false;
+            avisar(getString(R.string.admin_servicio_sesion_cambiada));
+            pintarEspera();
+            return;
         }
-    }
-
-    private void abrirComoAgregar() {
-        binding.servicioTitulo.setText(R.string.admin_servicios_agregar);
-        binding.servicioCatalogoBloque.setVisibility(View.VISIBLE);
-        binding.servicioQuitar.setVisibility(View.GONE);
-
-        List<Service> libres = viewModel.catalogoDisponible(hotelActual());
-        for (Service servicio : libres) {
-            binding.servicioCatalogo.addView(chipDeCatalogo(servicio));
+        if (estado == null || estado.isLoading()) {
+            pintarEspera();
+            return;
         }
-        // Al agregar se empieza por "incluido": es lo que un hotel hace con un
-        // servicio que acaba de sumar, y evita inventar un precio para poder
-        // guardar. Cobrarlo es la decisión, y se toma después.
-        escribir(true, 0d);
-    }
-
-    private void abrirComoEditar(@NonNull Service servicio) {
-        binding.servicioTitulo.setText(servicio.getName());
-        // El catálogo no se enseña: el servicio ya está elegido y el
-        // repositorio asocia por identificador, así que "cambiar de servicio"
-        // no es una operación que exista.
-        binding.servicioCatalogoBloque.setVisibility(View.GONE);
-        binding.servicioQuitar.setVisibility(View.VISIBLE);
-
-        HotelService asignado = asignacionDe(servicio.getServiceId());
-        escribir(asignado == null || asignado.isIncluded(),
-                asignado != null ? asignado.getPrice() : 0d);
-    }
-
-    // ------------------------------------------------------------------ Forma
-
-    private void configurarForma() {
-        agregarChipForma(true, getString(R.string.admin_servicio_incluido));
-        agregarChipForma(false, getString(R.string.admin_servicio_adicional));
-
-        binding.servicioForma.setOnCheckedStateChangeListener((grupo, marcados) -> {
-            if (rellenando || marcados.isEmpty()) {
+        binding.servicioReintentar.setVisibility(estado.isError() ? View.VISIBLE : View.GONE);
+        if (!estado.isSuccess()) {
+            preparada = false;
+            avisar(estado.getMessage());
+            pintarEspera();
+            return;
+        }
+        Hotel actual = estado.requireData();
+        if (editandoId != null) {
+            Service catalogo = viewModel.servicio(editandoId);
+            HotelService asignado = viewModel.asignacion(editandoId);
+            if (catalogo == null || asignado == null) {
+                preparada = false;
+                avisar(getString(R.string.admin_servicio_no_encontrado));
+                pintarEspera();
                 return;
             }
-            // El identificador del chip dice cuál es: los chips se crean en
-            // este orden y el grupo es de selección única y obligatoria, así
-            // que basta con saber si el marcado es el primero.
-            boolean incluido = marcados.get(0) == idChipIncluido;
-            mostrarPrecio(!incluido);
+            binding.servicioTitulo.setText(catalogo.getName());
+            binding.servicioCatalogoBloque.setVisibility(View.GONE);
+            binding.servicioQuitar.setVisibility(View.VISIBLE);
+            elegidoId = editandoId;
+            if (!borradorPreparado) {
+                incluido = asignado.isIncluded();
+                precioBorrador = asignado.getPrice() > 0 ? String.valueOf(asignado.getPrice()) : "";
+            }
+        } else {
+            binding.servicioTitulo.setText(R.string.admin_servicios_anadir);
+            binding.servicioCatalogoBloque.setVisibility(View.VISIBLE);
+            binding.servicioQuitar.setVisibility(View.GONE);
+            List<Service> disponibles = viewModel.catalogoDisponible(actual);
+            boolean elegidoDisponible = false;
+            for (Service servicio : disponibles) {
+                if (servicio.getServiceId().equals(elegidoId)) elegidoDisponible = true;
+            }
+            if (elegidoId != null && !elegidoDisponible) {
+                elegidoId = null;
+                avisar(getString(R.string.admin_servicio_catalogo_cambio));
+            }
+            rellenando = true;
+            binding.servicioCatalogo.removeAllViews();
+            for (Service servicio : disponibles) {
+                FilterChipView chip = nuevoChip(servicio.getName());
+                chip.bind(servicio);
+                chip.setChecked(servicio.getServiceId().equals(elegidoId));
+                chip.setOnCheckedChangeListener((boton, marcado) -> {
+                    if (rellenando || !marcado) return;
+                    elegidoId = servicio.getServiceId();
+                    binding.servicioError.setVisibility(View.GONE);
+                    pintarEspera();
+                });
+                binding.servicioCatalogo.addView(chip);
+            }
+            rellenando = false;
+            binding.servicioCatalogoVacio.setVisibility(disponibles.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+        borradorPreparado = true;
+        preparada = true;
+        escribirBorrador();
+        pintarEspera();
+    }
+
+    private void configurarForma() {
+        binding.servicioForma.removeAllViews();
+        FilterChipView gratis = nuevoChip(getString(R.string.admin_servicio_incluido));
+        FilterChipView pago = nuevoChip(getString(R.string.admin_servicio_de_pago));
+        idChipIncluido = gratis.getId();
+        idChipPago = pago.getId();
+        binding.servicioForma.addView(gratis);
+        binding.servicioForma.addView(pago);
+        binding.servicioForma.setOnCheckedStateChangeListener((grupo, marcados) -> {
+            if (rellenando || marcados.isEmpty()) return;
+            incluido = marcados.get(0) == idChipIncluido;
+            binding.servicioPrecioCampo.setVisibility(incluido ? View.GONE : View.VISIBLE);
+            binding.servicioPrecioCampo.setError(null);
         });
     }
 
-    private void agregarChipForma(boolean incluido, @NonNull String etiqueta) {
-        FilterChipView chip = nuevoChip(etiqueta);
-        chip.setId(View.generateViewId());
-        if (incluido) {
-            idChipIncluido = chip.getId();
-        }
-        binding.servicioForma.addView(chip);
-    }
-
-    private void mostrarPrecio(boolean visible) {
-        binding.servicioPrecioCampo.setVisibility(visible ? View.VISIBLE : View.GONE);
-        if (!visible) {
-            binding.servicioPrecioCampo.setError(null);
-        }
-    }
-
-    /**
-     * Vuelca el estado en los controles.
-     *
-     * <p>Mientras dura, {@code rellenando} está encendido: marcar un chip
-     * dispara su oyente, y sin la bandera rellenar el formulario se confundiría
-     * con el usuario eligiendo.
-     */
-    private void escribir(boolean incluido, double precio) {
+    private void escribirBorrador() {
         rellenando = true;
-        try {
-            for (int i = 0; i < binding.servicioForma.getChildCount(); i++) {
-                FilterChipView chip = (FilterChipView) binding.servicioForma.getChildAt(i);
-                chip.setChecked((chip.getId() == idChipIncluido) == incluido);
-            }
-            binding.servicioPrecio.setText(precio > 0d
-                    ? String.valueOf(precio) : "");
-            mostrarPrecio(!incluido);
-        } finally {
-            rellenando = false;
-        }
+        binding.servicioForma.check(incluido ? idChipIncluido : idChipPago);
+        binding.servicioPrecio.setText(precioBorrador);
+        binding.servicioPrecioCampo.setVisibility(incluido ? View.GONE : View.VISIBLE);
+        rellenando = false;
     }
-
-    // ------------------------------------------------------------------ Guardar
 
     private void guardar() {
-        Service servicio = enEdicion != null ? enEdicion : elegido;
-        if (servicio == null) {
+        if (!preparada || !mismaCuenta() || !viewModel.puedeGuardar()
+                || (editandoId == null && !viewModel.puedeAgregar())) return;
+        binding.servicioError.setVisibility(View.GONE);
+        binding.servicioPrecioCampo.setError(null);
+        if (elegidoId == null || viewModel.servicio(elegidoId) == null) {
             avisar(getString(R.string.admin_servicio_falta_elegir));
             return;
         }
-
-        boolean incluido = esIncluido();
-        double precio = 0d;
+        double precio = 0;
         if (!incluido) {
             Double leido = leerPrecio();
-            if (leido == null) {
-                return;
-            }
+            if (leido == null) return;
             precio = leido;
         }
-
-        binding.servicioPrecioCampo.setError(null);
-        viewModel.asignar(servicio.getServiceId(), incluido, precio);
+        viewModel.asignar(elegidoId, incluido, precio);
     }
 
-    private boolean esIncluido() {
-        for (int i = 0; i < binding.servicioForma.getChildCount(); i++) {
-            FilterChipView chip = (FilterChipView) binding.servicioForma.getChildAt(i);
-            if (chip.isChecked()) {
-                return chip.getId() == idChipIncluido;
-            }
-        }
-        // El grupo es de selección obligatoria, así que esto no debería pasar;
-        // si pasara, "incluido" es la opción que no exige inventar un precio.
-        return true;
-    }
-
-    /**
-     * El precio escrito, o {@code null} si no sirve.
-     *
-     * <p>Se valida aquí además de en el repositorio porque el error de un
-     * formulario tiene que salir en el campo que lo causó, no en un aviso
-     * genérico. El repositorio lo vuelve a comprobar de todas formas: una
-     * comprobación en la pantalla se puede saltar, y la regla de que un
-     * adicional se cobra es del negocio, no del formulario.
-     */
     @Nullable
     private Double leerPrecio() {
-        String texto = binding.servicioPrecio.getText() != null
-                ? binding.servicioPrecio.getText().toString().trim() : "";
+        String texto = precioBorrador.trim();
         if (texto.isEmpty()) {
-            binding.servicioPrecioCampo.setError(
-                    getString(R.string.admin_servicio_precio_obligatorio));
+            binding.servicioPrecioCampo.setError(getString(R.string.admin_servicio_precio_obligatorio));
             return null;
         }
         try {
             double valor = Double.parseDouble(texto.replace(',', '.'));
-            if (valor <= 0d) {
-                binding.servicioPrecioCampo.setError(
-                        getString(R.string.admin_servicio_precio_cero));
+            if (!Double.isFinite(valor) || valor <= 0) {
+                binding.servicioPrecioCampo.setError(getString(R.string.admin_servicio_precio_cero));
+                return null;
+            }
+            if (valor > 1000000) {
+                binding.servicioPrecioCampo.setError(getString(R.string.admin_servicio_precio_maximo));
                 return null;
             }
             return valor;
-        } catch (NumberFormatException e) {
-            binding.servicioPrecioCampo.setError(
-                    getString(R.string.admin_servicio_precio_invalido));
+        } catch (NumberFormatException error) {
+            binding.servicioPrecioCampo.setError(getString(R.string.admin_servicio_precio_invalido));
             return null;
         }
     }
 
     private void confirmarQuitar() {
-        if (enEdicion == null) {
-            return;
-        }
-        new AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.admin_servicio_quitar_titulo, enEdicion.getName()))
+        if (editandoId == null || !mismaCuenta() || !viewModel.puedeGuardar()
+                || dialogoQuitar != null) return;
+        Service servicio = viewModel.servicio(editandoId);
+        if (servicio == null) return;
+        dialogoQuitar = new AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.admin_servicio_quitar_titulo, servicio.getName()))
                 .setMessage(R.string.admin_servicio_quitar_mensaje)
                 .setNegativeButton(R.string.accion_volver, null)
-                .setPositiveButton(R.string.admin_servicio_quitar,
-                        (dialogo, cual) -> viewModel.quitar(enEdicion.getServiceId()))
-                .show();
+                .setPositiveButton(R.string.admin_servicio_quitar, (dialogo, cual) -> {
+                    if (mismaCuenta() && viewModel.puedeGuardar()) viewModel.quitar(editandoId);
+                }).create();
+        dialogoQuitar.setOnDismissListener(dialogo -> dialogoQuitar = null);
+        dialogoQuitar.show();
     }
 
-    // ------------------------------------------------------------------ Estado
-
     private void pintarOperacion(@Nullable UiState<Hotel> estado) {
-        if (estado == null) {
-            return;
+        pintarEspera();
+        if (estado == null || estado.isLoading()) return;
+        if (estado.isSuccess()) {
+            dismiss();
+            viewModel.limpiarOperacion();
+        } else {
+            avisar(estado.getMessage());
+            viewModel.limpiarOperacion();
         }
-        switch (estado.getStatus()) {
-            case LOADING:
-                binding.servicioGuardar.setEnabled(false);
-                break;
-            case SUCCESS:
-                binding.servicioGuardar.setEnabled(true);
-                dismiss();
-                break;
-            case EMPTY:
-            case ERROR:
-            default:
-                binding.servicioGuardar.setEnabled(true);
-                avisar(estado.getMessage());
-                break;
+    }
+
+    private void pintarEspera() {
+        if (binding == null || viewModel == null) return;
+        boolean guardando = viewModel.estaGuardando();
+        boolean ocupado = Boolean.TRUE.equals(viewModel.getOcupado().getValue());
+        boolean editable = preparada && mismaCuenta() && !ocupado && viewModel.puedeGuardar();
+        setCancelable(!guardando);
+        binding.servicioCerrar.setEnabled(!guardando);
+        binding.servicioGuardar.setEnabled(editable && elegidoId != null
+                && (editandoId != null || viewModel.puedeAgregar()));
+        binding.servicioGuardar.setText(guardando ? R.string.admin_servicio_guardando : R.string.admin_servicio_guardar);
+        binding.servicioQuitar.setEnabled(editable);
+        binding.servicioPrecioCampo.setEnabled(editable);
+        binding.servicioProgreso.setVisibility(ocupado ? View.VISIBLE : View.GONE);
+        binding.servicioReintentar.setEnabled(!ocupado && mismaCuenta());
+        habilitarChips(binding.servicioCatalogo, editable);
+        habilitarChips(binding.servicioForma, editable);
+        if (editandoId == null && viewModel.puedeGuardar() && !viewModel.puedeAgregar()) {
+            avisar(getString(R.string.admin_servicios_sin_cupo));
         }
+        if (getDialog() instanceof BottomSheetDialog) {
+            BottomSheetDialog dialogo = (BottomSheetDialog) getDialog();
+            dialogo.setCanceledOnTouchOutside(!guardando);
+            dialogo.getBehavior().setDraggable(!guardando);
+        }
+    }
+
+    private static void habilitarChips(ChipGroup grupo, boolean habilitado) {
+        for (int i = 0; i < grupo.getChildCount(); i++) grupo.getChildAt(i).setEnabled(habilitado);
+    }
+
+    private boolean mismaCuenta() {
+        return cuentaFormulario != null && hotelFormulario != null
+                && cuentaFormulario.equals(SessionManager.getUsuarioId())
+                && Objects.equals(hotelFormulario, viewModel.getHotelId());
     }
 
     private void avisar(@Nullable String mensaje) {
-        if (mensaje == null || mensaje.isEmpty()) {
-            return;
-        }
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
+        if (binding == null || mensaje == null || mensaje.isEmpty()) return;
+        binding.servicioError.setText(mensaje);
+        binding.servicioError.setVisibility(View.VISIBLE);
     }
 
-    // ------------------------------------------------------------------ Auxiliares
-
-    @NonNull
-    private FilterChipView chipDeCatalogo(@NonNull Service servicio) {
-        FilterChipView chip = nuevoChip(servicio.getName());
-        chip.setId(View.generateViewId());
-        chip.bind(servicio);
-        chip.setOnCheckedChangeListener((boton, marcado) -> {
-            if (marcado) {
-                elegido = servicio;
-            } else if (elegido == servicio) {
-                elegido = null;
-            }
-        });
-        return chip;
-    }
-
-    /**
-     * Un chip nuevo, con la separación que {@code ChipGroup} no pone.
-     *
-     * <p>El grupo coloca los chips pegados unos a otros: sin margen se leen
-     * como una sola palabra.
-     */
-    @NonNull
-    private FilterChipView nuevoChip(@NonNull String etiqueta) {
+    private FilterChipView nuevoChip(String etiqueta) {
         FilterChipView chip = new FilterChipView(requireContext());
+        chip.setId(View.generateViewId());
+        chip.setSaveEnabled(false);
         chip.setText(etiqueta);
-
-        ChipGroup.LayoutParams parametros = new ChipGroup.LayoutParams(
+        ChipGroup.LayoutParams params = new ChipGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         int separacion = getResources().getDimensionPixelSize(R.dimen.space_sm);
-        parametros.setMarginEnd(separacion);
-        parametros.bottomMargin = separacion;
-        chip.setLayoutParams(parametros);
+        params.setMarginEnd(separacion);
+        params.bottomMargin = separacion;
+        chip.setLayoutParams(params);
         return chip;
-    }
-
-    @Nullable
-    private Hotel hotelActual() {
-        UiState<Hotel> estado = viewModel.getHotel().getValue();
-        return estado != null ? estado.getData() : null;
-    }
-
-    @Nullable
-    private HotelService asignacionDe(@NonNull String serviceId) {
-        Hotel hotel = hotelActual();
-        if (hotel == null) {
-            return null;
-        }
-        for (HotelService asignado : hotel.getServicios()) {
-            if (asignado.getServiceId().equals(serviceId)) {
-                return asignado;
-            }
-        }
-        return null;
-    }
-
-    @Nullable
-    private Service buscarEnCatalogo(@NonNull String serviceId) {
-        for (Service servicio : viewModel.getCatalogo()) {
-            if (servicio.getServiceId().equals(serviceId)) {
-                return servicio;
-            }
-        }
-        return null;
     }
 
     @Override
     public void onDestroyView() {
+        if (dialogoQuitar != null) dialogoQuitar.dismiss();
         super.onDestroyView();
         binding = null;
     }

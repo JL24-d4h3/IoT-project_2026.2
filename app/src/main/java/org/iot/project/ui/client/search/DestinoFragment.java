@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import org.iot.project.R;
 import org.iot.project.core.ViewModelGrafo;
+import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentDestinoBinding;
 import org.iot.project.ui.common.DestinoAdapter;
 import org.iot.project.ui.common.DestinoItem;
@@ -80,6 +81,8 @@ public class DestinoFragment extends Fragment {
         binding.campoDestino.enfocar();
 
         viewModel.getRecientes().observe(getViewLifecycleOwner(), recientes -> reconstruir());
+        viewModel.getDestinos().observe(getViewLifecycleOwner(), destinos -> reconstruir());
+        viewModel.actualizarDestinos();
         reconstruir();
     }
 
@@ -114,6 +117,21 @@ public class DestinoFragment extends Fragment {
         adaptador.submitList(filas);
 
         boolean vacio = filas.isEmpty();
+        UiState<List<String>> destinos = viewModel.getDestinos().getValue();
+        if (vacio && destinos != null && destinos.isLoading()) {
+            binding.estadoSinResultados.conTitulo(R.string.cargando)
+                    .conMensaje("")
+                    .conAccion(R.string.accion_reintentar, null);
+        } else if (vacio && destinos != null && destinos.isError()) {
+            binding.estadoSinResultados.conTitulo(R.string.estado_error_titulo)
+                    .conMensaje(destinos.getMessage() != null
+                            ? destinos.getMessage() : getString(R.string.estado_error_mensaje))
+                    .conAccion(R.string.accion_reintentar, v -> viewModel.actualizarDestinos());
+        } else {
+            binding.estadoSinResultados.conTitulo(R.string.destino_sin_resultados_titulo)
+                    .conMensaje(R.string.destino_sin_resultados)
+                    .conAccion(R.string.accion_reintentar, null);
+        }
         binding.estadoSinResultados.setVisibility(vacio ? View.VISIBLE : View.GONE);
         binding.listaDestinos.setVisibility(vacio ? View.GONE : View.VISIBLE);
     }
@@ -160,6 +178,8 @@ public class DestinoFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        binding.listaDestinos.setAdapter(null);
+        adaptador = null;
         binding = null;
     }
 }

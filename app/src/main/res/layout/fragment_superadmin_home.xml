@@ -2,16 +2,16 @@
 <!--
     Portada del superadministrador (§47).
 
-    Responde a dos preguntas: cómo está la plataforma y qué espera una decisión
-    mía. El orden lo sigue: primero las cuatro cifras, que se leen de un
-    vistazo; después el aviso de pendientes, que es lo único accionable de la
-    pantalla; y al final los últimos movimientos, que se consultan despacio.
+    Crear hotel queda a la vista antes del tablero y sigue disponible cuando
+    las cifras no cargan. Debajo se muestran las cifras, los pendientes y los
+    últimos movimientos.
 
     El aviso de pendientes no se esconde cuando no hay ninguno: se queda y dice
     que no hay. Un bloque que desaparece deja al superadministrador sin saber si
     no hay pendientes o si el tablero no cargó.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,6 +23,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorSurface" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/sa_inicio_crear_hotel"
+        style="@style/Widget.App.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginBottom="@dimen/space_sm"
+        android:text="@string/sa_crear_hotel"
+        app:icon="@drawable/ic_add" />
 
     <FrameLayout
         android:layout_width="match_parent"

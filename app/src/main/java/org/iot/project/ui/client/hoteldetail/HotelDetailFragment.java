@@ -47,6 +47,7 @@ public class HotelDetailFragment extends Fragment {
     private HotelDetailViewModel viewModel;
     private RoomAdapter adaptadorHabitaciones;
     private ReviewAdapter adaptadorResenas;
+    private String hotelId;
 
     @Nullable
     @Override
@@ -67,7 +68,7 @@ public class HotelDetailFragment extends Fragment {
         prepararListas();
         observar();
 
-        String hotelId = getArguments() != null
+        hotelId = getArguments() != null
                 ? getArguments().getString("hotelId") : null;
         if (hotelId == null) {
             // Sin identificador no hay nada que pedir: mejor decirlo que dejar
@@ -76,7 +77,18 @@ public class HotelDetailFragment extends Fragment {
             binding.detalleError.conReintento(getString(R.string.estado_error_mensaje), null);
             return;
         }
-        viewModel.cargar(hotelId);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (hotelId != null) viewModel.cargar(hotelId);
+    }
+
+    @Override
+    public void onPause() {
+        viewModel.suspender();
+        super.onPause();
     }
 
     private void prepararHeader() {
@@ -229,6 +241,9 @@ public class HotelDetailFragment extends Fragment {
     }
 
     private void elegirHabitacion(@NonNull Room room) {
+        UiState<Hotel> actual = viewModel.getHotel().getValue();
+        if (actual == null || !actual.isSuccess()
+                || !room.getHotelId().equals(actual.requireData().getId())) return;
         Bundle argumentos = new Bundle();
         argumentos.putString("hotelId", room.getHotelId());
         argumentos.putString("roomId", room.getId());

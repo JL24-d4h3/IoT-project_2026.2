@@ -10,13 +10,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
+import org.iot.project.core.SessionManager;
 import org.iot.project.databinding.FragmentSuperadminHomeBinding;
 import org.iot.project.models.ResumenSuperadmin;
+import org.iot.project.models.Role;
 import org.iot.project.ui.superadmin.bitacora.BitacoraAdapter;
 import org.iot.project.utils.InsetUtils;
 
@@ -26,9 +29,8 @@ import java.util.Collections;
  * Portada del superadministrador (§47).
  *
  * <p>Es lo primero que ve al entrar y responde a dos preguntas: como esta la
- * plataforma y que espera una decision suya. Las cuatro cifras van arriba, el
- * aviso de pendientes justo debajo —es lo unico accionable de la pantalla— y
- * los ultimos movimientos al final.
+ * plataforma y que espera una decision suya. Crear hotel tiene un acceso fijo
+ * sobre el tablero, disponible tambien mientras las cifras cargan o fallan.
  *
  * <p>Las cifras se leen como "activos de totales" y no como un numero suelto:
  * "12 usuarios" no dice si son todos o la mitad, y la mitad es precisamente lo
@@ -63,6 +65,7 @@ public class SuperadminHomeFragment extends Fragment {
         InsetUtils.applyTopPadding(binding.saHeader);
 
         binding.saHeader.setTitulo(R.string.sa_titulo_inicio);
+        binding.saInicioCrearHotel.setOnClickListener(v -> crearHotel());
 
         // Esta cabecera no lleva accion: el cerrar sesion vive en el perfil,
         // con los otros roles, y no hace falta tenerlo dos veces. Antes estaba
@@ -87,6 +90,7 @@ public class SuperadminHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        binding.saInicioCrearHotel.setEnabled(true);
         // Las cifras cambian desde las otras pantallas del panel —desactivar una
         // cuenta, habilitar un conductor, dar de alta un hotel— y volver a Inicio
         // tiene que enseñarlas al dia. Sin esqueleto: el tablero ya esta pintado
@@ -134,7 +138,7 @@ public class SuperadminHomeFragment extends Fragment {
         binding.saStatHoteles.setDato(R.string.sa_stat_hoteles,
                 deTotales(resumen.getHotelesPublicados(), resumen.getHotelesTotales()));
         binding.saStatPendientes.setDato(R.string.sa_stat_pendientes,
-                String.valueOf(resumen.getConductoresPendientes()));
+                resumen.getConductoresPendientes() < 0 ? "—" : String.valueOf(resumen.getConductoresPendientes()));
 
         pintarPendientes(resumen);
         pintarUltimos(resumen);
@@ -142,6 +146,7 @@ public class SuperadminHomeFragment extends Fragment {
 
     @NonNull
     private CharSequence deTotales(int parte, int total) {
+        if (parte < 0 || total < 0) return "—";
         return getString(R.string.sa_de_total, parte, total);
     }
 
@@ -193,6 +198,19 @@ public class SuperadminHomeFragment extends Fragment {
 
     private void irA(@IdRes int destino) {
         Navigation.findNavController(requireView()).navigate(destino);
+    }
+
+    private void crearHotel() {
+        NavController controlador = Navigation.findNavController(requireView());
+        if (SessionManager.getRolActivo() != Role.SUPERADMIN
+                || controlador.getCurrentDestination() == null
+                || controlador.getCurrentDestination().getId() != R.id.superadminHomeFragment) {
+            return;
+        }
+        binding.saInicioCrearHotel.setEnabled(false);
+        // La lista queda debajo del alta para recibir el hotel creado y refrescarse.
+        controlador.navigate(R.id.superadminHotelesFragment);
+        controlador.navigate(R.id.superadminAltaHotelFragment);
     }
 
     @Override

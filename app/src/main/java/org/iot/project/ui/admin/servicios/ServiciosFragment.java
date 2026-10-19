@@ -8,9 +8,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
@@ -43,6 +43,7 @@ public class ServiciosFragment extends Fragment {
 
     private FragmentAdminServiciosBinding binding;
     private ServiciosViewModel viewModel;
+    private Snackbar aviso;
 
     @Nullable
     @Override
@@ -58,11 +59,21 @@ public class ServiciosFragment extends Fragment {
         InsetUtils.applyTopPadding(binding.adminServiciosHeader);
 
         binding.adminServiciosHeader.setTitulo(R.string.nav_servicios);
+        binding.adminServiciosHeader.ocultarAccion();
         binding.adminServiciosAgregar.setOnClickListener(v -> abrirHoja(null));
 
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, ServiciosViewModel.class);
         viewModel.getHotel().observe(getViewLifecycleOwner(), this::pintar);
-        viewModel.cargar();
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> actualizarAcciones());
+        viewModel.getConfirmacion().observe(getViewLifecycleOwner(), this::confirmarCambio);
+        actualizarAcciones();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        viewModel.refrescarAlVolver();
+        actualizarAcciones();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -93,6 +104,7 @@ public class ServiciosFragment extends Fragment {
                 pintarError(estado.getMessage());
                 break;
         }
+        actualizarAcciones();
     }
 
     /**
@@ -108,6 +120,7 @@ public class ServiciosFragment extends Fragment {
         binding.adminServiciosContenido.setVisibility(View.GONE);
         binding.adminServiciosError.setVisibility(View.VISIBLE);
         binding.adminServiciosError.conReintento(mensaje, v -> viewModel.recargar());
+        actualizarAcciones();
     }
 
     private void pintarServicios(@NonNull Hotel hotel) {
@@ -142,9 +155,11 @@ public class ServiciosFragment extends Fragment {
      * que es la información que el administrador venía a buscar.
      */
     private void pintarAgregar(@NonNull Hotel hotel) {
+        boolean limite = hotel.getServicios().size() >= org.iot.project.data.firebase.HotelFirebase.MAX_SERVICIOS;
         boolean quedanServicios = !viewModel.catalogoDisponible(hotel).isEmpty();
-        binding.adminServiciosAgregar.setVisibility(quedanServicios ? View.VISIBLE : View.GONE);
-        binding.adminServiciosCompleto.setVisibility(quedanServicios ? View.GONE : View.VISIBLE);
+        binding.adminServiciosCompleto.setVisibility(limite || !quedanServicios ? View.VISIBLE : View.GONE);
+        binding.adminServiciosCompleto.setText(limite
+                ? R.string.admin_servicios_limite : R.string.admin_servicios_completo);
     }
 
     private void llenarGrupo(@NonNull ChipGroup grupo, @NonNull List<HotelService> asignados) {
@@ -170,6 +185,7 @@ public class ServiciosFragment extends Fragment {
         // visto bueno que no significa nada y que no se puede deshacer.
         chip.setCheckable(false);
         chip.setClickable(true);
+        chip.setEnabled(viewModel.puedeGuardar());
         // El incluido no lleva precio —no se cobra— y el adicional lo lleva en
         // el propio chip: es la única diferencia entre los dos grupos, así que
         // tiene que caber en el chip y no en una nota al pie.
@@ -202,13 +218,47 @@ public class ServiciosFragment extends Fragment {
     }
 
     private void abrirHoja(@Nullable Service servicio) {
+        boolean permitido = servicio == null ? viewModel.puedeAgregar()
+                : viewModel.puedeGuardar() && viewModel.asignacion(servicio.getServiceId()) != null;
+        if (!permitido || Boolean.TRUE.equals(viewModel.getOcupado().getValue())
+                || getChildFragmentManager().isStateSaved()
+                || getChildFragmentManager().findFragmentByTag(ServicioSheet.TAG) != null) return;
+        viewModel.limpiarOperacion();
         ServicioSheet hoja = ServicioSheet.para(servicio);
-        hoja.show(getChildFragmentManager(), ServicioSheet.TAG);
+        hoja.showNow(getChildFragmentManager(), ServicioSheet.TAG);
+    }
+
+    private void actualizarAcciones() {
+        if (binding == null || viewModel == null) return;
+        binding.adminServiciosAgregar.setEnabled(viewModel.puedeAgregar()
+                && !Boolean.TRUE.equals(viewModel.getOcupado().getValue()));
+        habilitarGrupo(binding.adminServiciosIncluidos, viewModel.puedeGuardar());
+        habilitarGrupo(binding.adminServiciosAdicionales, viewModel.puedeGuardar());
+    }
+
+    private static void habilitarGrupo(ChipGroup grupo, boolean habilitado) {
+        for (int i = 0; i < grupo.getChildCount(); i++) grupo.getChildAt(i).setEnabled(habilitado);
+    }
+
+    private void confirmarCambio(@Nullable ServiciosViewModel.Confirmacion cambio) {
+        if (cambio == null) return;
+        if (aviso != null) aviso.dismiss();
+        aviso = Snackbar.make(binding.getRoot(), getString(cambio.retirado
+                ? R.string.admin_servicio_retirado_confirmacion : R.string.admin_servicio_guardado_confirmacion,
+                cambio.servicio), Snackbar.LENGTH_LONG);
+        View barra = requireActivity().findViewById(R.id.bottom_nav);
+        if (barra != null && barra.getVisibility() == View.VISIBLE) aviso.setAnchorView(barra);
+        aviso.show();
+        viewModel.consumirConfirmacion();
     }
 
     @Override
     public void onDestroyView() {
+        if (aviso != null) aviso.dismiss();
         super.onDestroyView();
+        binding.adminServiciosIncluidos.removeAllViews();
+        binding.adminServiciosAdicionales.removeAllViews();
+        aviso = null;
         binding = null;
     }
 }

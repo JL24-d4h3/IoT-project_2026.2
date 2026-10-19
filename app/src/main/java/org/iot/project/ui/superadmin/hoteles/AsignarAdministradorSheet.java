@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
@@ -27,8 +28,8 @@ import java.util.List;
  * del grafo, y asignar es una accion suya. Pedir los candidatos otra vez al
  * repositorio seria poder enseñar dos listas distintas de lo mismo.
  *
- * <p>Al elegir no cierra ella misma la ficha ni dice nada: el aviso lo da la
- * pantalla que sigue debajo, que es la que sabe si la asignacion salio bien.
+ * <p>La hoja espera la respuesta al asignar. Si falla, conserva las cuentas y
+ * muestra el error; la ficha confirma el exito y cierra la hoja.
  */
 public class AsignarAdministradorSheet extends BottomSheetDialogFragment {
 
@@ -54,18 +55,27 @@ public class AsignarAdministradorSheet extends BottomSheetDialogFragment {
         // se le asigna es al hotel de la ficha que la abrio.
         viewModel = ViewModelGrafo.de(this, R.id.nav_superadmin, SuperadminHotelViewModel.class);
 
-        binding.saAsignarCerrar.setOnClickListener(v -> dismiss());
+        binding.saAsignarCerrar.setOnClickListener(v -> {
+            if (!viewModel.estaModificando()) {
+                dismiss();
+            }
+        });
 
         adaptador = new AdministradorElegibleAdapter(this::elegir);
         binding.saAsignarLista.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.saAsignarLista.setAdapter(adaptador);
 
-        pintar(viewModel.getContenido().getValue());
+        viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
+        viewModel.getCambio().observe(getViewLifecycleOwner(), this::pintarCambio);
+        pintarEspera();
     }
 
     private void elegir(@NonNull User candidato) {
+        if (!viewModel.puedeAsignar()) {
+            return;
+        }
+        binding.saAsignarError.setVisibility(View.GONE);
         viewModel.asignar(candidato.getId());
-        dismiss();
     }
 
     private void pintar(@Nullable UiState<SuperadminHotelViewModel.Contenido> estado) {
@@ -83,7 +93,31 @@ public class AsignarAdministradorSheet extends BottomSheetDialogFragment {
             // hay se dice por que, en vez de dejar un hueco.
             binding.saAsignarVacio.conIcono(R.drawable.ic_person_group)
                     .conTitulo(R.string.sa_asignar_vacio_titulo)
-                    .conMensaje(R.string.sa_asignar_vacio_mensaje);
+                    .conMensaje(R.string.sa_asignar_libres_mensaje);
+        }
+        pintarEspera();
+    }
+
+    private void pintarCambio(@Nullable UiState<SuperadminHotelViewModel.Cambio> estado) {
+        pintarEspera();
+        if (estado != null && estado.isError()) {
+            binding.saAsignarError.setText(estado.getMessage() != null
+                    ? estado.getMessage() : getString(R.string.estado_error_mensaje));
+            binding.saAsignarError.setVisibility(View.VISIBLE);
+            viewModel.consumirCambio();
+        }
+    }
+
+    private void pintarEspera() {
+        boolean pendiente = viewModel.estaModificando();
+        setCancelable(!pendiente);
+        binding.saAsignarCerrar.setEnabled(!pendiente);
+        binding.saAsignarProgreso.setVisibility(pendiente ? View.VISIBLE : View.GONE);
+        adaptador.setHabilitado(viewModel.puedeAsignar());
+        if (getDialog() instanceof BottomSheetDialog) {
+            BottomSheetDialog dialogo = (BottomSheetDialog) getDialog();
+            dialogo.setCanceledOnTouchOutside(!pendiente);
+            dialogo.getBehavior().setDraggable(!pendiente);
         }
     }
 

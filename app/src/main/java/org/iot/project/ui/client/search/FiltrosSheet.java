@@ -53,6 +53,7 @@ public class FiltrosSheet extends BottomSheetDialogFragment {
     private static final float RATING_MAXIMO = 10f;
 
     private SheetFiltrosBinding binding;
+    private float techoPrecio;
     private SearchViewModel viewModel;
 
     /** Borrador: lo que el usuario esta probando, todavia sin aplicar. */
@@ -111,7 +112,11 @@ public class FiltrosSheet extends BottomSheetDialogFragment {
     // ------------------------------------------------------------------
 
     private void configurarPrecio() {
-        float techo = (float) ServiceLocator.hoteles().precioMaximo();
+        // El catalogo real puede estar vacio o seguir cargando. Slider exige
+        // un intervalo positivo; el extremo superior conserva "cualquier precio".
+        float techo = Math.max(PASO_PRECIO_CORTO,
+                (float) ServiceLocator.hoteles().precioMaximo());
+        techoPrecio = techo;
         float paso = techo > UMBRAL_PASO_LARGO ? PASO_PRECIO_LARGO : PASO_PRECIO_CORTO;
 
         binding.precioSlider.setValueFrom(0f);
@@ -234,10 +239,12 @@ public class FiltrosSheet extends BottomSheetDialogFragment {
     private void escribirBorrador() {
         rellenando = true;
         try {
-            float techo = (float) ServiceLocator.hoteles().precioMaximo();
+            float techo = techoPrecio;
             float precio = borrador.getPrecioMax() > 0
-                    ? (float) borrador.getPrecioMax()
+                    ? Math.min(techo, (float) borrador.getPrecioMax())
                     : techo;
+            float paso = binding.precioSlider.getStepSize();
+            if (paso > 0) precio = Math.round(precio / paso) * paso;
             binding.precioSlider.setValue(precio);
             aplicarPrecio(precio, techo);
 

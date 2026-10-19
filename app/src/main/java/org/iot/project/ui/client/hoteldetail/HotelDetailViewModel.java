@@ -12,117 +12,97 @@ import org.iot.project.models.Hotel;
 import org.iot.project.models.Review;
 import org.iot.project.models.Room;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-/**
- * Estado de la ficha de un hotel.
- *
- * <p>Carga cuatro cosas por separado —el hotel, sus habitaciones, sus reseñas y
- * sus servicios— porque cada una puede fallar por su cuenta. Si las reseñas no
- * llegan, la ficha sigue siendo útil; sería un error tirar la pantalla entera.
- */
+/** Ficha revalidada contra el servidor cada vez que vuelve a estar visible. */
 public class HotelDetailViewModel extends ViewModel {
-
     private final MutableLiveData<UiState<Hotel>> hotel = new MutableLiveData<>();
     private final MutableLiveData<UiState<List<Room>>> habitaciones = new MutableLiveData<>();
     private final MutableLiveData<UiState<List<Review>>> resenas = new MutableLiveData<>();
     private final MutableLiveData<Boolean> esFavorito = new MutableLiveData<>(false);
-
     private String hotelId;
+    private int generacion;
+    private boolean cargando;
 
-    public LiveData<UiState<Hotel>> getHotel() {
-        return hotel;
-    }
+    public LiveData<UiState<Hotel>> getHotel() { return hotel; }
+    public LiveData<UiState<List<Room>>> getHabitaciones() { return habitaciones; }
+    public LiveData<UiState<List<Review>>> getResenas() { return resenas; }
+    public LiveData<Boolean> getEsFavorito() { return esFavorito; }
 
-    public LiveData<UiState<List<Room>>> getHabitaciones() {
-        return habitaciones;
-    }
-
-    public LiveData<UiState<List<Review>>> getResenas() {
-        return resenas;
-    }
-
-    public LiveData<Boolean> getEsFavorito() {
-        return esFavorito;
-    }
-
-    /** Carga la ficha. Solo se pide una vez por hotel. */
-    public void cargar(@NonNull String hotelId) {
-        if (hotelId.equals(this.hotelId) && hotel.getValue() != null
-                && hotel.getValue().isSuccess()) {
-            return;
+    /** onResume inicia la carga; onViewCreated solo monta los observadores. */
+    public void cargar(@NonNull String id) {
+        if (!id.equals(hotelId)) {
+            suspender();
+            hotelId = id;
+            esFavorito.setValue(false);
         }
-        this.hotelId = hotelId;
         recargar();
     }
 
     public void recargar() {
-        if (hotelId == null) {
-            return;
-        }
-        cargarHotel();
-        cargarHabitaciones();
-        cargarResenas();
-    }
-
-    private void cargarHotel() {
+        if (hotelId == null || cargando) return;
+        cargando = true;
+        int solicitud = ++generacion;
         hotel.setValue(UiState.loading());
+        habitaciones.setValue(UiState.loading());
+        resenas.setValue(UiState.loading());
         ServiceLocator.hoteles().obtener(hotelId, new ResultCallback<Hotel>() {
             @Override
             public void onExito(@NonNull Hotel datos) {
+                if (solicitud != generacion) return;
+                cargando = false;
                 hotel.setValue(UiState.success(datos));
+                // El mismo snapshot autorizado incluye el inventario habilitado.
+                // El calendario de reservas todavia pertenece a otro modulo.
+                List<Room> disponibles = new ArrayList<>();
+                for (Room habitacion : datos.getHabitaciones()) {
+                    if (habitacion.isDisponible()) disponibles.add(habitacion);
+                }
+                disponibles.sort(Comparator.comparingDouble(Room::getPrecioNoche));
+                habitaciones.setValue(disponibles.isEmpty()
+                        ? UiState.empty() : UiState.success(disponibles));
+                cargarResenas(solicitud);
             }
 
             @Override
             public void onError(@NonNull String mensaje) {
+                if (solicitud != generacion) return;
+                cargando = false;
                 hotel.setValue(UiState.error(mensaje));
-            }
-        });
-    }
-
-    /**
-     * Habitaciones disponibles para esta noche.
-     *
-     * <p>La ficha muestra lo que el hotel ofrece hoy; el rango elegido por el
-     * usuario se aplica al reservar, más adelante.
-     */
-    private void cargarHabitaciones() {
-        habitaciones.setValue(UiState.loading());
-        LocalDate hoy = LocalDate.now();
-        ServiceLocator.hoteles().habitacionesDisponibles(hotelId, hoy, hoy.plusDays(1),
-                new ResultCallback<List<Room>>() {
-                    @Override
-                    public void onExito(@NonNull List<Room> datos) {
-                        habitaciones.setValue(datos.isEmpty()
-                                ? UiState.empty() : UiState.success(datos));
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        habitaciones.setValue(UiState.error(mensaje));
-                    }
-                });
-    }
-
-    private void cargarResenas() {
-        resenas.setValue(UiState.loading());
-        ServiceLocator.hoteles().resenas(hotelId, new ResultCallback<List<Review>>() {
-            @Override
-            public void onExito(@NonNull List<Review> datos) {
-                resenas.setValue(datos.isEmpty()
-                        ? UiState.empty() : UiState.success(datos));
-            }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
+                habitaciones.setValue(UiState.error(mensaje));
                 resenas.setValue(UiState.error(mensaje));
             }
         });
     }
 
+    public void suspender() {
+        generacion++;
+        cargando = false;
+    }
+
+    @Override
+    protected void onCleared() {
+        suspender();
+    }
+
+    private void cargarResenas(int solicitud) {
+        ServiceLocator.hoteles().resenas(hotelId, new ResultCallback<List<Review>>() {
+            @Override
+            public void onExito(@NonNull List<Review> datos) {
+                if (solicitud != generacion) return;
+                resenas.setValue(datos.isEmpty() ? UiState.empty() : UiState.success(datos));
+            }
+
+            @Override
+            public void onError(@NonNull String mensaje) {
+                if (solicitud == generacion) resenas.setValue(UiState.error(mensaje));
+            }
+        });
+    }
+
     public void alternarFavorito() {
-        Boolean actual = esFavorito.getValue();
-        esFavorito.setValue(actual == null || !actual);
+        esFavorito.setValue(!Boolean.TRUE.equals(esFavorito.getValue()));
     }
 }

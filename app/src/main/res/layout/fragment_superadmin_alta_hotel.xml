@@ -207,6 +207,16 @@
                 android:layout_marginTop="@dimen/space_base"
                 android:text="@string/sa_alta_guardar" />
 
+            <TextView
+                android:id="@+id/sa_alta_error"
+                style="@style/TextAppearance.App.BodySecondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/colorError"
+                android:visibility="gone" />
+
             <!--
                 El aviso va debajo del botón y no en un diálogo: es lo que
                 explica por qué el hotel recién registrado no aparece en el

@@ -27,10 +27,19 @@ public class AdministradorElegibleAdapter
     }
 
     private final AlElegir alElegir;
+    private boolean habilitado = true;
 
     public AdministradorElegibleAdapter(@NonNull AlElegir alElegir) {
         super(DIFF);
         this.alElegir = alElegir;
+    }
+
+    public void setHabilitado(boolean habilitado) {
+        if (this.habilitado == habilitado) {
+            return;
+        }
+        this.habilitado = habilitado;
+        notifyItemRangeChanged(0, getItemCount());
     }
 
     @NonNull
@@ -44,7 +53,14 @@ public class AdministradorElegibleAdapter
     public void onBindViewHolder(@NonNull Fila fila, int posicion) {
         User candidato = getItem(posicion);
         fila.binding.saCandidatoNombre.setText(candidato.getNombreCompleto());
-        fila.binding.getRoot().setOnClickListener(v -> alElegir.elegir(candidato));
+        fila.binding.saCandidatoCorreo.setText(candidato.getEmail());
+        fila.binding.getRoot().setEnabled(habilitado);
+        fila.binding.getRoot().setAlpha(habilitado ? 1f : 0.5f);
+        fila.binding.getRoot().setOnClickListener(v -> {
+            if (habilitado) {
+                alElegir.elegir(candidato);
+            }
+        });
     }
 
     static class Fila extends RecyclerView.ViewHolder {
@@ -66,7 +82,8 @@ public class AdministradorElegibleAdapter
 
                 @Override
                 public boolean areContentsTheSame(@NonNull User a, @NonNull User b) {
-                    return a.getNombreCompleto().equals(b.getNombreCompleto());
+                    return a.getNombreCompleto().equals(b.getNombreCompleto())
+                            && java.util.Objects.equals(a.getEmail(), b.getEmail());
                 }
             };
 }

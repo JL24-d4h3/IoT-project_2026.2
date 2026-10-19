@@ -60,6 +60,12 @@ public class SearchViewModel extends ViewModel {
 
     /** Evita que un segundo toque en "Ver más" dispare dos peticiones. */
     private boolean pidiendo = false;
+    private int generacionBusqueda;
+    private int generacionDestinos;
+    private boolean cargandoDestinos;
+    private final MutableLiveData<UiState<List<String>>> destinos = new MutableLiveData<>();
+    private List<String> ciudades = new ArrayList<>();
+    private List<String> distritos = new ArrayList<>();
 
     // ------------------------------------------------------------------
     //  Estado
@@ -106,18 +112,57 @@ public class SearchViewModel extends ViewModel {
      * propuesto que la busqueda no reconoce llevaria a una pantalla de "sin
      * resultados" sin explicar por que.
      *
-     * <p>Se pide de forma sincrona: es una tabla de referencia que la
-     * aplicacion ya tiene en memoria, no una consulta de red.
+     * <p>La precarga asincrona actualiza estas copias y notifica al selector,
+     * incluso si se entro a Busqueda sin visitar Inicio.
      */
     @NonNull
     public List<String> getCiudades() {
-        return ServiceLocator.hoteles().ciudadesDisponibles();
+        return new ArrayList<>(ciudades);
     }
 
     /** Distritos donde hay alojamiento, para el buscador de destino. */
     @NonNull
     public List<String> getDistritos() {
-        return ServiceLocator.hoteles().distritosDisponibles();
+        return new ArrayList<>(distritos);
+    }
+
+    public LiveData<UiState<List<String>>> getDestinos() {
+        return destinos;
+    }
+
+    /** La pantalla de busqueda precarga; abrir el selector reutiliza esa solicitud. */
+    public void prepararDestinos() {
+        UiState<List<String>> actual = destinos.getValue();
+        if (actual == null || actual.isError()) actualizarDestinos();
+    }
+
+    public void actualizarDestinos() {
+        if (cargandoDestinos) return;
+        cargandoDestinos = true;
+        int solicitud = ++generacionDestinos;
+        ciudades = new ArrayList<>(ServiceLocator.hoteles().ciudadesDisponibles());
+        distritos = new ArrayList<>(ServiceLocator.hoteles().distritosDisponibles());
+        destinos.setValue(UiState.loading());
+        ServiceLocator.hoteles().ciudades(new ResultCallback<List<String>>() {
+            @Override
+            public void onExito(@NonNull List<String> datos) {
+                if (solicitud != generacionDestinos) return;
+                cargandoDestinos = false;
+                ciudades = new ArrayList<>(datos);
+                distritos = new ArrayList<>(ServiceLocator.hoteles().distritosDisponibles());
+                destinos.setValue(datos.isEmpty() && distritos.isEmpty()
+                        ? UiState.empty() : UiState.success(new ArrayList<>(datos)));
+            }
+
+            @Override
+            public void onError(@NonNull String mensaje) {
+                if (solicitud != generacionDestinos) return;
+                cargandoDestinos = false;
+                ciudades.clear();
+                distritos.clear();
+                destinos.setValue(UiState.error(mensaje));
+            }
+        });
     }
 
     // ------------------------------------------------------------------
@@ -191,6 +236,7 @@ public class SearchViewModel extends ViewModel {
      * empezarla de cero. Para empezar de cero esta borrar el destino.
      */
     public void volverAlFormulario() {
+        generacionBusqueda++;
         enResultados.setValue(false);
         resultados.setValue(null);
         acumulado.clear();
@@ -234,6 +280,7 @@ public class SearchViewModel extends ViewModel {
     }
 
     private void cargarPagina(int numero, boolean anexar) {
+        int solicitud = ++generacionBusqueda;
         pidiendo = true;
 
         if (anexar) {
@@ -242,10 +289,11 @@ public class SearchViewModel extends ViewModel {
             resultados.setValue(UiState.loading());
         }
 
-        ServiceLocator.hoteles().buscar(exigirConsulta(), numero,
+        ServiceLocator.hoteles().buscar(exigirConsulta().copy(), numero,
                 new ResultCallback<Pagina<Hotel>>() {
                     @Override
                     public void onExito(@NonNull Pagina<Hotel> datos) {
+                        if (solicitud != generacionBusqueda) return;
                         pidiendo = false;
                         cargandoMas.setValue(false);
                         paginaActual = datos.getNumero();
@@ -263,6 +311,7 @@ public class SearchViewModel extends ViewModel {
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        if (solicitud != generacionBusqueda) return;
                         pidiendo = false;
                         cargandoMas.setValue(false);
                         hayMas.setValue(false);
@@ -333,5 +382,11 @@ public class SearchViewModel extends ViewModel {
         if (lista.remove(destino)) {
             recientes.setValue(lista);
         }
+    }
+
+    @Override
+    protected void onCleared() {
+        generacionBusqueda++;
+        generacionDestinos++;
     }
 }

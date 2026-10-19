@@ -29,6 +29,8 @@ public class HomeViewModel extends ViewModel {
     private final MutableLiveData<UiState<List<Hotel>>> recomendados =
             new MutableLiveData<>();
     private final MutableLiveData<User> usuario = new MutableLiveData<>();
+    private int generacion;
+    private boolean cargando;
 
     public LiveData<UiState<List<Hotel>>> getRecomendados() {
         return recomendados;
@@ -40,12 +42,17 @@ public class HomeViewModel extends ViewModel {
 
     /** Carga inicial. Se puede volver a llamar desde el botón de reintento. */
     public void cargar() {
+        if (cargando) return;
+        cargando = true;
+        int solicitud = ++generacion;
         recomendados.setValue(UiState.loading());
 
         ServiceLocator.hoteles().recomendados(LIMITE_RECOMENDADOS,
                 new ResultCallback<List<Hotel>>() {
                     @Override
                     public void onExito(@NonNull List<Hotel> datos) {
+                        if (solicitud != generacion) return;
+                        cargando = false;
                         // Una lista vacía no es un error: es un estado vacío, y
                         // la pantalla lo dibuja distinto (§50).
                         recomendados.setValue(datos.isEmpty()
@@ -55,22 +62,35 @@ public class HomeViewModel extends ViewModel {
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        if (solicitud != generacion) return;
+                        cargando = false;
                         recomendados.setValue(UiState.error(mensaje));
                     }
                 });
 
-        cargarUsuario();
+        cargarUsuario(solicitud);
     }
 
-    private void cargarUsuario() {
+    /** Una respuesta iniciada antes de abandonar Inicio no repinta al regresar. */
+    public void suspender() {
+        generacion++;
+        cargando = false;
+    }
+
+    @Override
+    protected void onCleared() {
+        suspender();
+    }
+
+    private void cargarUsuario(int solicitud) {
         String usuarioId = SessionManager.getUsuarioIdSeguro();
-        if (usuarioId == null) {
+        if (usuarioId.isEmpty()) {
             return;
         }
         ServiceLocator.usuarios().usuario(usuarioId, new ResultCallback<User>() {
             @Override
             public void onExito(@NonNull User datos) {
-                usuario.setValue(datos);
+                if (solicitud == generacion) usuario.setValue(datos);
             }
 
             @Override

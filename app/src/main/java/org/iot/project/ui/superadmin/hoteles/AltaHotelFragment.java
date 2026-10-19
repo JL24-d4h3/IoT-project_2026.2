@@ -15,7 +15,6 @@ import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -93,6 +92,7 @@ public class AltaHotelFragment extends Fragment {
             return;
         }
         limpiarErrores();
+        binding.saAltaError.setVisibility(View.GONE);
 
         String nombre = texto(binding.saAltaNombreCampo, binding.saAltaNombre,
                 R.string.sa_alta_nombre_obligatorio);
@@ -188,6 +188,9 @@ public class AltaHotelFragment extends Fragment {
         habilitarFormulario(!cargando);
         binding.saAltaGuardar.setText(cargando
                 ? R.string.sa_alta_guardando_red : R.string.sa_alta_guardar);
+        if (cargando) {
+            binding.saAltaError.setVisibility(View.GONE);
+        }
         if (estado == null) {
             return;
         }
@@ -205,10 +208,9 @@ public class AltaHotelFragment extends Fragment {
             case ERROR:
             default:
                 binding.saAltaGuardar.setEnabled(true);
-                avisar(estado.getMessage());
-                // El aviso ya se leyo: si se queda ahi, volver a esta pantalla
-                // —o girar el telefono— lo repetiria.
-                viewModel.limpiar();
+                binding.saAltaError.setText(estado.getMessage() != null
+                        ? estado.getMessage() : getString(R.string.estado_error_mensaje));
+                binding.saAltaError.setVisibility(View.VISIBLE);
                 break;
         }
     }
@@ -246,13 +248,6 @@ public class AltaHotelFragment extends Fragment {
         binding.saAltaLatitudCampo.setEnabled(habilitado);
         binding.saAltaLongitudCampo.setEnabled(habilitado);
         binding.saHeader.getBotonVolver().setEnabled(habilitado);
-    }
-
-    private void avisar(@Nullable String mensaje) {
-        if (mensaje == null || mensaje.isEmpty()) {
-            return;
-        }
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
     }
 
     @Override

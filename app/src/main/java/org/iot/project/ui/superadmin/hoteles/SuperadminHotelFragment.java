@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -23,8 +24,8 @@ import org.iot.project.databinding.FragmentSuperadminHotelBinding;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.PeriodoDeVentas;
 import org.iot.project.ui.admin.reportes.PeriodoAdapter;
-import org.iot.project.utils.AvisoDePublicacion;
 import org.iot.project.utils.InsetUtils;
+import org.iot.project.utils.AvisoDePublicacion;
 
 import java.util.List;
 import java.util.Locale;
@@ -32,9 +33,8 @@ import java.util.Locale;
 /**
  * Ficha de un hotel para el superadministrador (RF-008, RF-059).
  *
- * <p>Cuatro bloques: el hotel, quien lo lleva, si se ofrece y como va. La
- * pantalla entera esta en lectura salvo dos decisiones —asignar administrador y
- * la publicacion—, porque el contenido del hotel lo edita su administrador.
+ * <p>La ficha permite asignar al administrador y publicar o retirar el hotel
+ * con confirmacion del servidor. Su contenido lo edita el administrador.
  *
  * <p>El ViewModel es el del grafo y no el de este Fragment: la hoja de
  * asignacion es un destino aparte y tiene que alcanzar al mismo. Por eso al
@@ -44,6 +44,7 @@ public class SuperadminHotelFragment extends Fragment {
 
     private FragmentSuperadminHotelBinding binding;
     private SuperadminHotelViewModel viewModel;
+    private OnBackPressedCallback bloqueoRetroceso;
     private PeriodoAdapter ventas;
 
     /** Lo ultimo pintado, que es lo que necesitan los botones al pulsarse. */
@@ -63,7 +64,11 @@ public class SuperadminHotelFragment extends Fragment {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applyTopPadding(binding.saHeader);
         binding.saHeader.setTitulo(R.string.sa_titulo_ficha_hotel);
-        binding.saHeader.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
+        binding.saHeader.mostrarVolver(v -> {
+            if (viewModel == null || !viewModel.estaModificando()) {
+                Navigation.findNavController(v).navigateUp();
+            }
+        });
 
         ventas = new PeriodoAdapter();
         binding.saFichaVentas.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -80,6 +85,14 @@ public class SuperadminHotelFragment extends Fragment {
         }
 
         viewModel = ViewModelGrafo.de(this, R.id.nav_superadmin, SuperadminHotelViewModel.class);
+        bloqueoRetroceso = new OnBackPressedCallback(viewModel.estaModificando()) {
+            @Override
+            public void handleOnBackPressed() {
+                // La operacion debe terminar antes de abandonar esta ficha.
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher()
+                .addCallback(getViewLifecycleOwner(), bloqueoRetroceso);
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getCambio().observe(getViewLifecycleOwner(), this::avisarDelCambio);
 
@@ -91,20 +104,17 @@ public class SuperadminHotelFragment extends Fragment {
 
     /** RF-008: la hoja enseña los candidatos que la ficha ya trae cargados. */
     private void abrirAsignacion() {
+        if (!viewModel.puedeAsignar() || getChildFragmentManager().isStateSaved()
+                || getChildFragmentManager().findFragmentByTag(AsignarAdministradorSheet.TAG) != null) {
+            return;
+        }
         new AsignarAdministradorSheet()
-                .show(getChildFragmentManager(), AsignarAdministradorSheet.TAG);
+                .showNow(getChildFragmentManager(), AsignarAdministradorSheet.TAG);
     }
 
-    /**
-     * Publicar no se pregunta y retirar si.
-     *
-     * <p>Retirar saca el hotel del catalogo del cliente y puede ser un error de
-     * dedo sobre la tarjeta de al lado; publicar lo devuelve y no quita nada a
-     * nadie. Es la misma regla que siguen las listas de cuentas y conductores.
-     */
     private void accionarPublicacion() {
         SuperadminHotelViewModel.Contenido datos = contenido;
-        if (datos == null) {
+        if (datos == null || !viewModel.puedeCambiarPublicacion()) {
             return;
         }
         if (!datos.hotel.isPublicado()) {
@@ -114,7 +124,7 @@ public class SuperadminHotelFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle(getString(R.string.sa_retirar_hotel_titulo, datos.hotel.getNombre()))
                 .setMessage(R.string.sa_retirar_hotel_mensaje)
-                .setNegativeButton(R.string.accion_cancelar, null)
+                .setNegativeButton(R.string.accion_volver, null)
                 .setPositiveButton(R.string.sa_retirar,
                         (dialogo, cual) -> viewModel.cambiarPublicacion(false))
                 .show();
@@ -125,6 +135,7 @@ public class SuperadminHotelFragment extends Fragment {
     private void pintar(@NonNull UiState<SuperadminHotelViewModel.Contenido> estado) {
         switch (estado.getStatus()) {
             case LOADING:
+                contenido = null;
                 mostrar(false, true, false);
                 break;
             case SUCCESS:
@@ -137,6 +148,7 @@ public class SuperadminHotelFragment extends Fragment {
                 binding.saError.conReintento(estado.getMessage(), v -> viewModel.reintentar());
                 break;
         }
+        actualizarAcciones();
     }
 
     private void llenar(@NonNull SuperadminHotelViewModel.Contenido datos) {
@@ -195,24 +207,22 @@ public class SuperadminHotelFragment extends Fragment {
                 ContextCompat.getColor(requireContext(), publicado
                         ? R.color.colorOnSuccessContainer : R.color.colorOnWarningContainer)));
 
-        // Lo que falta se dice al lado del boton y no en lugar del boton: un
-        // boton que desaparece deja sin saber por que no se puede publicar.
         CharSequence motivo = publicado ? null : AvisoDePublicacion.motivo(requireContext(), datos.hotel);
-        binding.saFichaPublicacionMotivo.setVisibility(motivo == null ? View.GONE : View.VISIBLE);
-        if (motivo != null) {
-            binding.saFichaPublicacionMotivo.setText(motivo);
+        if (!publicado && motivo == null && (datos.sinAsignar || datos.administrador == null)) {
+            motivo = getString(R.string.sa_publicacion_administrador_requerido);
         }
+        binding.saFichaPublicacionMotivo.setVisibility(motivo == null ? View.GONE : View.VISIBLE);
+        if (motivo != null) binding.saFichaPublicacionMotivo.setText(motivo);
 
         binding.saFichaPublicacionAccion.setText(publicado
                 ? R.string.sa_retirar : R.string.sa_publicar);
-        binding.saFichaPublicacionAccion.setEnabled(publicado || datos.esPublicable());
+        binding.saFichaPublicacionAccion.setEnabled(viewModel.puedeCambiarPublicacion());
     }
 
     private void pintarVentas(@NonNull List<PeriodoDeVentas> periodos) {
-        boolean hay = !periodos.isEmpty();
-        binding.saFichaVentas.setVisibility(hay ? View.VISIBLE : View.GONE);
-        binding.saFichaVentasVacio.setVisibility(hay ? View.GONE : View.VISIBLE);
-        ventas.submitList(periodos);
+        binding.saFichaVentas.setVisibility(View.GONE);
+        binding.saFichaVentasVacio.setVisibility(View.VISIBLE);
+        binding.saFichaVentasVacio.setText(R.string.sa_ventas_pendiente_conexion);
     }
 
     private void fondo(int drawable) {
@@ -227,18 +237,50 @@ public class SuperadminHotelFragment extends Fragment {
     }
 
     /**
-     * El aviso de una sola vez tras asignar o cambiar la publicacion.
+     * El aviso de una sola vez tras asignar, publicar o retirar.
      *
      * <p>El texto se arma aqui y no en el ViewModel porque lleva el nombre del
      * hotel dentro y los textos de la aplicacion viven en {@code strings.xml}.
      */
     private void avisarDelCambio(@Nullable UiState<SuperadminHotelViewModel.Cambio> estado) {
-        if (estado == null) {
+        actualizarAcciones();
+        if (estado == null || estado.isLoading()) {
             return;
+        }
+        Fragment hoja = getChildFragmentManager().findFragmentByTag(AsignarAdministradorSheet.TAG);
+        if (hoja instanceof AsignarAdministradorSheet) {
+            if (estado.isError()) {
+                // La hoja conserva el error junto a las cuentas para poder reintentar.
+                return;
+            }
+            ((AsignarAdministradorSheet) hoja).dismiss();
         }
         SuperadminHotelViewModel.Cambio cambio = estado.getData();
         avisar(cambio != null ? textoDe(cambio) : mensajeDe(estado));
         viewModel.consumirCambio();
+    }
+
+    private void actualizarAcciones() {
+        boolean pendiente = viewModel.estaModificando();
+        bloqueoRetroceso.setEnabled(pendiente);
+        binding.saHeader.getBotonVolver().setEnabled(!pendiente);
+        binding.saFichaAsignar.setEnabled(viewModel.puedeAsignar());
+        SuperadminHotelViewModel.Operacion operacion = viewModel.getOperacionPendiente();
+        if (pendiente && operacion == SuperadminHotelViewModel.Operacion.ASIGNAR) {
+            binding.saFichaAsignar.setText(R.string.sa_asignando_red);
+        } else if (contenido != null) {
+            binding.saFichaAsignar.setText(contenido.sinAsignar
+                    ? R.string.sa_asignar_administrador : R.string.sa_cambiar_administrador);
+        }
+        binding.saFichaPublicacionAccion.setEnabled(viewModel.puedeCambiarPublicacion());
+        if (pendiente && operacion == SuperadminHotelViewModel.Operacion.PUBLICAR) {
+            binding.saFichaPublicacionAccion.setText(R.string.sa_publicando_red);
+        } else if (pendiente && operacion == SuperadminHotelViewModel.Operacion.RETIRAR) {
+            binding.saFichaPublicacionAccion.setText(R.string.sa_retirando_red);
+        } else if (contenido != null) {
+            binding.saFichaPublicacionAccion.setText(contenido.hotel.isPublicado()
+                    ? R.string.sa_retirar : R.string.sa_publicar);
+        }
     }
 
     @NonNull
@@ -263,7 +305,12 @@ public class SuperadminHotelFragment extends Fragment {
     }
 
     private void avisar(@NonNull CharSequence mensaje) {
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
+        Snackbar aviso = Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG);
+        View barra = requireActivity().findViewById(R.id.bottom_nav);
+        if (barra != null && barra.getVisibility() == View.VISIBLE) {
+            aviso.setAnchorView(barra);
+        }
+        aviso.show();
     }
 
     /**
@@ -289,5 +336,6 @@ public class SuperadminHotelFragment extends Fragment {
         ventas = null;
         contenido = null;
         binding = null;
+        bloqueoRetroceso = null;
     }
 }

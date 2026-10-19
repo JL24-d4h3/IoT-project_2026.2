@@ -49,9 +49,8 @@ public class HabitacionesFragment extends Fragment {
         InsetUtils.applyTopPadding(binding.adminHabitacionesHeader);
 
         binding.adminHabitacionesHeader.setTitulo(R.string.nav_habitaciones);
-        binding.adminHabitacionesHeader.mostrarAccion(
-                R.drawable.ic_add, R.string.cd_agregar_habitacion,
-                v -> abrirHoja(null));
+        binding.adminHabitacionesHeader.ocultarAccion();
+        binding.adminHabitacionesCrear.setOnClickListener(v -> abrirHoja(null));
 
         adaptador = new HabitacionAdapter();
         adaptador.setAlEditar(this::abrirHoja);
@@ -67,7 +66,25 @@ public class HabitacionesFragment extends Fragment {
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, HabitacionesViewModel.class);
         viewModel.getHabitaciones().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getOperacion().observe(getViewLifecycleOwner(), this::pintarOperacion);
-        viewModel.cargar();
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> actualizarAcciones());
+        viewModel.getCreada().observe(getViewLifecycleOwner(), habitacion -> {
+            if (habitacion == null) return;
+            Snackbar aviso = Snackbar.make(binding.getRoot(),
+                    getString(R.string.admin_habitacion_creada, habitacion.getNumero()),
+                    Snackbar.LENGTH_LONG);
+            View barra = requireActivity().findViewById(R.id.bottom_nav);
+            if (barra != null && barra.getVisibility() == View.VISIBLE) aviso.setAnchorView(barra);
+            aviso.show();
+            viewModel.consumirCreada();
+        });
+        actualizarAcciones();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        viewModel.refrescarAlVolver();
+        actualizarAcciones();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -104,6 +121,7 @@ public class HabitacionesFragment extends Fragment {
                 pintarError(estado.getMessage());
                 break;
         }
+        actualizarAcciones();
     }
 
     /**
@@ -148,8 +166,9 @@ public class HabitacionesFragment extends Fragment {
         binding.adminHabitacionesVacio.conTitulo(R.string.admin_habitaciones_vacio_titulo);
         binding.adminHabitacionesVacio.conMensaje(R.string.admin_habitaciones_vacio);
         binding.adminHabitacionesVacio.conAccion(
-                R.string.admin_habitaciones_agregar, v -> abrirHoja(null));
+                R.string.admin_habitaciones_crear, v -> abrirHoja(null));
         binding.adminHabitacionesHeader.setSubtitulo(null);
+        actualizarAcciones();
     }
 
     private void pintarError(@Nullable String mensaje) {
@@ -159,6 +178,7 @@ public class HabitacionesFragment extends Fragment {
         binding.adminHabitacionesError.setVisibility(View.VISIBLE);
         binding.adminHabitacionesError.conReintento(mensaje, v -> viewModel.recargar());
         binding.adminHabitacionesHeader.setSubtitulo(null);
+        actualizarAcciones();
     }
 
     /**
@@ -179,27 +199,57 @@ public class HabitacionesFragment extends Fragment {
         // de fiar —la lista pudo reordenarse— y porque esto solo ocurre cuando
         // algo ha ido mal, no en el uso normal.
         adaptador.notifyDataSetChanged();
-        Snackbar.make(binding.getRoot(),
+        Snackbar aviso = Snackbar.make(binding.getRoot(),
                 estado.getMessage() != null
                         ? estado.getMessage() : getString(R.string.estado_error_descripcion),
-                Snackbar.LENGTH_LONG).show();
+                Snackbar.LENGTH_LONG);
+        View barra = requireActivity().findViewById(R.id.bottom_nav);
+        if (barra != null && barra.getVisibility() == View.VISIBLE) aviso.setAnchorView(barra);
+        aviso.show();
         viewModel.limpiarOperacion();
     }
 
     // ------------------------------------------------------------------ Acciones
 
     private void cambiarDisponibilidad(@NonNull Room habitacion, boolean disponible) {
+        if (!viewModel.puedeGuardar() || Boolean.TRUE.equals(viewModel.getOcupado().getValue())
+                || getChildFragmentManager().findFragmentByTag(HabitacionSheet.TAG) != null) {
+            adaptador.notifyDataSetChanged();
+            return;
+        }
         viewModel.cambiarDisponibilidad(habitacion.getId(), disponible);
     }
 
     private void abrirHoja(@Nullable Room habitacion) {
-        HabitacionSheet hoja = HabitacionSheet.para(habitacion);
-        hoja.show(getChildFragmentManager(), HabitacionSheet.TAG);
+        boolean permitido = habitacion == null ? viewModel.puedeCrear() : viewModel.puedeGuardar();
+        if (!permitido || viewModel.getHotelId() == null
+                || Boolean.TRUE.equals(viewModel.getOcupado().getValue())
+                || getChildFragmentManager().isStateSaved()
+                || getChildFragmentManager().findFragmentByTag(HabitacionSheet.TAG) != null) {
+            return;
+        }
+        viewModel.limpiarGuardado();
+        HabitacionSheet hoja = HabitacionSheet.para(habitacion, viewModel.getHotelId());
+        hoja.showNow(getChildFragmentManager(), HabitacionSheet.TAG);
+    }
+
+    private void actualizarAcciones() {
+        if (binding == null || viewModel == null) return;
+        boolean puedeCrear = viewModel.getHotelId() != null && viewModel.puedeCrear()
+                && !Boolean.TRUE.equals(viewModel.getOcupado().getValue());
+        binding.adminHabitacionesCrear.setEnabled(puedeCrear);
+        binding.adminHabitacionesVacio.getAccion().setEnabled(puedeCrear);
+        binding.adminHabitacionesLimite.setVisibility(
+                viewModel.puedeGuardar() && !viewModel.puedeCrear() ? View.VISIBLE : View.GONE);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        binding.adminHabitacionesLista.setAdapter(null);
+        adaptador.setAlEditar(null);
+        adaptador.setAlCambiarDisponibilidad(null);
+        adaptador = null;
         binding = null;
     }
 }

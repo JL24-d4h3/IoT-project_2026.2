@@ -13,275 +13,175 @@ import org.iot.project.core.UiState;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.NearbyPlace;
 
-/**
- * Estado de los datos del hotel (§42, RF-010 a RF-013).
- *
- * <p>Vive en el grafo del administrador y no en el fragmento porque las dos
- * hojas que se abren desde aqui —la de los datos y la del lugar cercano—
- * tambien tienen que alcanzarlo: las dos dejan el hotel cambiado, y quien lo
- * repinta es esta pantalla. Con un estado por fragmento habria que devolver el
- * hotel de una a otra a mano.
- *
- * <p>Este ViewModel no vuelve a pedir el hotel despues de escribir. Todas las
- * operaciones de {@code GestionHotelRepository} devuelven el hotel ya
- * actualizado, asi que se publica ese y no se lanza una consulta para leer lo
- * que se acaba de escribir. Con una recarga, cada fotografia agregada seria dos
- * viajes y un parpadeo del esqueleto.
- *
- * <p>Los canales de las operaciones van separados por quien los pide, no por
- * tipo de operacion: {@link #guardado}, {@link #foto} y {@link #publicacion} los
- * lee la pantalla, y {@link #lugar} lo lee la hoja del lugar. Dos observadores sobre un mismo
- * estado se roban el valor: el primero que lo atiende lo limpia, y el segundo
- * recibe un nulo. Es el mismo motivo por el que la gestion de habitaciones
- * separa "guardado" de "operacion".
- */
+import java.util.Objects;
+
+/** Ficha compartida por las hojas; permite una escritura de hotel a la vez. */
 public class HotelDatosViewModel extends ViewModel {
-
-    /** El hotel, con sus fotografias y sus lugares cercanos. */
     private final MutableLiveData<UiState<Hotel>> hotel = new MutableLiveData<>();
-
-    /** Resultado de guardar el formulario de datos (RF-010). */
     private final MutableLiveData<UiState<Hotel>> guardado = new MutableLiveData<>();
-
-    /**
-     * Resultado de agregar o de quitar una fotografia (RF-012, RF-013).
-     *
-     * <p>Las dos operaciones comparten canal porque las atiende el mismo
-     * observador y de la misma forma —repintar la tira y avisar—, y separarlas
-     * solo anadiria un canal mas que limpiar. Lo que no comparten es el aviso:
-     * cual de los dos toca lo decide la pantalla, que es quien sabe que se
-     * pulso.
-     */
     private final MutableLiveData<UiState<Hotel>> foto = new MutableLiveData<>();
-
-    /** Resultado de registrar un lugar cercano (RF-011), que pide la hoja. */
     private final MutableLiveData<UiState<Hotel>> lugar = new MutableLiveData<>();
-
-    /** Resultado de publicar el hotel o de retirarlo (RF-007). */
     private final MutableLiveData<UiState<Hotel>> publicacion = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> ocupado = new MutableLiveData<>(false);
+    private boolean cargando;
+    private boolean escribiendo;
+    private boolean ultimaFotoAgregada = true;
+    private long consulta;
 
-    public LiveData<UiState<Hotel>> getHotel() {
-        return hotel;
-    }
+    public LiveData<UiState<Hotel>> getHotel() { return hotel; }
+    public LiveData<UiState<Hotel>> getGuardado() { return guardado; }
+    public LiveData<UiState<Hotel>> getFoto() { return foto; }
+    public LiveData<UiState<Hotel>> getLugar() { return lugar; }
+    public LiveData<UiState<Hotel>> getPublicacion() { return publicacion; }
+    public LiveData<Boolean> getOcupado() { return ocupado; }
+    public boolean estaEscribiendo() { return escribiendo; }
+    public boolean fueFotoAgregada() { return ultimaFotoAgregada; }
 
-    public LiveData<UiState<Hotel>> getGuardado() {
-        return guardado;
-    }
-
-    public LiveData<UiState<Hotel>> getFoto() {
-        return foto;
-    }
-
-    public LiveData<UiState<Hotel>> getLugar() {
-        return lugar;
-    }
-
-    /**
-     * Resultado de publicar o de retirar, para el aviso de una sola vez.
-     *
-     * <p>Va en su propio canal y no en el de {@link #guardado}: los dos cambian
-     * el hotel, pero {@code guardado} lo lee el observador que ademas limpia el
-     * campo del formulario, y este no tiene formulario que limpiar.
-     */
-    public LiveData<UiState<Hotel>> getPublicacion() {
-        return publicacion;
+    public boolean puedeModificar() {
+        UiState<Hotel> actual = hotel.getValue();
+        return !cargando && !escribiendo && actual != null && actual.isSuccess()
+                && actual.getData() != null && actual.getData().getId().equals(getHotelId());
     }
 
     @Nullable
-    public String getHotelId() {
-        return SessionManager.getHotelAdministrado();
-    }
+    public String getHotelId() { return SessionManager.getHotelAdministrado(); }
 
-    /**
-     * Carga el hotel, o no hace nada si ya esta cargado.
-     *
-     * <p>Al rotar, el ViewModel sobrevive con el hotel dentro: volver a pasar
-     * por el esqueleto dejaria la pantalla en blanco un instante sin motivo.
-     */
     public void cargar() {
         UiState<Hotel> actual = hotel.getValue();
-        if (actual != null && actual.isSuccess()) {
-            return;
-        }
-        recargar();
+        if (actual != null && actual.isSuccess() && actual.getData() != null
+                && actual.getData().getId().equals(getHotelId())) return;
+        solicitar(false);
     }
 
-    public void recargar() {
+    public void recargar() { solicitar(false); }
+
+    /** Al volver de Habitaciones/Servicios se vuelve a comprobar el agregado. */
+    public void refrescarAlVolver() { solicitar(true); }
+
+    private void solicitar(boolean silencioso) {
+        if (cargando || escribiendo) return;
         String hotelId = getHotelId();
         if (hotelId == null) {
-            // No es un fallo de red: es que esta cuenta no administra nada. Se
-            // dice tal cual, porque reintentar no lo arreglaria.
-            hotel.setValue(UiState.<Hotel>error("Todavía no tienes un hotel asignado."));
+            hotel.setValue(UiState.error("Todavía no tienes un hotel asignado."));
             return;
         }
-        hotel.setValue(UiState.<Hotel>loading());
+        String uid = SessionManager.getUsuarioId();
+        long mia = ++consulta;
+        cargando = true;
+        ocupado.setValue(true);
+        UiState<Hotel> anterior = hotel.getValue();
+        if (!silencioso || anterior == null || !anterior.isSuccess()
+                || anterior.getData() == null || !hotelId.equals(anterior.getData().getId())) {
+            hotel.setValue(UiState.loading());
+        }
         ServiceLocator.hoteles().obtener(hotelId, new ResultCallback<Hotel>() {
             @Override
             public void onExito(@NonNull Hotel datos) {
-                hotel.setValue(UiState.success(datos));
+                if (mia != consulta) return;
+                cargando = false;
+                hotel.setValue(vigente(uid, hotelId) ? UiState.success(datos)
+                        : UiState.error("Tu asignación cambió. Vuelve a abrir los datos del hotel."));
+                ocupado.setValue(false);
             }
 
             @Override
             public void onError(@NonNull String mensaje) {
+                if (mia != consulta) return;
+                cargando = false;
                 hotel.setValue(UiState.error(mensaje));
+                ocupado.setValue(false);
             }
         });
     }
 
-    /**
-     * Guarda el nombre, la descripcion, la direccion y las coordenadas
-     * (RF-010).
-     *
-     * <p>Aqui no se comprueba que los datos valgan: el repositorio es quien
-     * conoce las reglas —nombre obligatorio, direccion obligatoria, coordenadas
-     * dentro del mundo— y repetirlas seria tener dos versiones de la misma
-     * regla, que con el tiempo discreparian. La hoja solo comprueba lo que
-     * puede comprobar un campo: que no este vacio y que sea un numero.
-     */
     public void guardarDatos(@NonNull String nombre, @NonNull String descripcion,
                              @NonNull String direccion, double latitud, double longitud) {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            return;
-        }
-        guardado.setValue(UiState.<Hotel>loading());
-        ServiceLocator.gestion().actualizarDatos(hotelId, nombre, descripcion, direccion,
-                latitud, longitud, new ResultCallback<Hotel>() {
-                    @Override
-                    public void onExito(@NonNull Hotel datos) {
-                        hotel.setValue(UiState.success(datos));
-                        guardado.setValue(UiState.success(datos));
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        guardado.setValue(UiState.error(mensaje));
-                    }
-                });
+        String id = iniciar(guardado);
+        if (id == null) return;
+        ServiceLocator.gestion().actualizarDatos(id, nombre, descripcion, direccion,
+                latitud, longitud, respuesta(id, guardado));
     }
 
-    /** Agrega una fotografia (RF-012). */
     public void agregarFoto(@NonNull String url) {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            return;
-        }
-        foto.setValue(UiState.<Hotel>loading());
-        ServiceLocator.gestion().agregarFoto(hotelId, url, new ResultCallback<Hotel>() {
-            @Override
-            public void onExito(@NonNull Hotel datos) {
-                hotel.setValue(UiState.success(datos));
-                foto.setValue(UiState.success(datos));
-            }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
-                foto.setValue(UiState.error(mensaje));
-            }
-        });
+        String id = iniciar(foto);
+        if (id == null) return;
+        ultimaFotoAgregada = true;
+        ServiceLocator.gestion().agregarFoto(id, url, respuesta(id, foto));
     }
 
-    /**
-     * Quita una fotografia (RF-013).
-     *
-     * <p>La pantalla no ofrece quitarla cuando el hotel esta en el minimo, pero
-     * la regla se comprueba igualmente en el repositorio: una condicion que solo
-     * vive en la interfaz se salta sola en cuanto alguien llame a esto desde
-     * otro sitio.
-     */
     public void quitarFoto(@NonNull String url) {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            return;
-        }
-        foto.setValue(UiState.<Hotel>loading());
-        ServiceLocator.gestion().quitarFoto(hotelId, url, new ResultCallback<Hotel>() {
-            @Override
-            public void onExito(@NonNull Hotel datos) {
-                hotel.setValue(UiState.success(datos));
-                foto.setValue(UiState.success(datos));
-            }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
-                foto.setValue(UiState.error(mensaje));
-            }
-        });
+        String id = iniciar(foto);
+        if (id == null) return;
+        ultimaFotoAgregada = false;
+        ServiceLocator.gestion().quitarFoto(id, url, respuesta(id, foto));
     }
 
-    /** Registra un lugar de interes cercano (RF-011). */
     public void agregarLugar(@NonNull NearbyPlace nuevo) {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            return;
+        String id = iniciar(lugar);
+        if (id == null) return;
+        ServiceLocator.gestion().agregarLugarCercano(id, nuevo, respuesta(id, lugar));
+    }
+
+    public void cambiarPublicacion(boolean publicado) {
+        String id = iniciar(publicacion);
+        if (id == null) return;
+        ServiceLocator.gestion().cambiarPublicacion(id, publicado, respuesta(id, publicacion));
+    }
+
+    @Nullable
+    private String iniciar(MutableLiveData<UiState<Hotel>> canal) {
+        if (escribiendo || cargando) return null;
+        String id = getHotelId();
+        if (id == null) {
+            canal.setValue(UiState.error("Todavía no tienes un hotel asignado."));
+            return null;
         }
-        lugar.setValue(UiState.<Hotel>loading());
-        ServiceLocator.gestion().agregarLugarCercano(hotelId, nuevo, new ResultCallback<Hotel>() {
+        if (!puedeModificar()) return null;
+        escribiendo = true;
+        ++consulta;
+        ocupado.setValue(true);
+        canal.setValue(UiState.loading());
+        return id;
+    }
+
+    private ResultCallback<Hotel> respuesta(String id, MutableLiveData<UiState<Hotel>> canal) {
+        String uid = SessionManager.getUsuarioId();
+        return new ResultCallback<Hotel>() {
             @Override
             public void onExito(@NonNull Hotel datos) {
-                hotel.setValue(UiState.success(datos));
-                lugar.setValue(UiState.success(datos));
+                escribiendo = false;
+                if (vigente(uid, id)) {
+                    hotel.setValue(UiState.success(datos));
+                    ocupado.setValue(false);
+                    canal.setValue(UiState.success(datos));
+                } else {
+                    ocupado.setValue(false);
+                    canal.setValue(UiState.error("Tu asignación cambió. Vuelve a abrir los datos del hotel."));
+                }
             }
 
             @Override
             public void onError(@NonNull String mensaje) {
-                lugar.setValue(UiState.error(mensaje));
+                escribiendo = false;
+                ocupado.setValue(false);
+                canal.setValue(UiState.error(mensaje));
             }
-        });
+        };
     }
 
-    /** Limpia el resultado del guardado al terminar de atenderlo. */
-    public void limpiarGuardado() {
-        guardado.setValue(null);
+    private boolean vigente(String uid, String id) {
+        return uid != null && Objects.equals(uid, SessionManager.getUsuarioId())
+                && id.equals(getHotelId());
     }
 
-    /** Limpia el resultado de la ultima operacion sobre las fotografias. */
-    public void limpiarFoto() {
-        foto.setValue(null);
-    }
+    public void limpiarGuardado() { limpiar(guardado); }
+    public void limpiarFoto() { limpiar(foto); }
+    public void limpiarLugar() { limpiar(lugar); }
+    public void limpiarPublicacion() { limpiar(publicacion); }
 
-    /** Limpia el resultado del ultimo lugar registrado, al cerrarse la hoja. */
-    public void limpiarLugar() {
-        lugar.setValue(null);
-    }
-
-    /**
-     * Publica el hotel en el catalogo o lo retira (RF-007).
-     *
-     * <p>La regla —que para publicar hace falta contenido— no se comprueba aqui:
-     * la aplica el repositorio, que es el unico que no se puede saltar. Esta
-     * pantalla se limita a enseñar lo que falta y a ofrecer el boton cuando se
-     * puede, y el error del repositorio, si llega, se enseña tal cual.
-     *
-     * <p>El hotel que devuelve la operacion es el mismo objeto que esta pantalla
-     * tiene cargado, asi que basta con publicarlo otra vez: el estado de
-     * publicacion se lee del hotel, no de un campo aparte que habria que
-     * mantener en dos sitios.
-     */
-    public void cambiarPublicacion(boolean publicado) {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            publicacion.setValue(UiState.<Hotel>error("Todavía no tienes un hotel asignado."));
-            return;
-        }
-        publicacion.setValue(UiState.<Hotel>loading());
-        ServiceLocator.gestion().cambiarPublicacion(hotelId, publicado,
-                new ResultCallback<Hotel>() {
-                    @Override
-                    public void onExito(@NonNull Hotel datos) {
-                        hotel.setValue(UiState.success(datos));
-                        publicacion.setValue(UiState.success(datos));
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        publicacion.setValue(UiState.error(mensaje));
-                    }
-                });
-    }
-
-    /** Limpia el resultado de la ultima publicacion, ya avisado. */
-    public void limpiarPublicacion() {
-        publicacion.setValue(null);
+    /** Recrear una hoja nunca cancela el estado de una escritura en curso. */
+    private void limpiar(MutableLiveData<UiState<Hotel>> canal) {
+        UiState<Hotel> actual = canal.getValue();
+        if (actual == null || !actual.isLoading()) canal.setValue(null);
     }
 }

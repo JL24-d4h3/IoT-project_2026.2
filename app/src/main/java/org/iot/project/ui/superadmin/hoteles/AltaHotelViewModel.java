@@ -78,8 +78,4 @@ public class AltaHotelViewModel extends ViewModel {
         });
     }
 
-    /** El formulario se rearma tras un alta con exito o tras un error. */
-    public void limpiar() {
-        alta.setValue(null);
-    }
 }

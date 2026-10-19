@@ -25,8 +25,7 @@ import java.util.List;
  *
  * <p>El filtro vive aqui y no en el repositorio, igual que en las otras dos
  * listas del panel: es mirar de nuevo una lista que ya esta en memoria, y
- * hacerlo pasar por el repositorio costaria la latencia simulada en cada toque
- * de chip.
+ * volver a descargarla en cada toque de chip no aporta datos nuevos.
  */
 public class SuperadminHotelesViewModel extends ViewModel {
 
@@ -119,10 +118,17 @@ public class SuperadminHotelesViewModel extends ViewModel {
      */
     public void refrescarEnSilencio() {
         UiState<List<FilaHotel>> actual = contenido.getValue();
-        if (cargando || actual == null || !(actual.isSuccess() || actual.isEmpty())) {
+        if (actual == null || !(actual.isSuccess() || actual.isEmpty())) {
             return;
         }
         cargando = true;
+        pedir();
+    }
+
+    /** Un alta propia invalida incluso una consulta que hubiera empezado antes. */
+    public void refrescarTrasAlta() {
+        cargando = true;
+        contenido.setValue(UiState.loading());
         pedir();
     }
 
@@ -186,7 +192,10 @@ public class SuperadminHotelesViewModel extends ViewModel {
     /** El filtro de la lista: todos, o solo los que no se ofrecen al cliente. */
     public void filtrar(boolean soloSinPublicar) {
         this.soloSinPublicar = soloSinPublicar;
-        publicar();
+        UiState<List<FilaHotel>> actual = contenido.getValue();
+        if (!cargando && actual != null && (actual.isSuccess() || actual.isEmpty())) {
+            publicar();
+        }
     }
 
     private void publicar() {
