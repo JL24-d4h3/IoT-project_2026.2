@@ -1,0 +1,48 @@
+{
+  "formato": "preparacion-por-correo-v1",
+  "instrucciones": "Estos registros no son documentos importables. Copiar el UID real desde Firebase Authentication y crear usuarios/{uid} desde la consola o un backend con Admin SDK. Los nombres son ejemplos editables. Agregar creadoEn y actualizadoEn como timestamps al crear cada documento. No usar correos como IDs ni incluir contrasenas.",
+  "cuentas": [
+    {
+      "emailAuthentication": "cliente@example.com",
+      "perfil": {
+        "nombres": "Cliente",
+        "apellidos": "Inicial",
+        "email": "cliente@example.com",
+        "telefono": null,
+        "direccion": null,
+        "fotoUrl": null,
+        "rol": "CLIENTE",
+        "activo": true,
+        "hotelId": null
+      }
+    },
+    {
+      "emailAuthentication": "superadmin@example.com",
+      "perfil": {
+        "nombres": "Superadministrador",
+        "apellidos": "Inicial",
+        "email": "superadmin@example.com",
+        "telefono": null,
+        "direccion": null,
+        "fotoUrl": null,
+        "rol": "SUPERADMIN",
+        "activo": true,
+        "hotelId": null
+      }
+    },
+    {
+      "emailAuthentication": "admin@example.com",
+      "perfil": {
+        "nombres": "Administrador",
+        "apellidos": "Hotel",
+        "email": "admin@example.com",
+        "telefono": null,
+        "direccion": null,
+        "fotoUrl": null,
+        "rol": "ADMIN_HOTEL",
+        "activo": true,
+        "hotelId": null
+      }
+    }
+  ]
+}

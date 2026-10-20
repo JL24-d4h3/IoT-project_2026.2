@@ -33,7 +33,9 @@ superadministrador, actualizando ambos documentos de forma atomica. La navegacio
 usa el perfil para elegir la interfaz; la autorizacion de datos debe mantenerse
 tambien en las reglas o en el backend de cada modulo que se migre.
 
-## Preparar las tres cuentas indicadas
+## Ejemplo de preparacion de perfiles
+
+Los correos de esta seccion son ficticios; sustituirlos por cuentas propias.
 
 La forma mas rapida, una vez creada Firestore y publicadas las reglas, es iniciar
 sesion con cada cuenta existente. Si no tiene documento, la app crea su perfil
@@ -58,7 +60,7 @@ de debajo usando los datos preparados en el JSON.
 2. Copiar su **UID** exacto. Crear en Firestore un documento de la coleccion
    `usuarios` cuyo ID sea ese UID, no el correo ni un ID generado automaticamente.
 3. Copiar los campos `perfil` de la entrada correspondiente en
-   `tools/firebase/perfiles-iniciales.json`. Los nombres y apellidos son ejemplos:
+   `tools/firebase/perfiles-ejemplo.json`. Los nombres y apellidos son ejemplos:
    reemplazarlos por los que corresponda. Conservar el correo de Authentication.
 4. Agregar `creadoEn` y `actualizadoEn` con tipo **timestamp** y la fecha/hora de
    creacion. En un backend con Admin SDK usar `FieldValue.serverTimestamp()`.

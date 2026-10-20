@@ -1,15 +1,44 @@
+# Entorno local e IDE
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+.idea/
+.vscode/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+Thumbs.db
 local.properties
+
+# Archivos generados
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+.tooling/
+node_modules/
+*.log
+*.apk
+*.aab
+*.apks
+*.hprof
+
+# Configuracion privada y credenciales (tambien en variantes Android)
+google-services.json
+GoogleService-Info.plist
+.firebaserc
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+
+# Notas y datos locales; no forman parte del codigo compartido
+/RECUPERACION.md
+/docs/memory/
+/docs/views_prompt.txt
+/tools/firebase/perfiles-iniciales.json
