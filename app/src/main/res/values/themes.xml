@@ -124,8 +124,18 @@
         <item name="android:backgroundTint">@color/colorSurface</item>
         <item name="buttonBarPositiveButtonStyle">@style/Widget.App.Button.Text</item>
         <item name="buttonBarNegativeButtonStyle">@style/Widget.App.Button.Text</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.App.H2</item>
-        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.App.Body</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text</item>
+    </style>
+
+    <!-- Material infla el título sin dimensiones en el XML: el estilo del
+         widget debe conservarlas y aplicar la tipografía por textAppearance. -->
+    <style name="MaterialAlertDialog.App.Title.Text" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textAppearance">@style/TextAppearance.App.H2</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Body.Text" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textAppearance">@style/TextAppearance.App.Body</item>
     </style>
 
 </resources>
