@@ -1,6 +1,8 @@
 package org.iot.project.ui.admin.reservas;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -70,14 +72,51 @@ public class CargoSheet extends BottomSheetDialogFragment {
         // recargarlos cuando este cobro entre.
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, ReservaAdminViewModel.class);
 
+        String bookingId = getArguments() == null ? null
+                : getArguments().getString(ReservasAdminFragment.ARG_BOOKING_ID);
+        if (!viewModel.prepararCargo(bookingId)) {
+            dismiss();
+            return;
+        }
+
+        restaurarCampo(binding.cargoMonto, "Monto");
+        restaurarCampo(binding.cargoMotivo, "Motivo");
+        restaurarCampo(binding.cargoObservacion, "Observacion");
+
         binding.cargoCerrar.setOnClickListener(v -> dismiss());
         binding.cargoGuardar.setOnClickListener(v -> guardar());
 
         // Se limpia antes de observar: LiveData entrega su último valor al
         // registrarse, y sin esto una hoja recién abierta vería el éxito del
         // cobro anterior y se cerraría sola.
-        viewModel.limpiarCargo();
         viewModel.getCargo().observe(getViewLifecycleOwner(), this::pintar);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), ocupado -> actualizarControles());
+        actualizarControles();
+    }
+
+    private void restaurarCampo(TextInputEditText entrada, String campo) {
+        entrada.setText(viewModel.textoCargo(campo));
+        entrada.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                viewModel.guardarTextoCargo(campo, s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+    }
+
+    private void actualizarControles() {
+        boolean ocupado = viewModel.estaOcupado();
+        boolean editable = !ocupado && !viewModel.cargoIntentado();
+        binding.cargoMonto.setEnabled(editable);
+        binding.cargoMotivo.setEnabled(editable);
+        binding.cargoObservacion.setEnabled(editable);
+        binding.cargoGuardar.setEnabled(!ocupado);
+        binding.cargoCerrar.setEnabled(!ocupado);
+        binding.cargoGuardar.setText(viewModel.cargoIntentado()
+                ? R.string.admin_firestore_cargo_reintentar : R.string.cargo_guardar);
+        binding.cargoReintentoNota.setVisibility(viewModel.cargoIntentado() ? View.VISIBLE : View.GONE);
+        setCancelable(!ocupado);
     }
 
     // ------------------------------------------------------------------ Guardar
@@ -89,6 +128,11 @@ public class CargoSheet extends BottomSheetDialogFragment {
      * todos de una vez en vez de uno por intento.
      */
     private void guardar() {
+        if (viewModel.estaOcupado()) return;
+        if (viewModel.cargoIntentado()) {
+            viewModel.reintentarCargo();
+            return;
+        }
         binding.cargoMontoCampo.setError(null);
         binding.cargoMotivoCampo.setError(null);
         binding.cargoObservacionCampo.setError(null);
@@ -100,6 +144,14 @@ public class CargoSheet extends BottomSheetDialogFragment {
                 R.string.cargo_observacion_obligatoria);
 
         if (monto == null || motivo == null || observacion == null) {
+            return;
+        }
+        if (motivo.length() > 200) {
+            binding.cargoMotivoCampo.setError(getString(R.string.admin_firestore_cargo_motivo_limite));
+            return;
+        }
+        if (observacion.length() > 1000) {
+            binding.cargoObservacionCampo.setError(getString(R.string.admin_firestore_cargo_observacion_limite));
             return;
         }
         viewModel.agregarCargo(new Charge(monto, motivo, observacion));
@@ -122,8 +174,12 @@ public class CargoSheet extends BottomSheetDialogFragment {
         }
         try {
             double numero = Double.parseDouble(valor.replace(',', '.'));
-            if (numero <= 0d) {
+            if (!Double.isFinite(numero) || numero <= 0d) {
                 binding.cargoMontoCampo.setError(getString(R.string.cargo_monto_cero));
+                return null;
+            }
+            if (numero > 1_000_000d) {
+                binding.cargoMontoCampo.setError(getString(R.string.admin_firestore_cargo_monto_limite));
                 return null;
             }
             return numero;
@@ -154,19 +210,21 @@ public class CargoSheet extends BottomSheetDialogFragment {
         }
         switch (estado.getStatus()) {
             case LOADING:
-                binding.cargoGuardar.setEnabled(false);
+                actualizarControles();
                 break;
             case SUCCESS:
-                binding.cargoGuardar.setEnabled(true);
                 // Sin aviso aquí: la hoja se cierra y el Snackbar se iría con
                 // ella. La pantalla de detrás avisa y recarga los totales.
+                viewModel.cargoAtendido();
+                setCancelable(true);
                 dismiss();
                 break;
             case EMPTY:
             case ERROR:
             default:
-                binding.cargoGuardar.setEnabled(true);
+                actualizarControles();
                 avisar(estado.getMessage());
+                viewModel.limpiarCargo();
                 break;
         }
     }

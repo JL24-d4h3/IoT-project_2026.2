@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Source;
 
 import org.iot.project.core.ResultCallback;
+import org.iot.project.core.ServiceLocator;
 import org.iot.project.data.repository.UserRepository;
 import org.iot.project.models.AppNotification;
 import org.iot.project.models.Card;
@@ -29,10 +30,8 @@ public final class FirebaseUserRepository implements UserRepository {
             "La sesión cambió. Vuelve a cargar tu perfil.";
     private static final String TARJETAS_PENDIENTES =
             "La gestión de tarjetas todavía no está conectada.";
-    private static final String NOTIFICACIONES_PENDIENTES =
-            "Las notificaciones todavía no están conectadas.";
-    private static final String CHAT_PENDIENTE =
-            "El chat de las reservas todavía no está conectado.";
+    private final FirebaseNotificacionesRepository notificaciones =
+            new FirebaseNotificacionesRepository();
 
     @Override
     public void usuario(@NonNull String usuarioId, @NonNull ResultCallback<User> callback) {
@@ -114,24 +113,65 @@ public final class FirebaseUserRepository implements UserRepository {
     @Override
     public void notificaciones(@NonNull String usuarioId,
                                @NonNull ResultCallback<List<AppNotification>> callback) {
-        callback.onError(NOTIFICACIONES_PENDIENTES);
+        notificaciones.consultar(usuarioId, callback);
+    }
+
+    @NonNull
+    @Override
+    public Suscripcion observarNotificaciones(@NonNull String usuarioId,
+                               @NonNull ResultCallback<List<AppNotification>> callback) {
+        return notificaciones.observar(usuarioId, callback);
     }
 
     @Override
     public void marcarNotificacionesLeidas(@NonNull String usuarioId) {
-        // Sin efecto hasta migrar las notificaciones; nunca modifica datos simulados.
+        // Se conserva la firma anterior; solo marca la foto de la bandeja que se recibió.
+        notificaciones.consultar(usuarioId, new ResultCallback<List<AppNotification>>() {
+            @Override public void onExito(@NonNull List<AppNotification> datos) {
+                java.util.ArrayList<String> ids = new java.util.ArrayList<>();
+                for (AppNotification notificacion : datos) {
+                    if (!notificacion.isLeida()) ids.add(notificacion.getId());
+                }
+                notificaciones.marcarLeidas(usuarioId, ids, new ResultCallback<Boolean>() {
+                    @Override public void onExito(@NonNull Boolean resultado) { }
+                    @Override public void onError(@NonNull String mensaje) { }
+                });
+            }
+            @Override public void onError(@NonNull String mensaje) { }
+        });
+    }
+
+    @Override
+    public void marcarNotificacionesLeidas(@NonNull String usuarioId,
+                     @NonNull List<String> notificacionIds,
+                     @NonNull ResultCallback<Boolean> callback) {
+        notificaciones.marcarLeidas(usuarioId, notificacionIds, callback);
     }
 
     @Override
     public void conversacion(@NonNull String bookingId,
                              @NonNull ResultCallback<Conversation> callback) {
-        callback.onError(CHAT_PENDIENTE);
+        ServiceLocator.chats().conversacionDe(bookingId, callback);
     }
 
     @Override
     public void enviarMensaje(@NonNull String bookingId, @NonNull String texto,
                               @NonNull ResultCallback<Message> callback) {
-        callback.onError(CHAT_PENDIENTE);
+        String mensajeId = java.util.UUID.randomUUID().toString();
+        ServiceLocator.chats().enviar(bookingId, mensajeId, texto, new ResultCallback<Conversation>() {
+            @Override public void onExito(@NonNull Conversation conversacion) {
+                for (Message mensaje : conversacion.getMensajes()) {
+                    if (mensajeId.equals(mensaje.getId())) {
+                        callback.onExito(mensaje);
+                        return;
+                    }
+                }
+                Message ultimo = conversacion.getUltimoMensaje();
+                if (ultimo != null && mensajeId.equals(ultimo.getId())) callback.onExito(ultimo);
+                else callback.onError("El mensaje se envió. Vuelve a abrir la conversación para consultarlo.");
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     private boolean mismaSesion(@NonNull String usuarioId) {

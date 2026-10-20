@@ -18,6 +18,22 @@ import java.util.List;
  */
 public interface TaxiRepository {
 
+    interface Suscripcion {
+        void cerrar();
+    }
+
+    /** Actualizaciones del historial mientras la pantalla está visible. */
+    default Suscripcion escucharHistorial(@NonNull String clienteId,
+                                          @NonNull ResultCallback<List<TaxiService>> callback) {
+        historial(clienteId, callback);
+        return () -> { };
+    }
+
+    /** Registra, una sola vez, el aviso del último estado real de un traslado propio. */
+    default void sincronizarAvisoEstado(@NonNull String taxiId, @NonNull ResultCallback<Boolean> callback) {
+        callback.onExito(false);
+    }
+
     /** Servicio en curso del cliente, o error si no tiene ninguno. */
     void servicioActivo(@NonNull String clienteId, @NonNull ResultCallback<TaxiService> callback);
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reserva_firebase_guardando">Guardando reserva…</string>
+    <string name="reserva_firebase_continuar_pago">Continuar con el pago</string>
+    <string name="reserva_firebase_aviso">Tu reserva está guardada y pendiente de confirmación de pago. También puedes verla o cancelarla en Mis reservas.</string>
+    <string name="pago_firebase_guardando">Guardando confirmación…</string>
+    <string name="pago_firebase_confirmado_mensaje">Tu reserva %1$s está confirmada. Te esperamos el %2$s.\nLa confirmación de pago es simulada.</string>
+    <string name="reserva_firebase_consultando">Comprobando disponibilidad para estas fechas…</string>
+    <string name="reserva_firebase_disponible">Habitación disponible para las fechas seleccionadas.</string>
+    <string name="reserva_firebase_ocupada">Esta habitación está ocupada en esas fechas. Elige otras fechas.</string>
+    <string name="reserva_firebase_disponibilidad_error">%1$s Pulsa aquí para reintentar.</string>
+    <string name="reserva_firebase_estado_actual">Tu reserva está %1$s. Puedes consultar los detalles en Mis reservas.</string>
+    <string name="reserva_firebase_reintentar">Reintentar la misma reserva</string>
+    <string name="reserva_firebase_recuperar_intento">Hay un intento pendiente. Reintenta la misma reserva para recuperarla si ya se guardó.</string>
+</resources>

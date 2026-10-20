@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_firestore_guardando">Guardando cambios…</string>
+    <string name="admin_firestore_ingreso">Registrar ingreso</string>
+    <string name="admin_firestore_ingreso_titulo">¿Registrar el ingreso del huésped?</string>
+    <string name="admin_firestore_ingreso_mensaje">La reserva pasará a Activa. Se habilitarán el chat con el huésped y el registro de consumos de la estadía.</string>
+    <string name="admin_firestore_ingreso_hecho">Ingreso registrado. La estadía está en curso.</string>
+    <string name="admin_firestore_ingreso_pendiente">El huésped debe confirmar su reserva mediante el pago antes de registrar su ingreso.</string>
+    <string name="admin_firestore_ingreso_anticipado">Podrás registrar el ingreso desde la fecha de entrada.</string>
+    <string name="admin_firestore_ingreso_vencido">El período de esta reserva terminó. Ya no se puede registrar el ingreso.</string>
+    <string name="admin_firestore_ingreso_listo">Registra la llegada del huésped para iniciar la estadía y habilitar el chat.</string>
+    <string name="admin_firestore_cobrar">Registrar cobro simulado de %1$s</string>
+    <string name="admin_firestore_cobro_titulo">¿Registrar %1$s como cobro simulado?</string>
+    <string name="admin_firestore_cobro_mensaje">Se registrará el cobro del total en recepción y se avisará al huésped. Es una simulación: no se cargará ninguna tarjeta ni se moverá dinero.</string>
+    <string name="admin_firestore_cobro_confirmar">Registrar simulación</string>
+    <string name="admin_firestore_cobro_recepcion_nota">El cobro final se registra en recepción después del checkout. Es simulado; no se realiza ningún cargo bancario.</string>
+    <string name="admin_firestore_cobro_registrado">Cobro simulado registrado en recepción.</string>
+    <string name="admin_firestore_cobro_hecho">Cobro simulado registrado. Se avisó al huésped.</string>
+    <string name="admin_firestore_cargo_reintentar">Reintentar el mismo cargo</string>
+    <string name="admin_firestore_cargo_reintento_nota">El cargo conserva los datos del primer envío. Si hubo un problema de conexión, reinténtalo para confirmar el resultado sin duplicarlo.</string>
+    <string name="admin_firestore_cargo_monto_limite">El monto máximo es S/ 1 000 000.</string>
+    <string name="admin_firestore_cargo_motivo_limite">El motivo admite hasta 200 caracteres.</string>
+    <string name="admin_firestore_cargo_observacion_limite">La observación admite hasta 1000 caracteres.</string>
+</resources>

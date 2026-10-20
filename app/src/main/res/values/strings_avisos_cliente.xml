@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="avisos_contador_muchos">99+</string>
+    <plurals name="avisos_sin_leer">
+        <item quantity="one">Notificaciones: %d sin leer</item>
+        <item quantity="other">Notificaciones: %d sin leer</item>
+    </plurals>
+</resources>

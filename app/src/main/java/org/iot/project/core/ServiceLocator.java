@@ -5,9 +5,9 @@ import org.iot.project.data.firebase.FirebaseUserRepository;
 import org.iot.project.data.firebase.FirebaseHotelRepository;
 import org.iot.project.data.firebase.FirebaseSuperadminRepository;
 import org.iot.project.data.firebase.FirebaseGestionHotelRepository;
-import org.iot.project.data.mock.MockBookingRepository;
-import org.iot.project.data.mock.MockChatRepository;
-import org.iot.project.data.mock.MockTaxiRepository;
+import org.iot.project.data.firebase.FirebaseBookingRepository;
+import org.iot.project.data.firebase.FirebaseTaxiRepository;
+import org.iot.project.data.firebase.FirebaseChatRepository;
 import org.iot.project.data.repository.AccesoRepository;
 import org.iot.project.data.repository.BookingRepository;
 import org.iot.project.data.repository.ChatRepository;
@@ -21,21 +21,20 @@ import org.iot.project.data.repository.UserRepository;
  * Punto unico de acceso a los repositorios.
  *
  * <p>Es la pieza que permite que las pantallas dependan de una interfaz y no
- * de la implementacion. Acceso, perfiles y alta/asignacion de hoteles usan
- * Firebase. Los tipos de servicio son un catálogo local compartido; reservas,
- * taxis y chat conservan sus simulados.
+ * de la implementacion. Acceso, perfiles, reservas y gestión de hoteles usan
+ * Firebase. Los tipos de servicio son un catálogo local compartido y las
+ * conversaciones se guardan por reserva en Firestore.
  *
- * <p>Las instancias se crean una sola vez y se comparten, porque los
- * repositorios simulados guardan estado en memoria: si cada pantalla creara el
- * suyo, una reserva creada en el flujo de pago no apareceria en Mis Reservas.
+ * <p>Las instancias se comparten entre pantallas. Las reservas se consultan
+ * desde Firestore y sobreviven al cierre de la aplicación.
  */
 public final class ServiceLocator {
 
     private static final FirebaseHotelRepository HOTELES = new FirebaseHotelRepository();
-    private static final BookingRepository RESERVAS = new MockBookingRepository();
-    private static final TaxiRepository TAXIS = new MockTaxiRepository();
+    private static final BookingRepository RESERVAS = new FirebaseBookingRepository();
+    private static final TaxiRepository TAXIS = new FirebaseTaxiRepository();
     private static final UserRepository USUARIOS = new FirebaseUserRepository();
-    private static final ChatRepository CHATS = new MockChatRepository();
+    private static final ChatRepository CHATS = new FirebaseChatRepository();
     private static final AccesoRepository ACCESO = new FirebaseAccesoRepository();
     private static final GestionHotelRepository GESTION = new FirebaseGestionHotelRepository();
     private static final SuperadminRepository SUPERADMIN = new FirebaseSuperadminRepository(HOTELES);

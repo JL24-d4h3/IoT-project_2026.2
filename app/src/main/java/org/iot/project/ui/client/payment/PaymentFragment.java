@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.radiobutton.MaterialRadioButton;
@@ -43,7 +45,6 @@ public class PaymentFragment extends Fragment {
 
     private FragmentPaymentBinding binding;
     private PaymentViewModel viewModel;
-    private boolean pagando;
 
     @Nullable
     @Override
@@ -61,8 +62,7 @@ public class PaymentFragment extends Fragment {
         binding.header.setTitulo(R.string.titulo_pago);
         binding.header.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
         binding.pagoConfirmar.setOnClickListener(v -> pagar());
-        binding.pagoVerReserva.setOnClickListener(v ->
-                Navigation.findNavController(v).navigateUp());
+        binding.pagoVerReserva.setOnClickListener(v -> abrirDetalle());
 
         viewModel = new ViewModelProvider(this).get(PaymentViewModel.class);
         viewModel.getDatos().observe(getViewLifecycleOwner(), this::pintar);
@@ -75,6 +75,12 @@ public class PaymentFragment extends Fragment {
             return;
         }
         viewModel.cargar(bookingId);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.recargar();
     }
 
     private void pintar(@NonNull UiState<PaymentViewModel.Datos> estado) {
@@ -100,7 +106,9 @@ public class PaymentFragment extends Fragment {
         Booking reserva = datos.reserva;
         Hotel hotel = ServiceLocator.hoteles().hotel(reserva.getHotelId());
         binding.pagoReserva.setText(getString(R.string.detalle_reserva_codigo,
-                hotel != null ? hotel.getNombre() : reserva.getHotelId(),
+                hotel != null ? hotel.getNombre()
+                        : !reserva.getHotelNombre().isEmpty() ? reserva.getHotelNombre()
+                        : getString(R.string.reserva_hotel_desconocido),
                 reserva.getCodigo()));
 
         pintarDesglose(reserva);
@@ -108,7 +116,7 @@ public class PaymentFragment extends Fragment {
 
         binding.pagoConfirmar.setText(getString(R.string.pago_confirmar,
                 PriceFormatter.format(reserva.getTotal())));
-        binding.pagoConfirmar.setEnabled(!pagando);
+        actualizarEspera();
     }
 
     private void pintarDesglose(@NonNull Booking reserva) {
@@ -136,6 +144,8 @@ public class PaymentFragment extends Fragment {
      */
     private void pintarMetodos(@NonNull List<Card> tarjetas) {
         RadioGroup grupo = binding.pagoMetodos;
+        String guardado = viewModel.getMetodoElegido();
+        grupo.setOnCheckedChangeListener(null);
         grupo.removeAllViews();
 
         LayoutInflater inflador = LayoutInflater.from(requireContext());
@@ -156,12 +166,22 @@ public class PaymentFragment extends Fragment {
         recepcion.setTag(getString(R.string.pago_metodo_recepcion));
         grupo.addView(recepcion);
 
-        // La primera opción marcada: sin selección, el botón de pagar no sabría
-        // qué registrar.
-        grupo.check(grupo.getChildAt(0).getId());
+        int seleccion = recepcion.getId();
+        for (int i = 0; i < grupo.getChildCount(); i++) {
+            View opcion = grupo.getChildAt(i);
+            if (guardado != null && guardado.equals(opcion.getTag())) seleccion = opcion.getId();
+        }
+        grupo.setOnCheckedChangeListener((g, id) -> {
+            View elegida = g.findViewById(id);
+            if (elegida != null && elegida.getTag() instanceof String) {
+                viewModel.setMetodoElegido((String) elegida.getTag());
+            }
+        });
+        grupo.check(seleccion);
     }
 
     private void pagar() {
+        if (!viewModel.puedePagar()) return;
         RadioGroup grupo = binding.pagoMetodos;
         if (grupo.getCheckedRadioButtonId() == View.NO_ID) {
             return;
@@ -171,17 +191,14 @@ public class PaymentFragment extends Fragment {
         if (!(etiqueta instanceof String)) {
             return;
         }
-        pagando = true;
-        binding.pagoConfirmar.setEnabled(false);
         viewModel.pagar((String) etiqueta);
     }
 
     private void pintarPago(@Nullable UiState<Booking> estado) {
+        actualizarEspera();
         if (estado == null || estado.isLoading()) {
             return;
         }
-        pagando = false;
-        binding.pagoConfirmar.setEnabled(true);
 
         if (estado.isError()) {
             Snackbar.make(binding.getRoot(), estado.getMessage(), Snackbar.LENGTH_LONG).show();
@@ -190,11 +207,34 @@ public class PaymentFragment extends Fragment {
         }
 
         Booking reserva = estado.requireData();
-        binding.pagoExitoMensaje.setText(getString(R.string.pago_confirmado_mensaje,
+        binding.pagoExitoMensaje.setText(getString(R.string.pago_firebase_confirmado_mensaje,
                 reserva.getCodigo(),
                 DateFormatter.fechaLarga(reserva.getFechaEntrada())));
         binding.pagoFormulario.setVisibility(View.GONE);
+        binding.pagoError.setVisibility(View.GONE);
         binding.pagoExito.setVisibility(View.VISIBLE);
+    }
+
+    private void actualizarEspera() {
+        boolean ocupado = viewModel.estaPagando();
+        binding.pagoConfirmar.setEnabled(viewModel.puedePagar());
+        binding.pagoConfirmar.setText(ocupado
+                ? getString(R.string.pago_firebase_guardando)
+                : getString(R.string.pago_confirmar, PriceFormatter.format(viewModel.getTotal())));
+        for (int i = 0; i < binding.pagoMetodos.getChildCount(); i++) {
+            binding.pagoMetodos.getChildAt(i).setEnabled(!ocupado);
+        }
+    }
+
+    private void abrirDetalle() {
+        String id = getArguments() != null ? getArguments().getString("bookingId") : null;
+        if (id == null) return;
+        NavController navegador = Navigation.findNavController(requireView());
+        if (navegador.popBackStack(R.id.bookingDetailFragment, false)) return;
+        Bundle argumentos = new Bundle();
+        argumentos.putString("bookingId", id);
+        navegador.navigate(R.id.bookingDetailFragment, argumentos,
+                new NavOptions.Builder().setPopUpTo(R.id.paymentFragment, true).build());
     }
 
     @Override

@@ -13,6 +13,35 @@
         android:layout_height="wrap_content"
         android:background="@color/colorSurface" />
 
+    <LinearLayout
+        android:id="@+id/chat_estado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorSurface"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingEnd="@dimen/space_sm"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/chat_aviso"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityLiveRegion="polite"
+            android:paddingTop="@dimen/space_sm"
+            android:paddingBottom="@dimen/space_sm" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chat_reintentar"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chat_cliente_reintentar" />
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -76,7 +105,9 @@
             android:hint="@string/chat_escribe"
             android:imeOptions="actionSend"
             android:inputType="textCapSentences|textMultiLine"
+            android:saveEnabled="false"
             android:maxLines="4"
+            android:maxLength="4000"
             android:minHeight="@dimen/touch_target_min"
             android:paddingStart="@dimen/space_md"
             android:paddingTop="@dimen/space_sm"

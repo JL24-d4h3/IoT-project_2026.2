@@ -8,6 +8,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
 import androidx.navigation.NavOptions;
@@ -15,6 +17,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import org.iot.project.core.Roles;
+import org.iot.project.core.AvisosClienteViewModel;
 import org.iot.project.core.SessionManager;
 import org.iot.project.databinding.ActivityMainBinding;
 import org.iot.project.models.Cuenta;
@@ -63,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private NavController navController;
+    private AvisosClienteViewModel avisosCliente;
     private String identidadAplicada;
     private String hotelAplicado;
     private static final String CLAVE_UID = "sesionUid";
@@ -81,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         hotelAplicado = estadoSeguro == null ? null : estadoSeguro.getString(CLAVE_HOTEL);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        avisosCliente = new ViewModelProvider(this).get(AvisosClienteViewModel.class);
 
         NavHostFragment host = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host);
@@ -138,6 +143,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        if (avisosCliente != null) avisosCliente.iniciar();
+    }
+
+    @Override
+    protected void onStop() {
+        if (avisosCliente != null) avisosCliente.detener();
+        super.onStop();
+    }
+
+    @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(CLAVE_UID, identidadAplicada);
@@ -169,6 +186,9 @@ public class MainActivity extends AppCompatActivity {
             navController.setGraph(grafo);
         } else {
             actualizarBarra(navController.getCurrentDestination());
+        }
+        if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
+            avisosCliente.iniciar();
         }
     }
 

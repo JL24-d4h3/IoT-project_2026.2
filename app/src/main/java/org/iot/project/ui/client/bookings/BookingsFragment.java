@@ -9,14 +9,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
+import org.iot.project.core.SessionManager;
 import org.iot.project.databinding.FragmentBookingsBinding;
 import org.iot.project.models.Booking;
+import org.iot.project.models.Role;
 import org.iot.project.ui.common.BookingAdapter;
 import org.iot.project.utils.InsetUtils;
 
@@ -55,7 +58,7 @@ public class BookingsFragment extends Fragment {
         binding.header.mostrarAccion(R.drawable.ic_notifications, R.string.cd_notificaciones,
                 v -> Navigation.findNavController(v).navigate(R.id.notificationsFragment));
 
-        adaptadorEnCurso = new BookingAdapter(this::abrirReserva);
+        adaptadorEnCurso = new BookingAdapter(this::abrirReserva, this::abrirChat);
         adaptadorProximas = new BookingAdapter(this::abrirReserva);
         adaptadorHistorial = new BookingAdapter(this::abrirReserva);
         prepararLista(binding.reservasEnCurso, adaptadorEnCurso);
@@ -80,6 +83,12 @@ public class BookingsFragment extends Fragment {
     private void prepararLista(@NonNull RecyclerView lista, @NonNull BookingAdapter adaptador) {
         lista.setLayoutManager(new LinearLayoutManager(getContext()));
         lista.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onPause() {
+        if (viewModel != null) viewModel.suspender();
+        super.onPause();
     }
 
     private void pintar(@NonNull UiState<BookingsViewModel.Secciones> estado) {
@@ -132,10 +141,23 @@ public class BookingsFragment extends Fragment {
     }
 
     private void abrirReserva(@NonNull Booking reserva) {
+        abrir(reserva, R.id.bookingDetailFragment);
+    }
+
+    private void abrirChat(@NonNull Booking reserva) {
+        if (!reserva.permiteChat()) return;
+        abrir(reserva, R.id.chatFragment);
+    }
+
+    private void abrir(@NonNull Booking reserva, int destino) {
+        if (binding == null || SessionManager.getRolActivo() != Role.CLIENTE
+                || !reserva.getClienteId().equals(SessionManager.getUsuarioId())) return;
+        NavController navegador = Navigation.findNavController(binding.getRoot());
+        if (navegador.getCurrentDestination() == null
+                || navegador.getCurrentDestination().getId() != R.id.bookingsFragment) return;
         Bundle argumentos = new Bundle();
         argumentos.putString("bookingId", reserva.getId());
-        Navigation.findNavController(requireView())
-                .navigate(R.id.bookingDetailFragment, argumentos);
+        navegador.navigate(destino, argumentos);
     }
 
     @Override

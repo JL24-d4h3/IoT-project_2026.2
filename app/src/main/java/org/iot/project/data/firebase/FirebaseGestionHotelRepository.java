@@ -3,7 +3,6 @@ package org.iot.project.data.firebase;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -18,6 +17,8 @@ import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.SessionManager;
 import org.iot.project.data.repository.GestionHotelRepository;
+import org.iot.project.models.Booking;
+import org.iot.project.models.BookingStatus;
 import org.iot.project.models.CargosDeReserva;
 import org.iot.project.models.ClienteDeHotel;
 import org.iot.project.models.Cuenta;
@@ -33,7 +34,9 @@ import org.iot.project.models.ResumenHotel;
 import org.iot.project.models.Role;
 import org.iot.project.models.Room;
 import org.iot.project.models.Service;
+import org.iot.project.models.User;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +44,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Contenido del hotel administrado, con autorizacion y auditoria en la misma transaccion.
- * Reservas, resumen e ingresos permanecen pendientes; nunca se sustituyen por datos simulados.
+ * El panel, las reservas y los informes se calculan con los documentos del hotel asignado.
  * El constructor no inicializa el SDK.
  */
 public final class FirebaseGestionHotelRepository implements GestionHotelRepository {
@@ -64,17 +68,6 @@ public final class FirebaseGestionHotelRepository implements GestionHotelReposit
             "administradorId", "creadoPor", "creadoEn", "actualizadoEn", "ultimoEventoId",
             "descripcion", "fotos", "habitaciones", "servicios", "lugaresCercanos",
             "precioDesde", "rating", "numReviews", "montoMinimoTaxi"));
-
-    private static final String RESUMEN_PENDIENTE =
-            "El resumen de reservas e ingresos de tu hotel todavía no está conectado.";
-    private static final String RESERVAS_PENDIENTES =
-            "Las reservas de tu hotel todavía no están conectadas.";
-    private static final String CLIENTES_PENDIENTES =
-            "La lista de clientes de tu hotel todavía no está conectada.";
-    private static final String CARGOS_PENDIENTES =
-            "Los cargos de las reservas todavía no están conectados.";
-    private static final String REPORTES_PENDIENTES =
-            "Los reportes de reservas e ingresos todavía no están conectados.";
 
     private interface Cambio {
         Map<String, Object> aplicar(Map<String, Object> original, Hotel hotel);
@@ -94,7 +87,19 @@ public final class FirebaseGestionHotelRepository implements GestionHotelReposit
 
     @Override
     public void resumen(@NonNull String hotelId, @NonNull ResultCallback<ResumenHotel> callback) {
-        pendiente(hotelId, RESUMEN_PENDIENTE, callback);
+        FirebaseReservasHotel.consultar(hotelId, resumenConsultado(callback));
+    }
+
+    @Override
+    public Suscripcion escucharResumen(@NonNull String hotelId,
+                                       @NonNull ResultCallback<ResumenHotel> callback) {
+        return FirebaseReservasHotel.escuchar(hotelId, resumenConsultado(callback));
+    }
+
+    @Override
+    public Suscripcion escucharReservas(@NonNull String hotelId,
+                                        @NonNull ResultCallback<List<ReservaDeHotel>> callback) {
+        return FirebaseReservasHotel.escuchar(hotelId, reservasConsultadas(callback));
     }
 
     @Override
@@ -121,25 +126,86 @@ public final class FirebaseGestionHotelRepository implements GestionHotelReposit
     @Override
     public void reservas(@NonNull String hotelId,
                          @NonNull ResultCallback<List<ReservaDeHotel>> callback) {
-        pendiente(hotelId, RESERVAS_PENDIENTES, callback);
+        FirebaseReservasHotel.consultar(hotelId, reservasConsultadas(callback));
     }
 
     @Override
     public void reserva(@NonNull String hotelId, @NonNull String bookingId,
                         @NonNull ResultCallback<ReservaDeHotel> callback) {
-        pendiente(hotelId, RESERVAS_PENDIENTES, callback);
+        FirebaseReservasHotel.consultarReserva(hotelId, bookingId,
+                reservasConsultadas(new ResultCallback<List<ReservaDeHotel>>() {
+                    @Override public void onExito(@NonNull List<ReservaDeHotel> reservas) {
+                        if (reservas.size() != 1) callback.onError("No encontramos esta reserva en tu hotel.");
+                        else callback.onExito(reservas.get(0));
+                    }
+                    @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+                }));
+    }
+
+    @Override
+    public Suscripcion escucharReserva(@NonNull String hotelId, @NonNull String bookingId,
+                                        @NonNull ResultCallback<ReservaDeHotel> callback) {
+        return FirebaseReservasHotel.escucharReserva(hotelId, bookingId,
+                reservasConsultadas(new ResultCallback<List<ReservaDeHotel>>() {
+                    @Override public void onExito(@NonNull List<ReservaDeHotel> reservas) {
+                        if (reservas.size() == 1) callback.onExito(reservas.get(0));
+                        else callback.onError("No encontramos esta reserva en tu hotel.");
+                    }
+                    @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+                }));
     }
 
     @Override
     public void clientes(@NonNull String hotelId,
                          @NonNull ResultCallback<List<ClienteDeHotel>> callback) {
-        pendiente(hotelId, CLIENTES_PENDIENTES, callback);
+        reservas(hotelId, new ResultCallback<List<ReservaDeHotel>>() {
+            @Override public void onExito(@NonNull List<ReservaDeHotel> reservas) {
+                Map<String, List<ReservaDeHotel>> agrupadas = new LinkedHashMap<>();
+                for (ReservaDeHotel detalle : reservas) {
+                    Booking reserva = detalle.getReserva();
+                    if (detalle.getCliente() == null || reserva.getEstado() != BookingStatus.ACTIVA
+                            && reserva.getEstado() != BookingStatus.FINALIZADA) continue;
+                    agrupadas.computeIfAbsent(reserva.getClienteId(), id -> new ArrayList<>()).add(detalle);
+                }
+                List<ClienteDeHotel> clientes = new ArrayList<>();
+                for (List<ReservaDeHotel> estancias : agrupadas.values()) {
+                    User usuario = estancias.get(0).getCliente();
+                    if (usuario == null) continue;
+                    LocalDate ultima = estancias.get(0).getReserva().getFechaEntrada();
+                    double total = 0d;
+                    boolean activa = false;
+                    for (ReservaDeHotel detalle : estancias) {
+                        total += detalle.getTotal();
+                        LocalDate entrada = detalle.getReserva().getFechaEntrada();
+                        if (entrada.isAfter(ultima)) ultima = entrada;
+                        activa |= detalle.estaEnCurso();
+                    }
+                    clientes.add(new ClienteDeHotel(usuario, estancias.size(), total, ultima, activa));
+                }
+                clientes.sort(Comparator.comparingInt((ClienteDeHotel cliente) -> cliente.estaEnCurso() ? 0 : 1)
+                        .thenComparing(Comparator.comparing(ClienteDeHotel::getUltimaEstancia).reversed())
+                        .thenComparing(cliente -> cliente.getCliente().getId()));
+                callback.onExito(clientes);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     @Override
     public void cargos(@NonNull String hotelId,
                        @NonNull ResultCallback<List<CargosDeReserva>> callback) {
-        pendiente(hotelId, CARGOS_PENDIENTES, callback);
+        reservas(hotelId, new ResultCallback<List<ReservaDeHotel>>() {
+            @Override public void onExito(@NonNull List<ReservaDeHotel> reservas) {
+                List<CargosDeReserva> grupos = new ArrayList<>();
+                for (ReservaDeHotel detalle : reservas) {
+                    if (!detalle.getReserva().getCargos().isEmpty()) {
+                        grupos.add(new CargosDeReserva(detalle, detalle.getReserva().getCargos()));
+                    }
+                }
+                callback.onExito(grupos);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     @Override
@@ -345,13 +411,92 @@ public final class FirebaseGestionHotelRepository implements GestionHotelReposit
     @Override
     public void ventas(@NonNull String hotelId, @NonNull Periodicidad periodicidad,
                        @NonNull ResultCallback<List<PeriodoDeVentas>> callback) {
-        pendiente(hotelId, REPORTES_PENDIENTES, callback);
+        FirebaseReservasHotel.consultar(hotelId, new ResultCallback<FirebaseReservasHotel.Datos>() {
+            @Override public void onExito(@NonNull FirebaseReservasHotel.Datos datos) {
+                if (!datos.vigente()) return;
+                List<Booking> ventas = new ArrayList<>();
+                for (Booking reserva : datos.reservas) {
+                    if (generaIngreso(reserva)) ventas.add(reserva);
+                }
+                callback.onExito(PeriodoDeVentas.agrupar(periodicidad, ventas));
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     @Override
     public void ingresosPorServicios(@NonNull String hotelId,
                                      @NonNull ResultCallback<List<IngresoPorServicio>> callback) {
-        pendiente(hotelId, REPORTES_PENDIENTES, callback);
+        FirebaseReservasHotel.consultar(hotelId, new ResultCallback<FirebaseReservasHotel.Datos>() {
+            @Override public void onExito(@NonNull FirebaseReservasHotel.Datos datos) {
+                if (datos.vigente()) callback.onExito(calcularIngresos(datos.reservas));
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
+    }
+
+    private static ResultCallback<FirebaseReservasHotel.Datos> reservasConsultadas(
+            ResultCallback<List<ReservaDeHotel>> callback) {
+        return new ResultCallback<FirebaseReservasHotel.Datos>() {
+            @Override public void onExito(@NonNull FirebaseReservasHotel.Datos datos) {
+                FirebaseReservasHotel.detallar(datos, callback);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        };
+    }
+
+    private static ResultCallback<FirebaseReservasHotel.Datos> resumenConsultado(
+            ResultCallback<ResumenHotel> callback) {
+        return new ResultCallback<FirebaseReservasHotel.Datos>() {
+            @Override public void onExito(@NonNull FirebaseReservasHotel.Datos datos) {
+                FirebaseReservasHotel.detallar(datos, new ResultCallback<List<ReservaDeHotel>>() {
+                    @Override public void onExito(@NonNull List<ReservaDeHotel> reservas) {
+                        if (!datos.vigente()) return;
+                        List<ReservaDeHotel> activas = new ArrayList<>();
+                        for (ReservaDeHotel detalle : reservas) {
+                            if (detalle.getEstado() == BookingStatus.ACTIVA) activas.add(detalle);
+                        }
+                        activas.sort(Comparator.comparing((ReservaDeHotel detalle) ->
+                                detalle.getReserva().getFechaSalida()).thenComparing(
+                                detalle -> detalle.getReserva().getId()));
+                        callback.onExito(new ResumenHotel(datos.hotel, activas, calcularIngresos(datos.reservas)));
+                    }
+                    @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+                });
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        };
+    }
+
+    private static boolean generaIngreso(Booking reserva) {
+        return reserva.getEstado() == BookingStatus.CONFIRMADA
+                || reserva.getEstado() == BookingStatus.ACTIVA
+                || reserva.getEstado() == BookingStatus.FINALIZADA;
+    }
+
+    /** Se usa el precio contratado en la reserva, aunque luego se edite el catálogo. */
+    private static List<IngresoPorServicio> calcularIngresos(List<Booking> reservas) {
+        Map<String, Integer> cantidades = new LinkedHashMap<>();
+        Map<String, Double> montos = new LinkedHashMap<>();
+        for (Booking reserva : reservas) {
+            if (!generaIngreso(reserva)) continue;
+            for (HotelService servicio : reserva.getServiciosAdicionales()) {
+                if (servicio.isIncluded()) continue;
+                String id = servicio.getServiceId();
+                cantidades.put(id, cantidades.getOrDefault(id, 0) + 1);
+                montos.put(id, montos.getOrDefault(id, 0d) + servicio.getPrice());
+            }
+        }
+        List<IngresoPorServicio> ingresos = new ArrayList<>();
+        for (Map.Entry<String, Integer> entrada : cantidades.entrySet()) {
+            Service servicio = ServiceLocator.hoteles().servicio(entrada.getKey());
+            ingresos.add(new IngresoPorServicio(entrada.getKey(),
+                    servicio == null ? entrada.getKey() : servicio.getName(),
+                    entrada.getValue(), montos.get(entrada.getKey())));
+        }
+        ingresos.sort(Comparator.comparingDouble(IngresoPorServicio::getMontoTotal)
+                .thenComparing(IngresoPorServicio::getServiceId));
+        return ingresos;
     }
 
     private void modificar(String hotelId, String accion, String detalle, Cambio cambio,
@@ -611,14 +756,4 @@ public final class FirebaseGestionHotelRepository implements GestionHotelReposit
         return "No pudimos completar la operación del hotel. Inténtalo de nuevo.";
     }
 
-    private static void pendiente(@Nullable String hotelId, @NonNull String mensaje,
-                                  @NonNull ResultCallback<?> callback) {
-        if (hotelId == null || hotelId.trim().isEmpty()) {
-            callback.onError("Tu cuenta todavía no tiene un hotel asignado.");
-        } else if (!SessionManager.puedeGestionar(hotelId)) {
-            callback.onError("No tienes permiso para gestionar este hotel.");
-        } else {
-            callback.onError(mensaje);
-        }
-    }
 }

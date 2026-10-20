@@ -19,6 +19,10 @@ public class Conversation {
     private final String clienteId;
     private final String hotelId;
     private final List<Message> mensajes = new ArrayList<>();
+    private int totalResumen = -1;
+    private int sinLeerCliente = -1;
+    private int sinLeerHotel = -1;
+    private Message ultimoResumen;
 
     public Conversation(String id, String bookingId, String clienteId, String hotelId) {
         this.id = id;
@@ -51,13 +55,26 @@ public class Conversation {
         mensajes.add(mensaje);
     }
 
+    /** La bandeja usa metadatos del servidor sin descargar cada historial. */
+    public Conversation withResumen(int total, int cliente, int hotel, Message ultimo) {
+        totalResumen = Math.max(0, total);
+        sinLeerCliente = Math.max(0, cliente);
+        sinLeerHotel = Math.max(0, hotel);
+        ultimoResumen = ultimo;
+        return this;
+    }
+
+    public int getTotalMensajes() {
+        return totalResumen >= 0 ? totalResumen : mensajes.size();
+    }
+
     public boolean isVacia() {
-        return mensajes.isEmpty();
+        return getTotalMensajes() == 0;
     }
 
     /** Ultimo mensaje de la lista, o null si aun no hay conversacion. */
     public Message getUltimoMensaje() {
-        return mensajes.isEmpty() ? null : mensajes.get(mensajes.size() - 1);
+        return mensajes.isEmpty() ? ultimoResumen : mensajes.get(mensajes.size() - 1);
     }
 
     /**
@@ -72,6 +89,8 @@ public class Conversation {
      * escribio.
      */
     public int getNumNoLeidosPara(@NonNull Message.Autor lector) {
+        int resumen = lector == Message.Autor.CLIENTE ? sinLeerCliente : sinLeerHotel;
+        if (resumen >= 0) return resumen;
         int total = 0;
         for (Message mensaje : mensajes) {
             if (!mensaje.esDe(lector) && !mensaje.isLeido()) {
@@ -89,6 +108,8 @@ public class Conversation {
      * ha visto.
      */
     public void marcarLeidoPara(@NonNull Message.Autor lector) {
+        if (lector == Message.Autor.CLIENTE && sinLeerCliente >= 0) sinLeerCliente = 0;
+        if (lector == Message.Autor.HOTEL && sinLeerHotel >= 0) sinLeerHotel = 0;
         for (Message mensaje : mensajes) {
             if (!mensaje.esDe(lector)) {
                 mensaje.setLeido(true);

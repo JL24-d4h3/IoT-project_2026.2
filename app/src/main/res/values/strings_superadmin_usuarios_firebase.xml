@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_usuarios_firebase_reintentar">Reintentar</string>
+    <string name="sa_usuarios_firebase_guardando">Guardando…</string>
+    <string name="sa_usuarios_firebase_sin_nombre">Cuenta sin nombre</string>
+    <string name="sa_usuarios_firebase_sin_correo">Sin correo en el perfil</string>
+    <string name="sa_usuarios_firebase_guardando_cuenta">Guardando cambios de %1$s</string>
+    <string name="sa_usuarios_firebase_desactivar_cuenta">Desactivar a %1$s</string>
+    <string name="sa_usuarios_firebase_activar_cuenta">Activar a %1$s</string>
+</resources>

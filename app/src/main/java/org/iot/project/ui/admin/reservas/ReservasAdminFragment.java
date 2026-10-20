@@ -13,8 +13,6 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import org.iot.project.R;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentAdminReservasBinding;
@@ -68,8 +66,6 @@ public class ReservasAdminFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(ReservasAdminViewModel.class);
         viewModel.getSecciones().observe(getViewLifecycleOwner(), this::pintar);
-        viewModel.getOperacion().observe(getViewLifecycleOwner(), this::pintarOperacion);
-        viewModel.cargar();
     }
 
     @Override
@@ -78,7 +74,13 @@ public class ReservasAdminFragment extends Fragment {
         // Al volver del detalle se pudo haber cerrado la estadía: la reserva
         // cambia de bloque y esta lista tiene que reflejarlo. Se refresca sin
         // esqueleto, porque la pantalla ya está pintada.
-        viewModel.refrescarEnSilencio();
+        viewModel.iniciarSeguimiento();
+    }
+
+    @Override
+    public void onStop() {
+        viewModel.detenerSeguimiento();
+        super.onStop();
     }
 
     private void prepararLista(@NonNull RecyclerView lista,
@@ -154,17 +156,6 @@ public class ReservasAdminFragment extends Fragment {
         binding.adminReservasVacio.setVisibility(View.GONE);
         binding.adminReservasError.setVisibility(View.VISIBLE);
         binding.adminReservasError.conReintento(mensaje, v -> viewModel.recargar());
-    }
-
-    private void pintarOperacion(@Nullable UiState<ReservaDeHotel> estado) {
-        if (estado == null || !estado.isError()) {
-            return;
-        }
-        Snackbar.make(binding.getRoot(),
-                estado.getMessage() != null
-                        ? estado.getMessage() : getString(R.string.estado_error_descripcion),
-                Snackbar.LENGTH_LONG).show();
-        viewModel.limpiarOperacion();
     }
 
     // ------------------------------------------------------------------ Navegación

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="driver_auth_bienvenida">Bienvenido</string>
+    <string name="driver_auth_acceso_listo">Tu cuenta de taxista está activa.</string>
+    <string name="driver_auth_rol">Taxista</string>
+    <string name="driver_auth_servicios_titulo">Servicios de taxi</string>
+    <string name="driver_auth_servicios_pendientes">Los servicios de taxi estarán disponibles próximamente.</string>
+</resources>

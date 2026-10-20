@@ -6,10 +6,9 @@ import androidx.annotation.Nullable;
 /**
  * Lo que el acceso necesita saber para dejar entrar a alguien (RF-004).
  *
- * <p>No es un usuario: es su rol y la identidad con la que entra. Existe porque
- * un conductor no es un {@link User} sino un {@link Driver}, y el acceso no
- * tiene por que saber cual de los dos modelos tiene delante: con esto, los
- * cuatro roles llegan a la pantalla de acceso de la misma forma.
+ * <p>Contiene el rol y la identidad de acceso de cualquiera de los cuatro
+ * roles. El perfil operativo del conductor ({@link Driver}) es independiente
+ * del inicio de sesión y no hace falta cargarlo para abrir su portada.
  *
  * <p>No contiene contrasenas ni tokens. La identidad es el UID autenticado;
  * el rol y el hotel asignado provienen del perfil protegido en el servidor.

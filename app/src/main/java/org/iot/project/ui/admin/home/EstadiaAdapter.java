@@ -46,15 +46,12 @@ public class EstadiaAdapter extends ListAdapter<ReservaDeHotel, EstadiaAdapter.E
                 @Override
                 public boolean areContentsTheSame(@NonNull ReservaDeHotel anterior,
                                                   @NonNull ReservaDeHotel nueva) {
-                    // Lo que la fila dibuja. Las fechas de una reserva ya creada
-                    // no cambian, pero el nombre del cliente y la habitación sí
-                    // pueden corregirse desde la gestión del hotel. Del cliente
-                    // se compara el identificador y no el nombre: el nombre sale
-                    // de él, así que es lo mismo dicho de una forma que no
-                    // necesita resolver el usuario para comparar dos filas.
                     return anterior.getReserva().getClienteId()
                                     .equals(nueva.getReserva().getClienteId())
+                            && anterior.getClienteNombre("").equals(nueva.getClienteNombre(""))
                             && anterior.getHabitacionNumero().equals(nueva.getHabitacionNumero())
+                            && anterior.getReserva().getNumHuespedes() == nueva.getReserva().getNumHuespedes()
+                            && anterior.getReserva().getFechaEntrada().equals(nueva.getReserva().getFechaEntrada())
                             && anterior.getReserva().getFechaSalida()
                                     .equals(nueva.getReserva().getFechaSalida());
                 }

@@ -4,93 +4,119 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
+import org.iot.project.data.repository.ChatRepository;
 import org.iot.project.models.ConversacionDeHotel;
+import org.iot.project.models.Cuenta;
+import org.iot.project.models.Role;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Estado de la bandeja de mensajes del hotel (§44, RF-064).
- *
- * <p>No ordena ni cuenta nada: el repositorio ya devuelve la bandeja cruzada con
- * su estadía y ordenada por la fecha del último mensaje, y el número de sin leer
- * lo sabe cada conversación. Aquí solo se pasa el estado de carga a la pantalla.
- */
+/** Bandeja de estadías activas, con resumen y sin leer procedentes de Firestore. */
 public class MensajesViewModel extends ViewModel {
-
     private final MutableLiveData<UiState<List<ConversacionDeHotel>>> conversaciones =
             new MutableLiveData<>();
+    private final Observer<Cuenta> sesion = cuenta -> revisarSesion();
+    @Nullable private ChatRepository.Suscripcion suscripcion;
+    @Nullable private String uid;
+    @Nullable private String hotelId;
+    private long generacion;
+    private boolean visible;
 
-    private boolean cargado;
-
+    public MensajesViewModel() { SessionManager.sesion().observeForever(sesion); }
     public LiveData<UiState<List<ConversacionDeHotel>>> getConversaciones() {
         return conversaciones;
     }
+    @Nullable public String getHotelId() { return SessionManager.getHotelAdministrado(); }
 
-    @Nullable
-    public String getHotelId() {
-        return SessionManager.getHotelAdministrado();
+    public void iniciarSeguimiento() {
+        visible = true;
+        revisarSesion();
+        conectar();
     }
 
-    /**
-     * Carga con esqueleto. Es la primera y la del reintento.
-     *
-     * <p>La primera carga la dispara {@code onResume} y no {@code onViewCreated}:
-     * ver {@link #refrescarEnSilencio()}.
-     */
+    public void detenerSeguimiento() {
+        visible = false;
+        cerrarEscucha();
+    }
+
     public void recargar() {
-        String hotelId = getHotelId();
-        if (hotelId == null) {
-            conversaciones.setValue(UiState.<List<ConversacionDeHotel>>error(
-                    "Todavía no tienes un hotel asignado."));
-            return;
-        }
-        cargado = true;
-        conversaciones.setValue(UiState.<List<ConversacionDeHotel>>loading());
-        pedir(hotelId);
+        cerrarEscucha();
+        conversaciones.setValue(UiState.loading());
+        conectar();
     }
 
-    /**
-     * Recarga sin esqueleto, para lo que ya está en pantalla.
-     *
-     * <p>La bandeja se desactualiza sola: abrir un chat marca sus mensajes como
-     * leídos (RF-068) y volver atrás tiene que apagar el contador de esa fila.
-     * Volver a pasar por el esqueleto para eso dejaría la lista en blanco un
-     * instante cada vez que el administrador entra y sale de una conversación.
-     *
-     * <p>Si todavía no se ha cargado nada, no hay nada que conservar: se hace la
-     * carga entera. Por eso la primera carga de la pantalla es esta misma y no
-     * hay que llamar a las dos.
-     */
-    public void refrescarEnSilencio() {
-        String hotelId = getHotelId();
-        if (!cargado || hotelId == null) {
-            recargar();
-            return;
-        }
-        pedir(hotelId);
+    private void revisarSesion() {
+        String cuenta = SessionManager.getRolActivo() == Role.ADMIN_HOTEL
+                ? SessionManager.getUsuarioId() : null;
+        String hotel = SessionManager.getHotelAdministrado();
+        if (Objects.equals(uid, cuenta) && Objects.equals(hotelId, hotel)) return;
+        cerrarEscucha();
+        uid = cuenta;
+        hotelId = hotel;
+        conversaciones.setValue(UiState.loading());
+        conectar();
     }
 
-    private void pedir(@NonNull String hotelId) {
-        ServiceLocator.chats().conversacionesDeHotel(hotelId,
+    private void conectar() {
+        if (!visible || suscripcion != null) return;
+        if (uid == null || hotelId == null) {
+            conversaciones.setValue(UiState.error("Todavía no tienes un hotel asignado."));
+            return;
+        }
+        final String cuenta = uid;
+        final String hotel = hotelId;
+        final long version = ++generacion;
+        conversaciones.setValue(UiState.loading());
+        suscripcion = ServiceLocator.chats().escucharConversacionesDeHotel(hotel,
                 new ResultCallback<List<ConversacionDeHotel>>() {
-                    @Override
-                    public void onExito(@NonNull List<ConversacionDeHotel> datos) {
-                        conversaciones.setValue(datos.isEmpty()
-                                ? UiState.<List<ConversacionDeHotel>>empty()
-                                : UiState.success(datos));
+                    @Override public void onExito(@NonNull List<ConversacionDeHotel> datos) {
+                        if (!vigente(cuenta, hotel, version)) return;
+                        List<ConversacionDeHotel> activas = new ArrayList<>();
+                        for (ConversacionDeHotel dato : datos) {
+                            if (hotel.equals(dato.getConversacion().getHotelId())
+                                    && dato.getEstadia().getReserva().permiteChat()) activas.add(dato);
+                        }
+                        conversaciones.setValue(activas.isEmpty()
+                                ? UiState.empty() : UiState.success(activas));
                     }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        conversaciones.setValue(
-                                UiState.<List<ConversacionDeHotel>>error(mensaje));
+                    @Override public void onError(@NonNull String mensaje) {
+                        if (vigente(cuenta, hotel, version)) {
+                            conversaciones.setValue(UiState.error(mensaje));
+                        }
                     }
                 });
+    }
+
+    private boolean vigente(String cuenta, String hotel, long version) {
+        FirebaseUser actual = FirebaseAuth.getInstance().getCurrentUser();
+        return visible && version == generacion && actual != null
+                && cuenta.equals(actual.getUid()) && cuenta.equals(SessionManager.getUsuarioId())
+                && hotel.equals(SessionManager.getHotelAdministrado())
+                && SessionManager.getRolActivo() == Role.ADMIN_HOTEL;
+    }
+
+    private void cerrarEscucha() {
+        generacion++;
+        if (suscripcion != null) {
+            suscripcion.cerrar();
+            suscripcion = null;
+        }
+    }
+
+    @Override protected void onCleared() {
+        cerrarEscucha();
+        SessionManager.sesion().removeObserver(sesion);
     }
 }

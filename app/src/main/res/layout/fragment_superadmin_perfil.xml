@@ -185,6 +185,15 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/space_sm" />
 
+                            <TextView
+                                android:id="@+id/sa_perfil_conductores_aviso"
+                                style="@style/TextAppearance.App.BodySecondary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm"
+                                android:text="@string/sa_resumen_conductores_proximamente"
+                                android:visibility="gone" />
+
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/sa_perfil_ver_auditoria"
                                 style="@style/Widget.App.Button.Secondary"

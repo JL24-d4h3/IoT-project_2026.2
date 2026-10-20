@@ -15,13 +15,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
+import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentSuperadminUsuariosBinding;
 import org.iot.project.models.Role;
 import org.iot.project.models.User;
 import org.iot.project.utils.InsetUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Cuentas de la plataforma (RF-005, RF-006).
@@ -38,6 +41,7 @@ public class SuperadminUsuariosFragment extends Fragment {
     private FragmentSuperadminUsuariosBinding binding;
     private SuperadminUsuariosViewModel viewModel;
     private CuentaSaAdapter adaptador;
+    @Nullable private AlertDialog confirmacion;
 
     @Nullable
     @Override
@@ -53,22 +57,40 @@ public class SuperadminUsuariosFragment extends Fragment {
         InsetUtils.applyTopPadding(binding.saHeader);
         binding.saHeader.setTitulo(R.string.nav_usuarios);
 
+        viewModel = new ViewModelProvider(this).get(SuperadminUsuariosViewModel.class);
         nombrarFiltros();
+        binding.saUsuariosFiltros.check(chipDe(viewModel.getFiltro()));
 
         adaptador = new CuentaSaAdapter(this::confirmar);
         binding.saUsuariosLista.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.saUsuariosLista.setAdapter(adaptador);
 
-        viewModel = new ViewModelProvider(this).get(SuperadminUsuariosViewModel.class);
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getCambio().observe(getViewLifecycleOwner(), this::avisarDelCambio);
+        viewModel.getPendientes().observe(getViewLifecycleOwner(), pendientes ->
+                adaptador.mostrarPendientes(pendientes));
+        viewModel.getErrorSeguimiento().observe(getViewLifecycleOwner(), mensaje -> {
+            boolean error = mensaje != null && !mensaje.isEmpty();
+            binding.saUsuariosAviso.setVisibility(error ? View.VISIBLE : View.GONE);
+            binding.saUsuariosAvisoTexto.setText(mensaje);
+        });
+        binding.saUsuariosReintentar.setOnClickListener(v -> viewModel.reintentar());
 
         // Despues de tener el ViewModel: el grupo puede anunciar el chip que ya
         // venia marcado en cuanto se registra el oyente.
         binding.saUsuariosFiltros.setOnCheckedStateChangeListener((grupo, marcados) ->
                 viewModel.filtrarPor(rolDe(marcados.isEmpty() ? 0 : marcados.get(0))));
+    }
 
-        viewModel.cargar();
+    @Override public void onStart() {
+        super.onStart();
+        viewModel.iniciarSeguimiento();
+    }
+
+    @Override public void onStop() {
+        viewModel.detenerSeguimiento();
+        cerrarConfirmacion();
+        super.onStop();
     }
 
     /**
@@ -81,6 +103,7 @@ public class SuperadminUsuariosFragment extends Fragment {
         binding.saFiltroClientes.setText(Role.CLIENTE.getDisplayName());
         binding.saFiltroAdministradores.setText(Role.ADMIN_HOTEL.getDisplayName());
         binding.saFiltroSuperadmins.setText(Role.SUPERADMIN.getDisplayName());
+        binding.saFiltroConductores.setText(Role.CONDUCTOR.getDisplayName());
     }
 
     @Nullable
@@ -94,7 +117,16 @@ public class SuperadminUsuariosFragment extends Fragment {
         if (chipId == R.id.sa_filtro_superadmins) {
             return Role.SUPERADMIN;
         }
+        if (chipId == R.id.sa_filtro_conductores) return Role.CONDUCTOR;
         return null;
+    }
+
+    private int chipDe(@Nullable Role rol) {
+        if (rol == Role.CLIENTE) return R.id.sa_filtro_clientes;
+        if (rol == Role.ADMIN_HOTEL) return R.id.sa_filtro_administradores;
+        if (rol == Role.SUPERADMIN) return R.id.sa_filtro_superadmins;
+        if (rol == Role.CONDUCTOR) return R.id.sa_filtro_conductores;
+        return R.id.sa_filtro_todas;
     }
 
     /**
@@ -105,17 +137,25 @@ public class SuperadminUsuariosFragment extends Fragment {
      * fila quien lo pide, y la fila guarda una copia de lo que pinta.
      */
     private void confirmar(@NonNull String usuarioId, @NonNull String nombre, boolean activo) {
+        if (!viewModel.puedeCambiar(usuarioId) || confirmacion != null) return;
         if (activo) {
             viewModel.cambiarActivo(usuarioId, true);
             return;
         }
-        new AlertDialog.Builder(requireContext())
+        String sesion = SessionManager.getIdentidadId();
+        confirmacion = new AlertDialog.Builder(requireContext())
                 .setTitle(getString(R.string.sa_desactivar_titulo, nombre))
                 .setMessage(R.string.sa_desactivar_mensaje)
                 .setNegativeButton(R.string.accion_cancelar, null)
                 .setPositiveButton(R.string.sa_desactivar,
-                        (dialogo, cual) -> viewModel.cambiarActivo(usuarioId, false))
-                .show();
+                        (dialogo, cual) -> {
+                            if (Objects.equals(sesion, SessionManager.getIdentidadId())) {
+                                viewModel.cambiarActivo(usuarioId, false);
+                            }
+                        })
+                .create();
+        confirmacion.setOnDismissListener(dialogo -> confirmacion = null);
+        confirmacion.show();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -132,6 +172,7 @@ public class SuperadminUsuariosFragment extends Fragment {
                 adaptador.mostrar(estado.requireData());
                 break;
             case EMPTY:
+                adaptador.mostrar(Collections.emptyList());
                 mostrar(true, false, false);
                 binding.saUsuariosLista.setVisibility(View.GONE);
                 binding.saUsuariosVacio.setVisibility(View.VISIBLE);
@@ -165,11 +206,17 @@ public class SuperadminUsuariosFragment extends Fragment {
             return;
         }
         User cuenta = estado.getData();
-        avisar(cuenta != null
+        CharSequence mensaje = cuenta != null
                 ? getString(cuenta.isActivo()
                         ? R.string.sa_cuenta_ya_puede_entrar
                         : R.string.sa_cuenta_ya_no_puede_entrar, cuenta.getNombreCompleto())
-                : mensajeDe(estado));
+                : mensajeDe(estado);
+        Snackbar aviso = Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG);
+        if (estado.isError()) {
+            aviso.setAction(R.string.sa_usuarios_firebase_reintentar,
+                    vista -> viewModel.reintentarCambio());
+        }
+        aviso.show();
         viewModel.consumirCambio();
     }
 
@@ -180,12 +227,16 @@ public class SuperadminUsuariosFragment extends Fragment {
                 ? mensaje : getString(R.string.estado_error_descripcion);
     }
 
-    private void avisar(@NonNull CharSequence mensaje) {
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
+    private void cerrarConfirmacion() {
+        if (confirmacion != null) {
+            confirmacion.dismiss();
+            confirmacion = null;
+        }
     }
 
     @Override
     public void onDestroyView() {
+        cerrarConfirmacion();
         super.onDestroyView();
         binding.saUsuariosLista.setAdapter(null);
         adaptador = null;

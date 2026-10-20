@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_cliente_reintentar">Reintentar</string>
+    <string name="chat_cliente_reintentar_envio">Reintentar el envío del mensaje</string>
+    <string name="chat_cliente_enviando">Enviando mensaje…</string>
+    <string name="chat_cliente_envio_pendiente">El envío aún no se confirmó. Reintenta este mensaje antes de escribir otro.</string>
+    <string name="chat_cliente_lectura_error">No pudimos confirmar la lectura. %1$s</string>
+    <string name="chat_cliente_fecha_estado">%1$s · %2$s</string>
+    <string name="chat_cliente_mensaje_leido">Leído</string>
+    <string name="chat_cliente_mensaje_enviado">Enviado</string>
+</resources>

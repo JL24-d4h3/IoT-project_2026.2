@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -28,11 +29,8 @@ import java.util.List;
  * atiende varias a la vez y necesita ver de un vistazo cuáles tienen algo
  * esperando.
  *
- * <p>Se refresca al volver y no solo al entrar: abrir una conversación marca sus
- * mensajes como leídos (RF-068), y el contador de esa fila tiene que apagarse
- * cuando el administrador vuelve a la bandeja. Es la primera carga de la pantalla
- * la que dispara ese refresco —{@code onResume}—, así que no hay una segunda
- * llamada en {@code onViewCreated} que pidiera lo mismo dos veces.
+ * <p>Los resúmenes, el orden y los contadores se actualizan desde Firestore
+ * mientras esta pantalla está visible.
  */
 public class MensajesFragment extends Fragment {
 
@@ -77,16 +75,21 @@ public class MensajesFragment extends Fragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        // Carga la primera vez y refresca las siguientes: ver el javadoc de la
-        // clase.
-        viewModel.refrescarEnSilencio();
+    public void onStart() {
+        super.onStart();
+        viewModel.iniciarSeguimiento();
+    }
+
+    @Override
+    public void onStop() {
+        viewModel.detenerSeguimiento();
+        super.onStop();
     }
 
     // ------------------------------------------------------------------ Pinta
 
     private void pintar(@NonNull UiState<List<ConversacionDeHotel>> estado) {
+        if (binding == null) return;
         switch (estado.getStatus()) {
             case LOADING:
                 binding.adminMensajesEsqueleto.setVisibility(View.VISIBLE);
@@ -125,10 +128,18 @@ public class MensajesFragment extends Fragment {
         binding.adminMensajesVacio.setVisibility(View.VISIBLE);
         binding.adminMensajesVacio.conIcono(R.drawable.ic_chat);
         binding.adminMensajesVacio.conTitulo(R.string.admin_mensajes_vacio_titulo);
-        binding.adminMensajesVacio.conMensaje(R.string.admin_mensajes_vacio);
+        binding.adminMensajesVacio.conMensaje(R.string.admin_chat_firebase_vacio_reservas);
+        binding.adminMensajesVacio.conAccion(R.string.nav_reservas, v -> {
+            NavController navegacion = Navigation.findNavController(v);
+            if (navegacion.getCurrentDestination() != null
+                    && navegacion.getCurrentDestination().getId() == R.id.adminMensajesFragment) {
+                navegacion.navigate(R.id.adminReservasFragment);
+            }
+        });
     }
 
     private void pintarError(@Nullable String mensaje) {
+        adaptador.submitList(null);
         binding.adminMensajesEsqueleto.setVisibility(View.GONE);
         binding.adminMensajesLista.setVisibility(View.GONE);
         binding.adminMensajesVacio.setVisibility(View.GONE);
@@ -147,6 +158,7 @@ public class MensajesFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        viewModel.detenerSeguimiento();
         super.onDestroyView();
         // El adaptador se suelta antes que el binding: si el RecyclerView
         // conservara las vistas, seguirían apuntando a un binding ya liberado.

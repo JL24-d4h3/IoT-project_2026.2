@@ -4,145 +4,216 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
+import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
+import org.iot.project.data.repository.SuperadminRepository;
+import org.iot.project.models.Cuenta;
 import org.iot.project.models.Role;
 import org.iot.project.models.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
-/**
- * Cuentas de la plataforma (RF-005) y su activacion (RF-006).
- *
- * <p><b>El filtro vive aqui y no en el repositorio.</b> Filtrar por rol es
- * mirar una lista que ya esta en memoria; hacerlo pasar por el repositorio
- * costaria los 400 ms de latencia simulada en cada toque de filtro, y el
- * usuario veria el esqueleto cada vez que cambia de pestaña.
- *
- * <p>Los superadministradores se enseñan y no se tocan: saber quien puede
- * administrar la plataforma es parte de RF-005, y esconderlos haria creer que no
- * existen.
- */
+/** Cuentas de acceso de Firebase; el perfil operativo del taxi se gestiona aparte. */
 public class SuperadminUsuariosViewModel extends ViewModel {
-
-    /**
-     * Filtro de la lista. {@code null} significa "todas".
-     *
-     * <p>Es el rol y no el identificador del chip: el chip es cosa de la
-     * pantalla, y el ViewModel no tiene por que conocer sus identificadores.
-     */
-    @Nullable
-    private Role filtro;
-
     private final MutableLiveData<UiState<List<User>>> contenido = new MutableLiveData<>();
-
-    /** Resultado de activar o desactivar (RF-006), para el aviso de una vez. */
     private final MutableLiveData<UiState<User>> cambio = new MutableLiveData<>();
+    private final MutableLiveData<String> errorSeguimiento = new MutableLiveData<>();
+    private final MutableLiveData<Set<String>> pendientes =
+            new MutableLiveData<>(Collections.emptySet());
+    private final Set<String> cambiando = new HashSet<>();
+    private final Observer<Cuenta> sesion = cuenta -> revisarSesion();
 
-    /** La lista completa, tal como llego: el filtro se aplica sobre ella. */
+    @Nullable private Role filtro;
+    @Nullable private String uid;
+    @Nullable private SuperadminRepository.Suscripcion suscripcion;
     private List<User> todas = Collections.emptyList();
+    private boolean visible;
+    private boolean datosRecibidos;
+    private long contexto;
+    private long generacion;
+    private long revisionLista;
+    @Nullable private String cambioFallidoId;
+    private boolean cambioFallidoActivo;
 
-    private boolean cargando;
-
-    public LiveData<UiState<List<User>>> getContenido() {
-        return contenido;
+    public SuperadminUsuariosViewModel() {
+        SessionManager.sesion().observeForever(sesion);
     }
 
-    public LiveData<UiState<User>> getCambio() {
-        return cambio;
+    public LiveData<UiState<List<User>>> getContenido() { return contenido; }
+    public LiveData<UiState<User>> getCambio() { return cambio; }
+    public LiveData<String> getErrorSeguimiento() { return errorSeguimiento; }
+    public LiveData<Set<String>> getPendientes() { return pendientes; }
+    @Nullable public Role getFiltro() { return filtro; }
+
+    public void iniciarSeguimiento() {
+        visible = true;
+        revisarSesion();
+        conectar();
     }
 
-    public void cargar() {
-        if (cargando) {
-            return;
-        }
-        UiState<List<User>> actual = contenido.getValue();
-        if (actual != null && actual.isSuccess()) {
-            return;
-        }
-        cargando = true;
-        contenido.setValue(UiState.loading());
-        pedir();
+    public void detenerSeguimiento() {
+        visible = false;
+        cerrarEscucha();
     }
 
     public void reintentar() {
-        cargando = false;
-        cargar();
+        cerrarEscucha();
+        conectar();
     }
 
-    private void pedir() {
-        ServiceLocator.superadmin().usuarios(new ResultCallback<List<User>>() {
-            @Override
-            public void onExito(@NonNull List<User> datos) {
-                cargando = false;
-                todas = datos;
+    private void revisarSesion() {
+        String actual = SessionManager.getRolActivo() == Role.SUPERADMIN
+                ? SessionManager.getIdentidadId() : null;
+        if (Objects.equals(uid, actual)) return;
+        cerrarEscucha();
+        contexto++;
+        uid = actual;
+        todas = Collections.emptyList();
+        datosRecibidos = false;
+        cambiando.clear();
+        cambioFallidoId = null;
+        publicarPendientes();
+        cambio.setValue(null);
+        errorSeguimiento.setValue(null);
+        contenido.setValue(UiState.loading());
+        conectar();
+    }
+
+    private void conectar() {
+        if (!visible || suscripcion != null) return;
+        if (uid == null) {
+            contenido.setValue(UiState.error("Inicia sesión como superadministrador."));
+            return;
+        }
+        final String cuenta = uid;
+        final long solicitud = ++generacion;
+        final long identidad = contexto;
+        if (!datosRecibidos) contenido.setValue(UiState.loading());
+        errorSeguimiento.setValue(null);
+        suscripcion = ServiceLocator.superadmin().escucharUsuarios(new ResultCallback<List<User>>() {
+            @Override public void onExito(@NonNull List<User> datos) {
+                if (!escuchaVigente(cuenta, identidad, solicitud)) return;
+                todas = new ArrayList<>(datos);
+                revisionLista++;
+                datosRecibidos = true;
+                errorSeguimiento.setValue(null);
                 publicar();
             }
 
-            @Override
-            public void onError(@NonNull String mensaje) {
-                cargando = false;
-                contenido.setValue(UiState.error(mensaje));
+            @Override public void onError(@NonNull String mensaje) {
+                if (!escuchaVigente(cuenta, identidad, solicitud)) return;
+                if (datosRecibidos) errorSeguimiento.setValue(mensaje);
+                else contenido.setValue(UiState.error(mensaje));
             }
         });
     }
 
     public void filtrarPor(@Nullable Role rol) {
         filtro = rol;
-        publicar();
+        if (datosRecibidos) publicar();
     }
 
     private void publicar() {
         List<User> visibles = new ArrayList<>();
         for (User usuario : todas) {
-            if (filtro == null || usuario.getRol() == filtro) {
-                visibles.add(usuario);
-            }
+            if (filtro == null || usuario.getRol() == filtro) visibles.add(usuario);
         }
-        contenido.setValue(visibles.isEmpty()
-                ? UiState.<List<User>>empty()
-                : UiState.success(visibles));
+        contenido.setValue(visibles.isEmpty() ? UiState.empty() : UiState.success(visibles));
     }
 
-    /**
-     * Activa o desactiva una cuenta.
-     *
-     * <p>Se recarga la lista entera en vez de cambiar la fila en memoria: el
-     * repositorio es quien decide si el cambio era posible —un
-     * superadministrador no se desactiva—, y adelantarlo en la pantalla seria
-     * tener la regla escrita dos veces.
-     *
-     * <p>Entra el identificador y no la cuenta porque quien lo pide es una fila
-     * de la lista, y la fila guarda una copia de lo que pinta, no el objeto del
-     * repositorio: lo unico que sobrevive a esa copia y sirve para encontrar a
-     * la cuenta es el identificador.
-     */
+    public boolean puedeCambiar(@NonNull String usuarioId) {
+        if (!visible || uid == null || !vigente(uid, contexto) || cambiando.contains(usuarioId)) {
+            return false;
+        }
+        for (User usuario : todas) {
+            if (usuarioId.equals(usuario.getId())) return usuario.esDesactivable();
+        }
+        return false;
+    }
+
+    /** El estado de la fila cambia únicamente después de confirmar la escritura. */
     public void cambiarActivo(@NonNull String usuarioId, boolean activo) {
-        ServiceLocator.superadmin().cambiarActivo(usuarioId, activo,
-                new ResultCallback<User>() {
-                    @Override
-                    public void onExito(@NonNull User dato) {
-                        cambio.setValue(UiState.success(dato));
-                        // Sin esqueleto: la lista ya esta pintada y el cambio de
-                        // una fila no justifica borrarla mientras llega.
-                        cargando = true;
-                        pedir();
+        if (!puedeCambiar(usuarioId)) return;
+        final String cuenta = uid;
+        final long identidad = contexto;
+        final long revisionInicial = revisionLista;
+        cambiando.add(usuarioId);
+        publicarPendientes();
+        ServiceLocator.superadmin().cambiarActivo(usuarioId, activo, new ResultCallback<User>() {
+            @Override public void onExito(@NonNull User dato) {
+                if (!vigente(cuenta, identidad)) return;
+                if (usuarioId.equals(cambioFallidoId)) cambioFallidoId = null;
+                cambiando.remove(usuarioId);
+                publicarPendientes();
+                // Una instantánea recibida durante el cambio tiene prioridad.
+                if (revisionInicial == revisionLista) {
+                    List<User> actualizadas = new ArrayList<>(todas.size());
+                    for (User usuario : todas) {
+                        actualizadas.add(usuarioId.equals(usuario.getId()) ? dato : usuario);
                     }
+                    todas = actualizadas;
+                    publicar();
+                }
+                cambio.setValue(UiState.success(dato));
+            }
 
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        cambio.setValue(UiState.error(mensaje));
-                    }
-                });
+            @Override public void onError(@NonNull String mensaje) {
+                if (!vigente(cuenta, identidad)) return;
+                cambiando.remove(usuarioId);
+                publicarPendientes();
+                cambioFallidoId = usuarioId;
+                cambioFallidoActivo = activo;
+                cambio.setValue(UiState.error(mensaje));
+            }
+        });
     }
 
-    /** El aviso ya se leyo. */
-    public void consumirCambio() {
-        cambio.setValue(null);
+    private boolean vigente(@NonNull String cuenta, long identidad) {
+        FirebaseUser actual = FirebaseAuth.getInstance().getCurrentUser();
+        return identidad == contexto && actual != null && cuenta.equals(actual.getUid())
+                && cuenta.equals(uid) && cuenta.equals(SessionManager.getIdentidadId())
+                && SessionManager.getRolActivo() == Role.SUPERADMIN;
+    }
+
+    private boolean escuchaVigente(String cuenta, long identidad, long solicitud) {
+        return visible && solicitud == generacion && vigente(cuenta, identidad);
+    }
+
+    private void publicarPendientes() {
+        pendientes.setValue(Collections.unmodifiableSet(new HashSet<>(cambiando)));
+    }
+
+    public void consumirCambio() { cambio.setValue(null); }
+
+    public void reintentarCambio() {
+        String usuarioId = cambioFallidoId;
+        if (usuarioId != null) cambiarActivo(usuarioId, cambioFallidoActivo);
+    }
+
+    private void cerrarEscucha() {
+        generacion++;
+        if (suscripcion != null) {
+            suscripcion.cerrar();
+            suscripcion = null;
+        }
+    }
+
+    @Override protected void onCleared() {
+        contexto++;
+        cerrarEscucha();
+        SessionManager.sesion().removeObserver(sesion);
     }
 }

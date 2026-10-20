@@ -36,6 +36,11 @@ public interface HotelRepository {
 
     void obtener(@NonNull String hotelId, @NonNull ResultCallback<Hotel> callback);
 
+    /** Datos del alojamiento contratado, incluso si dejó de publicarse en el catálogo. */
+    default void obtenerDeReserva(@NonNull String bookingId, @NonNull ResultCallback<Hotel> callback) {
+        callback.onError("No pudimos consultar el alojamiento de esta reserva.");
+    }
+
     /** Hoteles destacados para el inicio, ordenados por rating. */
     void recomendados(int limite, @NonNull ResultCallback<List<Hotel>> callback);
 

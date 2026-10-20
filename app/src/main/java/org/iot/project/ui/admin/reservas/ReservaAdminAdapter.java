@@ -48,7 +48,13 @@ public class ReservaAdminAdapter
                     // misma reserva, así que leerla en vivo diría siempre que no
                     // cambió nada.
                     return anterior.getEstado() == nueva.getEstado()
-                            && anterior.getTotal() == nueva.getTotal();
+                            && Double.compare(anterior.getTotal(), nueva.getTotal()) == 0
+                            && anterior.getClienteNombre("").equals(nueva.getClienteNombre(""))
+                            && anterior.getHabitacionNumero().equals(nueva.getHabitacionNumero())
+                            && anterior.getHabitacionTipo().equals(nueva.getHabitacionTipo())
+                            && anterior.getReserva().getCodigo().equals(nueva.getReserva().getCodigo())
+                            && anterior.getReserva().getFechaEntrada().equals(nueva.getReserva().getFechaEntrada())
+                            && anterior.getReserva().getFechaSalida().equals(nueva.getReserva().getFechaSalida());
                 }
             };
 

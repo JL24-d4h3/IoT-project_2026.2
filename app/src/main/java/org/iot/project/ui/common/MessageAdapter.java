@@ -29,7 +29,7 @@ import java.util.Locale;
 public class MessageAdapter extends ListAdapter<Message, MessageAdapter.MessageViewHolder> {
 
     private static final DateTimeFormatter HORA =
-            DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault());
+            DateTimeFormatter.ofPattern("dd/MM HH:mm", Locale.getDefault());
 
     private static final DiffUtil.ItemCallback<Message> COMPARADOR =
             new DiffUtil.ItemCallback<Message>() {
@@ -41,7 +41,10 @@ public class MessageAdapter extends ListAdapter<Message, MessageAdapter.MessageV
                 @Override
                 public boolean areContentsTheSame(@NonNull Message anterior,
                                                   @NonNull Message nuevo) {
-                    return anterior.isLeido() == nuevo.isLeido();
+                    return anterior.isLeido() == nuevo.isLeido()
+                            && anterior.getTexto().equals(nuevo.getTexto())
+                            && anterior.getAutor() == nuevo.getAutor()
+                            && anterior.getTimestamp().equals(nuevo.getTimestamp());
                 }
             };
 
@@ -94,7 +97,12 @@ public class MessageAdapter extends ListAdapter<Message, MessageAdapter.MessageV
                     binding.getRoot().getContext(),
                     propio ? R.color.colorOnPrimary : R.color.colorTextPrimary));
 
-            binding.messageHora.setText(mensaje.getTimestamp().format(HORA));
+            String fecha = mensaje.getTimestamp().format(HORA);
+            binding.messageHora.setText(propio
+                    ? binding.getRoot().getContext().getString(R.string.chat_cliente_fecha_estado,
+                    fecha, binding.getRoot().getContext().getString(mensaje.isLeido()
+                            ? R.string.chat_cliente_mensaje_leido : R.string.chat_cliente_mensaje_enviado))
+                    : fecha);
 
             // La burbuja se pega a su lado y la hora la acompania. El conjunto
             // va en una columna, asi que basta con mover la gravedad.

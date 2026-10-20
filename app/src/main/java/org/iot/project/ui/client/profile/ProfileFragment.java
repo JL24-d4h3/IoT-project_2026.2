@@ -75,7 +75,8 @@ public class ProfileFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
         viewModel.getPerfil().observe(getViewLifecycleOwner(), this::pintar);
-        viewModel.getSinLeer().observe(getViewLifecycleOwner(), this::pintarSinLeer);
+        new ViewModelProvider(requireActivity()).get(org.iot.project.core.AvisosClienteViewModel.class)
+                .getSinLeer().observe(getViewLifecycleOwner(), this::pintarSinLeer);
         viewModel.cargar();
     }
 
@@ -193,6 +194,7 @@ public class ProfileFragment extends Fragment {
      */
     private void pintarSinLeer(@Nullable Integer cuenta) {
         if (cuenta == null) {
+            binding.perfilFilaNotificaciones.setResumen(null);
             return;
         }
         binding.perfilFilaNotificaciones.setResumen(cuenta > 0

@@ -96,8 +96,20 @@ public class PerfilFirebaseTest {
     }
 
     @Test
-    public void conductorNoEntraPorElPerfilFirestore() {
-        exigirRechazado(perfil("CONDUCTOR"));
+    public void conductorAutenticaSuCuentaSinConvertirseEnUsuarioDeHotel() {
+        Map<String, Object> perfil = perfil("CONDUCTOR");
+        perfil.put("hotelId", "hotel-ajeno");
+        perfil.put("email", "otro@correo.com");
+
+        Cuenta cuenta = PerfilFirebase.cuenta(UID, EMAIL, perfil);
+
+        assertEquals(Role.CONDUCTOR, cuenta.getRol());
+        assertEquals(UID, cuenta.getIdentidadId());
+        assertEquals(EMAIL, cuenta.getEmail());
+        assertEquals("Lucia Quispe", cuenta.getNombreCompleto());
+        assertNull(cuenta.getHotelId());
+        assertThrows(IllegalArgumentException.class,
+                () -> PerfilFirebase.usuario(UID, EMAIL, perfil));
     }
 
     @Test
@@ -109,7 +121,7 @@ public class PerfilFirebaseTest {
 
     @Test
     public void cuentaInactivaNoSePublicaComoSesionValida() {
-        for (Role rol : Arrays.asList(Role.CLIENTE, Role.ADMIN_HOTEL, Role.SUPERADMIN)) {
+        for (Role rol : Role.values()) {
             Map<String, Object> perfil = perfil(rol.name());
             perfil.put("activo", false);
             exigirRechazado(perfil);

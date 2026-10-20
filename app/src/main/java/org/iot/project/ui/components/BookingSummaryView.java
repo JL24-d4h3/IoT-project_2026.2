@@ -29,9 +29,8 @@ import org.iot.project.utils.PriceFormatter;
  * ({@link BookingCardView}) enseña mas cosas y ocupa mas; esta es la version
  * que cabe dentro de otro formulario.
  *
- * <p>El nombre del hotel lo pide al repositorio y no lo recibe: quien tiene una
- * reserva tiene un identificador de hotel, y obligar a cada pantalla a resolver
- * el nombre seria repetir la misma consulta en todas.
+ * <p>Consulta el nombre en el catálogo o usa los datos guardados en la reserva
+ * cuando el hotel ya no está disponible allí.
  */
 public class BookingSummaryView extends MaterialCardView {
 
@@ -68,9 +67,10 @@ public class BookingSummaryView extends MaterialCardView {
     public void bind(@NonNull Booking reserva) {
         Hotel alojamiento = org.iot.project.core.ServiceLocator.hoteles()
                 .hotel(reserva.getHotelId());
-        hotel.setText(alojamiento != null
-                ? alojamiento.getNombre()
-                : getContext().getString(R.string.reserva_hotel_desconocido));
+        String nombre = alojamiento != null
+                ? alojamiento.getNombre() : reserva.getHotelNombre();
+        hotel.setText(nombre.isEmpty()
+                ? getContext().getString(R.string.reserva_hotel_desconocido) : nombre);
 
         codigo.setText(reserva.getCodigo());
 

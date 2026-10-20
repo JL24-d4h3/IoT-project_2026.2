@@ -133,6 +133,18 @@
                     tools:text="S/ 1,440" />
             </LinearLayout>
         </LinearLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/booking_chat"
+            style="@style/Widget.App.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_md"
+            android:layout_marginTop="@dimen/space_sm"
+            android:layout_marginEnd="@dimen/space_md"
+            android:layout_marginBottom="@dimen/space_md"
+            android:text="@string/accion_hablar_hotel"
+            android:visibility="gone"
+            app:icon="@drawable/ic_chat" />
     </LinearLayout>
 
 </merge>

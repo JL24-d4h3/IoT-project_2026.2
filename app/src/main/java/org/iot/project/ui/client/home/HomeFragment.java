@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
+import org.iot.project.core.AvisosClienteViewModel;
 import org.iot.project.databinding.FragmentHomeBinding;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.User;
@@ -102,6 +103,21 @@ public class HomeFragment extends Fragment {
     private void observar() {
         viewModel.getRecomendados().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getUsuario().observe(getViewLifecycleOwner(), this::pintarSaludo);
+        new ViewModelProvider(requireActivity()).get(AvisosClienteViewModel.class)
+                .getSinLeer().observe(getViewLifecycleOwner(), this::pintarAvisos);
+    }
+
+    private void pintarAvisos(@Nullable Integer cantidad) {
+        boolean hay = cantidad != null && cantidad > 0;
+        binding.notificationsCount.setVisibility(hay ? View.VISIBLE : View.GONE);
+        if (hay) {
+            binding.notificationsCount.setText(cantidad > 99
+                    ? getString(R.string.avisos_contador_muchos) : String.valueOf(cantidad));
+            binding.actionNotifications.setContentDescription(getResources().getQuantityString(
+                    R.plurals.avisos_sin_leer, cantidad, cantidad));
+        } else {
+            binding.actionNotifications.setContentDescription(getString(R.string.cd_notificaciones));
+        }
     }
 
     private void pintarSaludo(@Nullable User usuario) {

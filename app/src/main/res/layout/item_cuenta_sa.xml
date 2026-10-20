@@ -13,6 +13,7 @@
 -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     style="@style/Widget.App.Card"
     android:layout_width="match_parent"
@@ -22,17 +23,15 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:paddingStart="@dimen/space_base"
         android:paddingTop="@dimen/space_md"
-        android:paddingEnd="@dimen/space_sm"
+        android:paddingEnd="@dimen/space_base"
         android:paddingBottom="@dimen/space_md">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -41,7 +40,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:maxLines="2"
                 tools:text="Lucía Quispe Ramos" />
 
             <TextView
@@ -51,14 +50,15 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xs"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:maxLines="2"
                 tools:text="lucia.quispe@correo.pe" />
 
-            <LinearLayout
+            <com.google.android.material.chip.ChipGroup
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
-                android:orientation="horizontal">
+                app:chipSpacingHorizontal="@dimen/space_sm"
+                app:chipSpacingVertical="@dimen/space_sm">
 
                 <TextView
                     android:id="@+id/sa_cuenta_rol"
@@ -71,21 +71,20 @@
                     android:paddingEnd="@dimen/space_sm"
                     android:paddingBottom="@dimen/space_xs"
                     android:textColor="@color/colorOnPrimaryContainer"
-                    tools:text="Cliente" />
+                    tools:text="Administrador de hotel" />
 
                 <TextView
                     android:id="@+id/sa_cuenta_estado"
                     style="@style/TextAppearance.App.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/space_sm"
                     android:paddingStart="@dimen/space_sm"
                     android:paddingTop="@dimen/space_xs"
                     android:paddingEnd="@dimen/space_sm"
                     android:paddingBottom="@dimen/space_xs"
                     tools:background="@drawable/bg_badge_success"
                     tools:text="Activa" />
-            </LinearLayout>
+            </com.google.android.material.chip.ChipGroup>
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
@@ -93,7 +92,8 @@
             style="@style/Widget.App.Button.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/space_xs"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/space_sm"
             tools:text="Desactivar" />
     </LinearLayout>
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_panel_cargando">Consultando conversaciones…</string>
+    <string name="chat_panel_error">%1$s Pulsa aquí para reintentar.</string>
+    <string name="chat_panel_al_dia">No tienes mensajes sin leer.</string>
+</resources>

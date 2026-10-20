@@ -18,7 +18,10 @@ import org.iot.project.databinding.ItemCuentaSaBinding;
 import org.iot.project.models.User;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Filas de la lista de cuentas (RF-005).
@@ -68,18 +71,32 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
         private final String rol;
         private final boolean activa;
         private final boolean desactivable;
+        private final boolean pendiente;
 
-        Cuenta(@NonNull User usuario) {
+        Cuenta(@NonNull User usuario, boolean pendiente) {
             this.id = usuario.getId();
-            this.nombre = usuario.getNombreCompleto();
+            this.nombre = (texto(usuario.getNombres()) + " " + texto(usuario.getApellidos())).trim();
             this.email = usuario.getEmail();
             this.rol = usuario.getRol().getDisplayName();
             this.activa = usuario.isActivo();
             this.desactivable = usuario.esDesactivable();
+            this.pendiente = pendiente;
+        }
+
+        Cuenta(@NonNull Cuenta cuenta, boolean pendiente) {
+            id = cuenta.id;
+            nombre = cuenta.nombre;
+            email = cuenta.email;
+            rol = cuenta.rol;
+            activa = cuenta.activa;
+            desactivable = cuenta.desactivable;
+            this.pendiente = pendiente;
         }
     }
 
     private final AlAccionar alAccionar;
+    private Set<String> pendientes = Collections.emptySet();
+    private List<Cuenta> cuentas = Collections.emptyList();
 
     public CuentaSaAdapter(@NonNull AlAccionar alAccionar) {
         super(DIFF);
@@ -96,8 +113,19 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
     public void mostrar(@NonNull List<User> cuentas) {
         List<Cuenta> filas = new ArrayList<>(cuentas.size());
         for (User usuario : cuentas) {
-            filas.add(new Cuenta(usuario));
+            filas.add(new Cuenta(usuario, pendientes.contains(usuario.getId())));
         }
+        this.cuentas = filas;
+        submitList(filas);
+    }
+
+    public void mostrarPendientes(@NonNull Set<String> pendientes) {
+        this.pendientes = new HashSet<>(pendientes);
+        List<Cuenta> filas = new ArrayList<>(cuentas.size());
+        for (Cuenta cuenta : cuentas) {
+            filas.add(new Cuenta(cuenta, pendientes.contains(cuenta.id)));
+        }
+        cuentas = filas;
         submitList(filas);
     }
 
@@ -123,8 +151,13 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
         }
 
         void bind(@NonNull Cuenta cuenta) {
-            binding.saCuentaNombre.setText(cuenta.nombre);
-            binding.saCuentaEmail.setText(cuenta.email);
+            String nombre = cuenta.nombre.isEmpty()
+                    ? itemView.getContext().getString(R.string.sa_usuarios_firebase_sin_nombre)
+                    : cuenta.nombre;
+            binding.saCuentaNombre.setText(nombre);
+            binding.saCuentaEmail.setText(texto(cuenta.email).isEmpty()
+                    ? itemView.getContext().getString(R.string.sa_usuarios_firebase_sin_correo)
+                    : cuenta.email);
             binding.saCuentaRol.setText(cuenta.rol);
 
             binding.saCuentaEstado.setText(cuenta.activa
@@ -136,13 +169,23 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
             // pueda administrar la plataforma, nadie podria volver a activar a
             // los demas.
             binding.saCuentaAccion.setVisibility(cuenta.desactivable ? View.VISIBLE : View.GONE);
+            binding.saCuentaAccion.setOnClickListener(null);
+            binding.saCuentaAccion.setEnabled(!cuenta.pendiente);
             if (!cuenta.desactivable) {
                 return;
             }
-            binding.saCuentaAccion.setText(cuenta.activa
-                    ? R.string.sa_desactivar : R.string.sa_activar);
-            binding.saCuentaAccion.setOnClickListener(v ->
-                    alAccionar.accionar(cuenta.id, cuenta.nombre, !cuenta.activa));
+            binding.saCuentaAccion.setText(cuenta.pendiente
+                    ? R.string.sa_usuarios_firebase_guardando
+                    : cuenta.activa ? R.string.sa_desactivar : R.string.sa_activar);
+            binding.saCuentaAccion.setContentDescription(itemView.getContext().getString(
+                    cuenta.pendiente ? R.string.sa_usuarios_firebase_guardando_cuenta
+                            : cuenta.activa ? R.string.sa_usuarios_firebase_desactivar_cuenta
+                            : R.string.sa_usuarios_firebase_activar_cuenta, nombre));
+            binding.saCuentaAccion.setOnClickListener(v -> {
+                if (!pendientes.contains(cuenta.id)) {
+                    alAccionar.accionar(cuenta.id, nombre, !cuenta.activa);
+                }
+            });
         }
 
         private void pintarEstado(boolean activa) {
@@ -169,6 +212,7 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
                 public boolean areContentsTheSame(@NonNull Cuenta a, @NonNull Cuenta b) {
                     return a.activa == b.activa
                             && a.desactivable == b.desactivable
+                            && a.pendiente == b.pendiente
                             && a.nombre.equals(b.nombre)
                             && mismoTexto(a.email, b.email)
                             && mismoTexto(a.rol, b.rol);
@@ -177,5 +221,9 @@ public class CuentaSaAdapter extends ListAdapter<CuentaSaAdapter.Cuenta, CuentaS
 
     private static boolean mismoTexto(@Nullable String a, @Nullable String b) {
         return a == null ? b == null : a.equals(b);
+    }
+
+    @NonNull private static String texto(@Nullable String texto) {
+        return texto == null ? "" : texto.trim();
     }
 }

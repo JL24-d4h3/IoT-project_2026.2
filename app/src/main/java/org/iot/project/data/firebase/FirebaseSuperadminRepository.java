@@ -1,6 +1,7 @@
 package org.iot.project.data.firebase;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Observer;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -12,6 +13,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
@@ -34,10 +37,18 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Alta, asignacion y publicacion persistentes con auditoria atomica. */
 public final class FirebaseSuperadminRepository implements SuperadminRepository {
+
+    private static final AtomicLong GENERACION = new AtomicLong();
+    private static boolean observandoIdentidad;
+    private static String identidadAuth;
+    private static String identidadSesion;
+    private static Role rolSesion;
 
     private final FirebaseHotelRepository hoteles;
 
@@ -249,19 +260,29 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
 
     @Override
     public void usuarios(@NonNull ResultCallback<List<User>> callback) {
-        String uid = actor(callback);
-        if (uid == null) return;
+        Acceso acceso = acceso(callback);
+        if (acceso == null) return;
         db().collection("usuarios").get(Source.SERVER).addOnSuccessListener(resultado -> {
-            if (!vigente(uid, callback)) return;
+            if (!acceso.vigente()) return;
             try {
+                exigirAutor(acceso, resultado);
                 List<User> lista = mapearUsuarios(resultado);
-                lista.sort(Comparator.comparingInt((User u) -> u.getRol().ordinal())
-                        .thenComparing(User::getNombreCompleto));
                 callback.onExito(lista);
             } catch (IllegalArgumentException error) {
                 callback.onError(mensaje(error));
             }
-        }).addOnFailureListener(error -> callback.onError(mensaje(error)));
+        }).addOnFailureListener(error -> {
+            if (acceso.vigente()) callback.onError(mensaje(error));
+        });
+    }
+
+    @Override
+    public Suscripcion escucharUsuarios(@NonNull ResultCallback<List<User>> callback) {
+        Acceso acceso = acceso(callback);
+        if (acceso == null) return () -> { };
+        EscuchaUsuarios escucha = new EscuchaUsuarios(acceso, callback);
+        escucha.iniciar();
+        return escucha;
     }
 
     @Override
@@ -276,14 +297,15 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
 
     @Override
     public void resumen(@NonNull ResultCallback<ResumenSuperadmin> callback) {
-        String uid = actor(callback);
-        if (uid == null) return;
+        Acceso acceso = acceso(callback);
+        if (acceso == null) return;
         Task<QuerySnapshot> cuentas = db().collection("usuarios").get(Source.SERVER);
         Task<QuerySnapshot> alojamientos = db().collection("hoteles").get(Source.SERVER);
         Task<QuerySnapshot> eventos = consultaAuditoria();
         Tasks.whenAll(cuentas, alojamientos, eventos).addOnSuccessListener(ignorado -> {
-            if (!vigente(uid, callback)) return;
+            if (!acceso.vigente()) return;
             try {
+                exigirAutor(acceso, cuentas.getResult());
                 List<User> usuarios = mapearUsuarios(cuentas.getResult());
                 List<Hotel> lista = mapearHoteles(alojamientos.getResult());
                 hoteles.reemplazarCache(lista);
@@ -300,12 +322,57 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
             } catch (IllegalArgumentException error) {
                 callback.onError(mensaje(error));
             }
-        }).addOnFailureListener(error -> callback.onError(mensaje(error)));
+        }).addOnFailureListener(error -> {
+            if (acceso.vigente()) callback.onError(mensaje(error));
+        });
     }
 
     @Override
     public void cambiarActivo(@NonNull String usuarioId, boolean activo, @NonNull ResultCallback<User> callback) {
-        callback.onError("La activación de cuentas todavía se gestiona desde la consola de Firebase.");
+        Acceso acceso = acceso(callback);
+        if (acceso == null) return;
+        try {
+            if (idValido(usuarioId) == null) {
+                throw new IllegalArgumentException("Selecciona una cuenta válida.");
+            }
+        } catch (IllegalArgumentException error) {
+            callback.onError(mensaje(error));
+            return;
+        }
+        DocumentReference actorRef = db().collection("usuarios").document(acceso.uid);
+        DocumentReference usuarioRef = db().collection("usuarios").document(usuarioId);
+        DocumentReference eventoRef = db().collection("auditoria").document();
+        db().runTransaction(transaccion -> {
+            if (!acceso.vigente()) throw new IllegalArgumentException(sesionCambiada());
+            Cuenta autor = exigirSuperadmin(acceso.uid, acceso.email, transaccion.get(actorRef));
+            User usuario = usuarioAdministrativo(transaccion.get(usuarioRef));
+            if (!activo && !usuario.esDesactivable()) {
+                throw new IllegalArgumentException("La cuenta de un superadministrador no se puede desactivar.");
+            }
+            // El estado ya confirmado es un reintento correcto y no genera otra auditoría.
+            if (usuario.isActivo() == activo) return usuario;
+            boolean anterior = usuario.isActivo();
+            Map<String, Object> evento = auditoria(autor, null, null,
+                    activo ? "ACTIVAR_USUARIO" : "DESACTIVAR_USUARIO",
+                    (activo ? "Se activó la cuenta de " : "Se desactivó la cuenta de ")
+                            + usuario.getNombreCompleto().trim() + " (" + usuario.getEmail() + ").");
+            evento.put("usuarioId", usuario.getId());
+            evento.put("rol", usuario.getRol().name());
+            evento.put("activoAnterior", anterior);
+            evento.put("activo", activo);
+            evento.put("estado", activo ? "ACTIVO" : "INACTIVO");
+            if (!acceso.vigente()) throw new IllegalArgumentException(sesionCambiada());
+            transaccion.update(usuarioRef, "activo", activo, "actualizadoEn", FieldValue.serverTimestamp());
+            transaccion.set(eventoRef, evento);
+            usuario.setActivo(activo);
+            return usuario;
+        }).addOnSuccessListener(usuario -> {
+            // El objeto procede de la transacción aceptada; no se hace una lectura posterior
+            // que pueda convertir una escritura confirmada en un falso error.
+            if (acceso.vigente()) callback.onExito(usuario);
+        }).addOnFailureListener(error -> {
+            if (acceso.vigente()) callback.onError(mensaje(error));
+        });
     }
 
     @Override
@@ -366,25 +433,192 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
     private static List<User> mapearUsuarios(QuerySnapshot resultado) {
         List<User> lista = new ArrayList<>();
         for (DocumentSnapshot documento : resultado) lista.add(usuarioAdministrativo(documento));
+        lista.sort(Comparator.comparingInt((User usuario) -> usuario.getRol().ordinal())
+                .thenComparing(User::getNombreCompleto, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(User::getId));
         return lista;
     }
 
     private static User usuarioAdministrativo(DocumentSnapshot documento) {
-        Map<String, Object> datos = documento.getData();
-        if (datos == null || !(datos.get("activo") instanceof Boolean)) {
-            throw new IllegalArgumentException("Hay un perfil sin configuración válida.");
+        return FirebaseCuentasAdministradas.desde(documento);
+    }
+
+    /** Evita entregar resultados de una sesión anterior, incluso si se vuelve al mismo UID. */
+    private static final class Acceso {
+        final String uid;
+        final String email;
+        final long generacion;
+
+        Acceso(String uid, String email, long generacion) {
+            this.uid = uid;
+            this.email = email;
+            this.generacion = generacion;
         }
-        // La consulta administrativa incluye cuentas inactivas; no autentica con ellas.
-        boolean activo = Boolean.TRUE.equals(datos.get("activo"));
-        Map<String, Object> lectura = new HashMap<>(datos);
-        lectura.put("activo", true);
-        Object correo = datos.get("email");
-        if (!(correo instanceof String)) {
-            throw new IllegalArgumentException("Hay un perfil sin correo válido.");
+
+        boolean vigente() {
+            FirebaseUser actual = FirebaseAuth.getInstance().getCurrentUser();
+            return actualizarIdentidad() == generacion && actual != null
+                    && uid.equals(actual.getUid()) && uid.equals(SessionManager.getIdentidadId())
+                    && SessionManager.getRolActivo() == Role.SUPERADMIN;
         }
-        User usuario = PerfilFirebase.usuario(documento.getId(), (String) correo, lectura);
-        usuario.setActivo(activo);
-        return usuario;
+    }
+
+    private static Acceso acceso(ResultCallback<?> callback) {
+        observarIdentidad();
+        String uid = actor(callback);
+        if (uid == null) return null;
+        FirebaseUser actual = FirebaseAuth.getInstance().getCurrentUser();
+        if (actual == null || !uid.equals(actual.getUid())) return null;
+        return new Acceso(uid, actual.getEmail(), actualizarIdentidad());
+    }
+
+    private static synchronized void observarIdentidad() {
+        if (observandoIdentidad) return;
+        observandoIdentidad = true;
+        actualizarIdentidad();
+        // Estos dos observadores guardan únicamente la generación del acceso en el proceso.
+        FirebaseAuth.getInstance().addAuthStateListener(auth -> actualizarIdentidad());
+        SessionManager.sesion().observeForever(cuenta -> actualizarIdentidad());
+    }
+
+    private static synchronized long actualizarIdentidad() {
+        FirebaseUser actual = FirebaseAuth.getInstance().getCurrentUser();
+        String authUid = actual == null ? null : actual.getUid();
+        String sesionUid = SessionManager.getIdentidadId();
+        Role rol = SessionManager.getRolActivo();
+        if (!Objects.equals(identidadAuth, authUid) || !Objects.equals(identidadSesion, sesionUid)
+                || rolSesion != rol) {
+            identidadAuth = authUid;
+            identidadSesion = sesionUid;
+            rolSesion = rol;
+            GENERACION.incrementAndGet();
+        }
+        return GENERACION.get();
+    }
+
+    private static void exigirAutor(Acceso acceso, QuerySnapshot cuentas) {
+        if (cuentas == null || cuentas.getMetadata().isFromCache()
+                || cuentas.getMetadata().hasPendingWrites()) {
+            throw new IllegalArgumentException("Hay cambios pendientes de confirmar en el servidor. Vuelve a cargar la pantalla.");
+        }
+        for (DocumentSnapshot documento : cuentas.getDocuments()) {
+            if (acceso.uid.equals(documento.getId())) {
+                exigirSuperadmin(acceso.uid, acceso.email, documento);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("No encontramos el perfil del superadministrador en el servidor.");
+    }
+
+    private static String sesionCambiada() {
+        return "La sesión cambió. Vuelve a cargar esta pantalla.";
+    }
+
+    private static final class EscuchaUsuarios implements Suscripcion {
+        private final Acceso acceso;
+        private final ResultCallback<List<User>> callback;
+        private final List<ListenerRegistration> registros = new ArrayList<>();
+        private FirebaseAuth.AuthStateListener authListener;
+        private Observer<Cuenta> sesionObserver;
+        private boolean cerrada;
+        private boolean consultando;
+        private boolean datosServidor;
+
+        EscuchaUsuarios(Acceso acceso, ResultCallback<List<User>> callback) {
+            this.acceso = acceso;
+            this.callback = callback;
+        }
+
+        void iniciar() {
+            authListener = auth -> comprobarSesion();
+            FirebaseAuth.getInstance().addAuthStateListener(authListener);
+            sesionObserver = cuenta -> comprobarSesion();
+            SessionManager.sesion().observeForever(sesionObserver);
+            if (!comprobarSesion()) return;
+            agregar(db().collection("usuarios").document(acceso.uid)
+                    .addSnapshotListener(MetadataChanges.INCLUDE, (perfil, error) -> {
+                        if (!comprobarSesion()) return;
+                        if (error != null) { fallar(error); return; }
+                        if (perfil == null || perfil.getMetadata().isFromCache()
+                                || perfil.getMetadata().hasPendingWrites()) return;
+                        try {
+                            exigirSuperadmin(acceso.uid, acceso.email, perfil);
+                            consultar();
+                        } catch (IllegalArgumentException invalido) { fallar(invalido); }
+                    }));
+            // Los listeners pueden entregar únicamente caché cuando no hay red. Esta lectura
+            // resuelve el arranque o muestra un error de conexión en lugar de cargar sin fin.
+            db().collection("usuarios").get(Source.SERVER).addOnSuccessListener(cuentas -> {
+                if (!comprobarSesion() || datosServidor) return;
+                try {
+                    entregar(cuentas);
+                    consultar();
+                } catch (IllegalArgumentException invalido) { fallar(invalido); }
+            }).addOnFailureListener(error -> {
+                if (comprobarSesion() && !datosServidor) fallar(error);
+            });
+        }
+
+        private void consultar() {
+            if (consultando || !comprobarSesion()) return;
+            consultando = true;
+            agregar(db().collection("usuarios").addSnapshotListener(MetadataChanges.INCLUDE,
+                    (cuentas, error) -> {
+                        if (!comprobarSesion()) return;
+                        if (error != null) { fallar(error); return; }
+                        if (cuentas == null || cuentas.getMetadata().isFromCache()
+                                || cuentas.getMetadata().hasPendingWrites()) return;
+                        try {
+                            entregar(cuentas);
+                        } catch (IllegalArgumentException invalido) { fallar(invalido); }
+                    }));
+        }
+
+        private void entregar(QuerySnapshot cuentas) {
+            // La misma instantánea del directorio confirma al actor activo.
+            exigirAutor(acceso, cuentas);
+            List<User> usuarios = mapearUsuarios(cuentas);
+            if (comprobarSesion()) {
+                datosServidor = true;
+                callback.onExito(usuarios);
+            }
+        }
+
+        private void agregar(ListenerRegistration registro) {
+            if (cerrada) registro.remove();
+            else registros.add(registro);
+        }
+
+        private boolean comprobarSesion() {
+            if (cerrada) return false;
+            if (acceso.vigente()) return true;
+            cerrar();
+            return false;
+        }
+
+        private void fallar(Exception error) {
+            if (!comprobarSesion()) return;
+            boolean sinPermiso = error instanceof FirebaseFirestoreException
+                    && (((FirebaseFirestoreException) error).getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED
+                    || ((FirebaseFirestoreException) error).getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED);
+            if (error instanceof IllegalArgumentException || sinPermiso) cerrar();
+            callback.onError(mensaje(error));
+        }
+
+        @Override public void cerrar() {
+            if (cerrada) return;
+            cerrada = true;
+            for (ListenerRegistration registro : registros) registro.remove();
+            registros.clear();
+            if (authListener != null) {
+                FirebaseAuth.getInstance().removeAuthStateListener(authListener);
+                authListener = null;
+            }
+            if (sesionObserver != null) {
+                SessionManager.sesion().removeObserver(sesionObserver);
+                sesionObserver = null;
+            }
+        }
     }
 
     private static Task<QuerySnapshot> consultaAuditoria() {
@@ -453,7 +687,7 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
                 return "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
             }
         }
-        return "No pudimos completar la operación del hotel. Inténtalo de nuevo.";
+        return "No pudimos completar la operación administrativa. Inténtalo de nuevo.";
     }
 
     private static FirebaseFirestore db() {

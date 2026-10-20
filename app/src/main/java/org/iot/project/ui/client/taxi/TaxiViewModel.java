@@ -4,357 +4,422 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
+import org.iot.project.data.repository.TaxiRepository;
 import org.iot.project.models.Booking;
 import org.iot.project.models.BookingStatus;
 import org.iot.project.models.Hotel;
+import org.iot.project.models.Role;
 import org.iot.project.models.TaxiService;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
-/**
- * Estado del modulo de taxi (§35 a §39).
- *
- * <p>Expone <em>dos</em> estados y no uno porque son dos modulos distintos: el
- * servicio de taxi y las reservas. Si el primero se cae —RC-019 a RC-022 dan
- * por hecho que puede—, la pantalla lo dice y se acaba ahi; lo que no puede es
- * arrastrar consigo al selector de reservas del formulario, que depende de
- * otro repositorio y sigue vivo.
- *
- * <p>El servicio en curso y el historial salen de la <em>misma</em> consulta.
- * El historial devuelve todos los servicios del cliente, el activo incluido:
- * partirlo en dos llamadas daria dos fotografias distintas del mismo dato y
- * bastaria con que una llegara antes que la otra para que el servicio apareciera
- * a la vez arriba y en la lista de abajo.
- */
+/** Solicitud y seguimiento del taxi, conservando el borrador durante una recreación. */
 public class TaxiViewModel extends ViewModel {
 
-    /** Lo que el cliente tiene hoy en la pantalla de taxi. */
     public static final class Estado {
-
-        /** Servicio en curso, o {@code null} si no hay ninguno. */
-        @Nullable
-        public final TaxiService activo;
-
-        /** Servicios ya cerrados, del mas reciente al mas antiguo. */
-        @NonNull
-        public final List<TaxiService> anteriores;
+        @Nullable public final TaxiService activo;
+        @NonNull public final List<TaxiService> anteriores;
 
         Estado(@Nullable TaxiService activo, @NonNull List<TaxiService> anteriores) {
             this.activo = activo;
             this.anteriores = anteriores;
         }
 
-        public boolean tieneActivo() {
-            return activo != null;
-        }
+        public boolean tieneActivo() { return activo != null; }
     }
 
+    private final SavedStateHandle guardado;
     private final MutableLiveData<UiState<Estado>> contenido = new MutableLiveData<>();
     private final MutableLiveData<UiState<List<Booking>>> reservas = new MutableLiveData<>();
-
-    /**
-     * Hotel de la reserva elegida en el formulario.
-     *
-     * <p>Se publica aparte de {@link #reservas} porque se pide despues y solo
-     * para una: meterlo en la misma lista obligaria a recargar todas las
-     * reservas cada vez que el cliente cambia de seleccion.
-     */
     private final MutableLiveData<UiState<Hotel>> hotelElegido = new MutableLiveData<>();
+    private final MutableLiveData<UiState<TaxiService>> solicitud = new MutableLiveData<>();
+    private final List<Booking> todasLasReservas = new ArrayList<>();
+    private final Set<String> reservasConTaxi = new HashSet<>();
+    @Nullable private Booking reserva;
+    @Nullable private Hotel hotel;
+    @Nullable private String cuentaId;
+    @Nullable private TaxiRepository.Suscripcion suscripcion;
+    private long generacion;
+    private long consultaHotel;
+    private long consultaReservas;
+    private boolean visible;
+    private boolean enviando;
+    @Nullable private String servicioEnfocadoId;
+    private final Set<String> valorando = new HashSet<>();
 
-    @Nullable
-    private Booking reserva;
-    @Nullable
-    private Hotel hotel;
-
-    private boolean cargando;
-
-    public LiveData<UiState<Estado>> getContenido() {
-        return contenido;
+    public TaxiViewModel(@NonNull SavedStateHandle guardado) {
+        this.guardado = guardado;
     }
 
-    public LiveData<UiState<List<Booking>>> getReservas() {
-        return reservas;
-    }
-
-    public LiveData<UiState<Hotel>> getHotelElegido() {
-        return hotelElegido;
-    }
-
-    // ------------------------------------------------------------------
-    //  Carga
-    // ------------------------------------------------------------------
+    public LiveData<UiState<Estado>> getContenido() { return contenido; }
+    public LiveData<UiState<List<Booking>>> getReservas() { return reservas; }
+    public LiveData<UiState<Hotel>> getHotelElegido() { return hotelElegido; }
+    public LiveData<UiState<TaxiService>> getSolicitud() { return solicitud; }
+    @Nullable public Booking getReservaElegida() { return reserva; }
+    public boolean isEnviando() { return enviando; }
 
     public void cargar() {
-        if (cargando) {
+        String uid = SessionManager.getUsuarioId();
+        if (uid == null || SessionManager.getRolActivo() != Role.CLIENTE) {
+            detenerSeguimiento();
+            contenido.setValue(UiState.error("Inicia sesión como cliente para pedir un taxi."));
             return;
         }
-        // Al rotar la pantalla el ViewModel sobrevive y ya tiene los datos: la
-        // segunda carga solo serviria para volver a pasar por el esqueleto y
-        // dejar la pantalla en blanco un instante. El refresco de verdad lo
-        // hace onResume, que no borra lo que ya se ve.
-        UiState<Estado> actual = contenido.getValue();
-        if (actual != null && actual.isSuccess()) {
-            return;
+        if (!uid.equals(cuentaId)) {
+            boolean estabaVisible = visible;
+            detenerSeguimiento();
+            visible = estabaVisible;
+            cuentaId = uid;
+            generacion++;
+            consultaHotel++;
+            consultaReservas++;
+            reserva = null;
+            hotel = null;
+            enviando = false;
+            valorando.clear();
+            todasLasReservas.clear();
+            reservasConTaxi.clear();
+            contenido.setValue(UiState.loading());
+            hotelElegido.setValue(null);
+            solicitud.setValue(null);
+            if (!uid.equals(guardado.get("taxiUid"))) {
+                limpiarBorrador();
+                guardado.set("taxiUid", uid);
+            }
         }
-        cargando = true;
-        contenido.setValue(UiState.loading());
-        cargarServicios();
         cargarReservas();
     }
 
-    /**
-     * Refresco silencioso al volver a la pantalla.
-     *
-     * <p>Sin esqueleto: la pantalla ya esta pintada, y volver de otra pantalla
-     * con la lista en blanco un instante se lee como si se hubiera perdido algo.
-     */
-    public void refrescarEnSilencio() {
-        if (!cargando) {
-            cargando = true;
-            cargarServicios();
-            cargarReservas();
-        }
-    }
-
-    private void cargarServicios() {
-        ServiceLocator.taxis().historial(SessionManager.getUsuarioIdSeguro(),
+    public void iniciarSeguimiento() {
+        visible = true;
+        cargar();
+        if (!visible || cuentaId == null || suscripcion != null) return;
+        final String uid = cuentaId;
+        final long version = generacion;
+        suscripcion = ServiceLocator.taxis().escucharHistorial(uid,
                 new ResultCallback<List<TaxiService>>() {
-                    @Override
-                    public void onExito(@NonNull List<TaxiService> datos) {
-                        cargando = false;
-                        contenido.setValue(UiState.success(separar(datos)));
+                    @Override public void onExito(@NonNull List<TaxiService> datos) {
+                        if (!visible || !vigente(uid, version)) return;
+                        aplicarServicios(datos);
                     }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        cargando = false;
-                        contenido.setValue(UiState.error(mensaje));
-                    }
-                });
-    }
-
-    /**
-     * Reparte los servicios del cliente en el que esta en curso y los demas.
-     *
-     * <p>El corte lo marca el estado, no la fecha: un servicio pedido para la
-     * semana que viene sigue pendiente mientras no termine, y no es un recuerdo.
-     *
-     * <p>Cuando hay mas de uno sin cerrar —un traslado que ya va en camino y
-     * otro pedido para mas adelante—, el que se enseña arriba es el que mas
-     * avanzado va, no el de fecha mas lejana. La lista llega ordenada por fecha
-     * descendente, asi que quedarse con el primero dejaba al cliente mirando una
-     * solicitud todavia sin conductor mientras su taxi de ahora mismo caia al
-     * fondo, como si ya hubiera pasado.
-     */
-    @NonNull
-    private static Estado separar(@NonNull List<TaxiService> servicios) {
-        TaxiService activo = null;
-        for (TaxiService servicio : servicios) {
-            if (!servicio.getEstado().isActive()) {
-                continue;
-            }
-            if (activo == null
-                    || servicio.getEstado().ordinal() > activo.getEstado().ordinal()) {
-                activo = servicio;
-            }
-        }
-
-        List<TaxiService> anteriores = new ArrayList<>();
-        for (TaxiService servicio : servicios) {
-            if (servicio != activo) {
-                anteriores.add(servicio);
-            }
-        }
-        return new Estado(activo, anteriores);
-    }
-
-    /**
-     * Reservas sobre las que se puede pedir un traslado.
-     *
-     * <p>Una reserva cancelada no da derecho a nada, y una ya terminada no
-     * tiene sentido como origen de un traslado futuro. El resto si: el servicio
-     * puede ser gratuito (RF-083) o de pago, y esa diferencia la explica la
-     * propia tarjeta de la reserva.
-     */
-    private void cargarReservas() {
-        ServiceLocator.reservas().reservasDe(SessionManager.getUsuarioIdSeguro(),
-                new ResultCallback<List<Booking>>() {
-                    @Override
-                    public void onExito(@NonNull List<Booking> datos) {
-                        List<Booking> utiles = new ArrayList<>();
-                        for (Booking reserva : datos) {
-                            if (reserva.getEstado() != BookingStatus.CANCELADA) {
-                                utiles.add(reserva);
-                            }
+                    @Override public void onError(@NonNull String mensaje) {
+                        if (visible && vigente(uid, version)) {
+                            contenido.setValue(UiState.error(mensaje));
                         }
-                        reservas.setValue(utiles.isEmpty()
-                                ? UiState.<List<Booking>>empty()
-                                : UiState.success(utiles));
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        reservas.setValue(UiState.<List<Booking>>error(mensaje));
                     }
                 });
     }
 
-    // ------------------------------------------------------------------
-    //  Acciones
-    // ------------------------------------------------------------------
+    public void detenerSeguimiento() {
+        visible = false;
+        if (suscripcion != null) {
+            suscripcion.cerrar();
+            suscripcion = null;
+        }
+    }
 
-    /**
-     * El cliente eligio una reserva en el formulario.
-     *
-     * <p>Se pide el hotel ademas de guardar la reserva porque de el salen dos
-     * datos que el formulario no puede inventar: la direccion de recojo con la
-     * que se rellena el campo, y las coordenadas que el plano de seguimiento
-     * necesita. Sin hotel no hay punto de recojo, y el repositorio rechazaria
-     * la solicitud al confirmarla.
-     */
-    public void elegirReserva(@NonNull Booking elegida) {
-        reserva = elegida;
-        hotel = null;
-        hotelElegido.setValue(UiState.loading());
-        ServiceLocator.hoteles().obtener(elegida.getHotelId(), new ResultCallback<Hotel>() {
-            @Override
-            public void onExito(@NonNull Hotel dato) {
-                // Si mientras se cargaba el hotel el cliente eligio otra
-                // reserva, esta respuesta ya no describe lo que hay en pantalla.
-                if (reserva != elegida) {
-                    return;
+    public void refrescarEnSilencio() {
+        cargar();
+        if (suscripcion == null) iniciarSeguimiento();
+    }
+
+    private boolean vigente(String uid, long version) {
+        return version == generacion && Objects.equals(cuentaId, uid)
+                && uid.equals(SessionManager.getUsuarioId())
+                && SessionManager.getRolActivo() == Role.CLIENTE;
+    }
+
+    private void cargarReservas() {
+        if (cuentaId == null) return;
+        String uid = cuentaId;
+        long version = generacion;
+        long consulta = ++consultaReservas;
+        reservas.setValue(UiState.loading());
+        ServiceLocator.reservas().reservasDe(uid, new ResultCallback<List<Booking>>() {
+            @Override public void onExito(@NonNull List<Booking> datos) {
+                if (!vigente(uid, version) || consulta != consultaReservas) return;
+                todasLasReservas.clear();
+                for (Booking dato : datos) {
+                    if (elegible(dato)) todasLasReservas.add(dato);
                 }
-                hotel = dato;
-                hotelElegido.setValue(UiState.success(dato));
+                publicarReservas();
             }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
-                if (reserva != elegida) {
-                    return;
+            @Override public void onError(@NonNull String mensaje) {
+                if (vigente(uid, version) && consulta == consultaReservas) {
+                    reservas.setValue(UiState.error(mensaje));
                 }
-                hotelElegido.setValue(UiState.error(mensaje));
             }
         });
     }
 
-    /** El formulario esta listo para enviarse: hay reserva y sabemos donde recoger. */
-    public boolean puedeSolicitar() {
-        return reserva != null && hotel != null;
+    private static boolean elegible(Booking dato) {
+        BookingStatus estado = dato.getEstado();
+        return (estado == BookingStatus.CONFIRMADA || estado == BookingStatus.ACTIVA
+                || estado == BookingStatus.FINALIZADA)
+                && !dato.getFechaSalida().isBefore(LocalDate.now());
     }
 
+    private void aplicarServicios(List<TaxiService> datos) {
+        reservasConTaxi.clear();
+        for (TaxiService taxi : datos) reservasConTaxi.add(taxi.getBookingId());
+        contenido.setValue(UiState.success(separar(datos)));
+        String elegidaId = guardado.get("taxiReservaId");
+        if (elegidaId != null && reservasConTaxi.contains(elegidaId)
+                && (enviando || isFormularioAbierto())) {
+            for (TaxiService taxi : datos) {
+                if (elegidaId.equals(taxi.getBookingId())) {
+                    enviando = false;
+                    guardado.set("taxiFormulario", false);
+                    solicitud.setValue(UiState.success(taxi));
+                    break;
+                }
+            }
+        }
+        publicarReservas();
+    }
+
+    private void publicarReservas() {
+        List<Booking> utiles = new ArrayList<>();
+        for (Booking dato : todasLasReservas) {
+            if (!reservasConTaxi.contains(dato.getId())) utiles.add(dato);
+        }
+        String elegidaId = guardado.get("taxiReservaId");
+        Booking actualizada = null;
+        for (Booking dato : utiles) {
+            if (dato.getId().equals(elegidaId)) actualizada = dato;
+        }
+        if (actualizada != null) {
+            if (reserva == null || !reserva.getId().equals(actualizada.getId())) {
+                elegirReserva(actualizada);
+            } else reserva = actualizada;
+        } else if (!enviando) {
+            reserva = null;
+            hotel = null;
+            consultaHotel++;
+            hotelElegido.setValue(null);
+        }
+        reservas.setValue(utiles.isEmpty() ? UiState.empty() : UiState.success(utiles));
+    }
+
+    @NonNull private Estado separar(@NonNull List<TaxiService> datos) {
+        TaxiService activo = null;
+        for (TaxiService taxi : datos) {
+            if (!taxi.getEstado().isActive()) continue;
+            if (activo == null || taxi.getEstado().ordinal() > activo.getEstado().ordinal()
+                    || (taxi.getEstado() == activo.getEstado()
+                    && taxi.getFecha().atTime(taxi.getHora()).isBefore(
+                    activo.getFecha().atTime(activo.getHora())))) activo = taxi;
+        }
+        if (servicioEnfocadoId != null) {
+            for (TaxiService taxi : datos) {
+                if (servicioEnfocadoId.equals(taxi.getId()) && taxi.getEstado().isActive()) {
+                    activo = taxi;
+                    break;
+                }
+            }
+        }
+        List<TaxiService> anteriores = new ArrayList<>();
+        for (TaxiService taxi : datos) if (taxi != activo) anteriores.add(taxi);
+        return new Estado(activo, anteriores);
+    }
+
+    public void elegirReserva(@NonNull Booking elegida) {
+        if (enviando || cuentaId == null || !elegible(elegida)) return;
+        reserva = elegida;
+        hotel = null;
+        boolean misma = elegida.getId().equals(guardado.get("taxiReservaId"));
+        guardado.set("taxiReservaId", elegida.getId());
+        if (!misma) {
+            guardado.set("taxiBorradorId", UUID.randomUUID().toString());
+            guardado.set("taxiOrigen", "");
+            guardado.set("taxiPasajeros", 1);
+            guardado.set("taxiFecha", elegida.getFechaSalida().toEpochDay());
+            LocalTime sugerida = LocalTime.of(9, 0);
+            if (elegida.getFechaSalida().equals(LocalDate.now())
+                    && !sugerida.isAfter(LocalTime.now())) {
+                LocalDateTime siguiente = LocalDateTime.now().plusMinutes(15);
+                sugerida = siguiente.toLocalDate().equals(LocalDate.now())
+                        ? siguiente.toLocalTime().withSecond(0).withNano(0) : LocalTime.of(23, 59);
+            }
+            guardado.set("taxiHora", sugerida.toSecondOfDay());
+        }
+        String uid = cuentaId;
+        long version = generacion;
+        long consulta = ++consultaHotel;
+        hotelElegido.setValue(UiState.loading());
+        ServiceLocator.hoteles().obtenerDeReserva(elegida.getId(), new ResultCallback<Hotel>() {
+            @Override public void onExito(@NonNull Hotel dato) {
+                if (!vigente(uid, version) || consulta != consultaHotel) return;
+                hotel = dato;
+                if (getOrigen().isEmpty()) guardado.set("taxiOrigen", dato.getDireccion());
+                hotelElegido.setValue(UiState.success(dato));
+            }
+            @Override public void onError(@NonNull String mensaje) {
+                if (vigente(uid, version) && consulta == consultaHotel) {
+                    hotelElegido.setValue(UiState.error(mensaje));
+                }
+            }
+        });
+    }
+
+    public boolean puedeSolicitar() { return reserva != null && hotel != null && !enviando; }
     public boolean esGratuito() {
         return reserva != null && hotel != null
                 && reserva.calificaParaTaxiGratuito(hotel.getMontoMinimoTaxi());
     }
 
-    /**
-     * Arma la solicitud con los datos del formulario.
-     *
-     * <p>El armado vive aqui y no en la pantalla porque lo que hace valida a
-     * una solicitud —el cliente, la reserva, el punto de recojo— no lo elige el
-     * usuario: lo elige la sesion y la reserva que selecciono. Dejar esos campos
-     * en manos del fragment seria repartir la regla por dos sitios.
-     */
     public void solicitar(@NonNull String origen, @NonNull String destino,
                           @NonNull LocalDate fecha, @NonNull LocalTime hora,
-                          int pasajeros, boolean idaYVuelta,
-                          @NonNull ResultCallback<TaxiService> callback) {
-        if (reserva == null || hotel == null) {
-            callback.onError("Elige la reserva del traslado.");
+                          int pasajeros, boolean idaYVuelta) {
+        if (enviando) return;
+        if (!puedeSolicitar() || cuentaId == null) {
+            solicitud.setValue(UiState.error("Elige una reserva y espera a que cargue su hotel."));
             return;
         }
-
-        TaxiService solicitud = new TaxiService("nuevo", "", reserva.getId(),
-                SessionManager.getUsuarioIdSeguro());
-        solicitud.withRuta(origen.trim(), destino.trim())
+        if (origen.trim().isEmpty() || destino.trim().isEmpty()
+                || origen.trim().length() > 300 || destino.trim().length() > 300) {
+            solicitud.setValue(UiState.error("Indica el recojo y el aeropuerto de destino (máximo 300 caracteres)."));
+            return;
+        }
+        if (fecha.isBefore(reserva.getFechaEntrada()) || fecha.isAfter(reserva.getFechaSalida())
+                || fecha.atTime(hora).isBefore(LocalDateTime.now())) {
+            solicitud.setValue(UiState.error("Elige una fecha y hora futuras dentro de las fechas de tu reserva, incluido el día de salida."));
+            return;
+        }
+        if (pasajeros < 1 || pasajeros > Math.min(6, reserva.getNumHuespedes())) {
+            solicitud.setValue(UiState.error("Los pasajeros no pueden superar a los huéspedes de la reserva ni las seis plazas."));
+            return;
+        }
+        guardarFormulario(origen, destino, fecha, hora, pasajeros, idaYVuelta);
+        String borradorId = guardado.get("taxiBorradorId");
+        if (borradorId == null) {
+            borradorId = UUID.randomUUID().toString();
+            guardado.set("taxiBorradorId", borradorId);
+        }
+        TaxiService borrador = new TaxiService(borradorId, "", reserva.getId(), cuentaId)
+                .withRuta(origen.trim(), destino.trim())
                 .withRecojo(hotel.getLatitud(), hotel.getLongitud())
-                .withProgramacion(fecha, hora, idaYVuelta)
-                .withPasajeros(pasajeros)
+                .withProgramacion(fecha, hora, idaYVuelta).withPasajeros(pasajeros)
                 .withPrecio(esGratuito() ? 0d : TaxiService.TARIFA_AEROPUERTO);
+        String uid = cuentaId;
+        long version = generacion;
+        enviando = true;
+        solicitud.setValue(UiState.loading());
+        ServiceLocator.taxis().solicitar(borrador, new ResultCallback<TaxiService>() {
+            @Override public void onExito(@NonNull TaxiService dato) {
+                if (!vigente(uid, version)) return;
+                enviando = false;
+                guardado.set("taxiFormulario", false);
+                publicarCon(dato);
+                solicitud.setValue(UiState.success(dato));
+            }
+            @Override public void onError(@NonNull String mensaje) {
+                if (!vigente(uid, version)) return;
+                enviando = false;
+                solicitud.setValue(UiState.error(mensaje));
+            }
+        });
+    }
 
-        ServiceLocator.taxis().solicitar(solicitud, new ResultCallback<TaxiService>() {
-            @Override
-            public void onExito(@NonNull TaxiService dato) {
-                // El servicio recien pedido ya es el estado vigente, asi que se
-                // pinta sin volver a preguntar: una segunda consulta dejaria al
-                // cliente mirando el formulario un momento mas, y el formulario
-                // ya no tiene nada que hacer.
+    public void valorar(@NonNull String taxiId, float rating,
+                        @NonNull ResultCallback<TaxiService> callback) {
+        if (cuentaId == null) {
+            callback.onError("Inicia sesión para valorar el traslado.");
+            return;
+        }
+        if (!valorando.add(taxiId)) {
+            callback.onError("La valoración se está guardando.");
+            return;
+        }
+        String uid = cuentaId;
+        long version = generacion;
+        ServiceLocator.taxis().calificar(taxiId, rating, new ResultCallback<TaxiService>() {
+            @Override public void onExito(@NonNull TaxiService dato) {
+                if (!vigente(uid, version)) return;
+                valorando.remove(taxiId);
                 publicarCon(dato);
                 callback.onExito(dato);
             }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
+            @Override public void onError(@NonNull String mensaje) {
+                if (!vigente(uid, version)) return;
+                valorando.remove(taxiId);
                 callback.onError(mensaje);
             }
         });
     }
 
-    /** RF-105: la nota del cliente sobre un traslado ya terminado. */
-    public void valorar(@NonNull String taxiId, float rating,
-                        @NonNull ResultCallback<TaxiService> callback) {
-        ServiceLocator.taxis().calificar(taxiId, rating, new ResultCallback<TaxiService>() {
-            @Override
-            public void onExito(@NonNull TaxiService dato) {
-                // El historial se rehace con el servicio ya valorado para que la
-                // tarjeta deje de ofrecer "Valorar": si no, el cliente volveria a
-                // pulsarlo y el repositorio lo rechazaria por repetido.
-                reemplazar(dato);
-                callback.onExito(dato);
-            }
-
-            @Override
-            public void onError(@NonNull String mensaje) {
-                callback.onError(mensaje);
-            }
-        });
-    }
-
-    /** Cambia un servicio del estado actual por su version nueva. */
-    private void reemplazar(@NonNull TaxiService actualizado) {
-        UiState<Estado> actual = contenido.getValue();
-        if (actual == null || actual.getData() == null) {
-            return;
-        }
-        Estado estado = actual.getData();
-        List<TaxiService> todos = new ArrayList<>();
-        if (estado.activo != null) {
-            todos.add(estado.activo.getId().equals(actualizado.getId())
-                    ? actualizado : estado.activo);
-        }
-        for (TaxiService anterior : estado.anteriores) {
-            todos.add(anterior.getId().equals(actualizado.getId()) ? actualizado : anterior);
-        }
-        contenido.setValue(UiState.success(separar(todos)));
-    }
-
-    /** Rehace el reparto añadiendo un servicio sin perder lo que ya habia. */
-    private void publicarCon(@NonNull TaxiService nuevo) {
+    private void publicarCon(TaxiService nuevo) {
         List<TaxiService> todos = new ArrayList<>();
         UiState<Estado> actual = contenido.getValue();
         if (actual != null && actual.getData() != null) {
-            Estado estado = actual.getData();
-            if (estado.activo != null) {
-                todos.add(estado.activo);
+            Estado datos = actual.getData();
+            if (datos.activo != null && !datos.activo.getId().equals(nuevo.getId())) todos.add(datos.activo);
+            for (TaxiService previo : datos.anteriores) {
+                if (!previo.getId().equals(nuevo.getId())) todos.add(previo);
             }
-            todos.addAll(estado.anteriores);
         }
         todos.add(nuevo);
-        contenido.setValue(UiState.success(separar(todos)));
+        aplicarServicios(todos);
+    }
+
+    public void guardarFormulario(String origen, String destino, LocalDate fecha, LocalTime hora,
+                                   int pasajeros, boolean idaYVuelta) {
+        if (enviando) return;
+        guardado.set("taxiOrigen", origen);
+        guardado.set("taxiDestino", destino);
+        guardado.set("taxiFecha", fecha.toEpochDay());
+        guardado.set("taxiHora", hora.toSecondOfDay());
+        guardado.set("taxiPasajeros", pasajeros);
+        guardado.set("taxiVuelta", idaYVuelta);
+    }
+
+    public String getOrigen() { String valor = guardado.get("taxiOrigen"); return valor == null ? "" : valor; }
+    public String getDestino() { String valor = guardado.get("taxiDestino"); return valor == null ? "" : valor; }
+    public LocalDate getFecha() { Long valor = guardado.get("taxiFecha"); return valor == null ? LocalDate.now().plusDays(1) : LocalDate.ofEpochDay(valor); }
+    public LocalTime getHora() { Integer valor = guardado.get("taxiHora"); return valor == null ? LocalTime.of(9, 0) : LocalTime.ofSecondOfDay(valor); }
+    public int getPasajeros() { Integer valor = guardado.get("taxiPasajeros"); return valor == null ? 1 : valor; }
+    public boolean isIdaYVuelta() { return Boolean.TRUE.equals(guardado.get("taxiVuelta")); }
+    public boolean isFormularioAbierto() { return Boolean.TRUE.equals(guardado.get("taxiFormulario")); }
+    public void setFormularioAbierto(boolean abierto) { if (!enviando) guardado.set("taxiFormulario", abierto); }
+    public void consumirSolicitud() { if (!enviando) solicitud.setValue(null); }
+
+    public void enfocarServicio(@NonNull String taxiId) {
+        servicioEnfocadoId = taxiId;
+        UiState<Estado> actual = contenido.getValue();
+        if (actual == null || actual.getData() == null) return;
+        List<TaxiService> datos = new ArrayList<>(actual.getData().anteriores);
+        if (actual.getData().activo != null) datos.add(actual.getData().activo);
+        contenido.setValue(UiState.success(separar(datos)));
+    }
+
+    private void limpiarBorrador() {
+        for (String clave : new String[]{"taxiReservaId", "taxiBorradorId", "taxiOrigen", "taxiDestino",
+                "taxiFecha", "taxiHora", "taxiPasajeros", "taxiVuelta", "taxiFormulario"}) guardado.remove(clave);
     }
 
     public void reintentar() {
-        cargando = false;
-        cargar();
+        detenerSeguimiento();
+        iniciarSeguimiento();
+    }
+
+    @Override protected void onCleared() {
+        detenerSeguimiento();
+        generacion++;
+        super.onCleared();
     }
 }

@@ -75,6 +75,12 @@ public class BookingDetailFragment extends Fragment {
         viewModel.cargar(bookingId);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.recargar();
+    }
+
     // ------------------------------------------------------------------ Pinta
 
     private void pintar(@NonNull UiState<Booking> estado) {
@@ -116,11 +122,17 @@ public class BookingDetailFragment extends Fragment {
         pintarAcciones(reserva);
     }
 
-    /** El nombre del cuarto vive en el hotel; la reserva solo guarda el id. */
+    /** Mantiene el tipo reservado aunque el hotel cambie después su inventario. */
     private String nombreHabitacion(@NonNull Booking reserva) {
+        if (!reserva.getHabitacionTipo().isEmpty()) {
+            return reserva.getHabitacionTipo()
+                    + (reserva.getHabitacionNumero().isEmpty()
+                    ? "" : " · " + reserva.getHabitacionNumero());
+        }
         org.iot.project.models.Hotel hotel =
                 ServiceLocator.hoteles().hotel(reserva.getHotelId());
         if (hotel == null) {
+            if (!reserva.getHotelNombre().isEmpty()) return reserva.getHotelNombre();
             return getString(R.string.reserva_hotel_desconocido);
         }
         for (Room room : hotel.getHabitaciones()) {
@@ -185,6 +197,9 @@ public class BookingDetailFragment extends Fragment {
         principal.setVisibility(View.GONE);
         secundaria.setVisibility(View.GONE);
         cancelar.setVisibility(View.GONE);
+        principal.setEnabled(!viewModel.estaOcupado());
+        secundaria.setEnabled(!viewModel.estaOcupado());
+        cancelar.setEnabled(!viewModel.estaOcupado());
 
         switch (reserva.getEstado()) {
             case PENDIENTE:
@@ -224,6 +239,7 @@ public class BookingDetailFragment extends Fragment {
     }
 
     private void abrir(int destino, @NonNull Booking reserva) {
+        if (viewModel.estaOcupado()) return;
         Bundle argumentos = new Bundle();
         argumentos.putString("bookingId", reserva.getId());
         Navigation.findNavController(requireView()).navigate(destino, argumentos);
@@ -239,6 +255,7 @@ public class BookingDetailFragment extends Fragment {
      * un toque accidental.
      */
     private void confirmarCancelacion(@NonNull Booking reserva) {
+        if (viewModel.estaOcupado()) return;
         new AlertDialog.Builder(requireContext())
                 .setTitle(R.string.confirmar_cancelar_titulo)
                 .setMessage(R.string.confirmar_cancelar_mensaje)
@@ -249,6 +266,10 @@ public class BookingDetailFragment extends Fragment {
     }
 
     private void pintarOperacion(@Nullable UiState<Booking> estado) {
+        boolean ocupado = viewModel.estaOcupado();
+        binding.accionPrincipal.setEnabled(!ocupado);
+        binding.accionSecundaria.setEnabled(!ocupado);
+        binding.accionCancelar.setEnabled(!ocupado);
         if (estado == null || estado.isLoading()) {
             return;
         }

@@ -8,11 +8,15 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.SavedStateHandle;
+import androidx.lifecycle.ViewModel;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import org.iot.project.R;
 import org.iot.project.core.ResultCallback;
+import org.iot.project.core.UiState;
 import org.iot.project.databinding.SheetValorarTaxiBinding;
 import org.iot.project.models.TaxiService;
 
@@ -35,6 +39,37 @@ public class ValorarTaxiSheet extends BottomSheetDialogFragment {
     private static final String ARG_TAXI = "taxiId";
 
     private SheetValorarTaxiBinding binding;
+    private ValoracionViewModel formulario;
+
+    /** Conserva el envío sin retener vistas de la hoja. */
+    public static class ValoracionViewModel extends ViewModel {
+        final SavedStateHandle guardado;
+        final MutableLiveData<UiState<TaxiService>> envio = new MutableLiveData<>();
+        boolean enviando;
+
+        public ValoracionViewModel(@NonNull SavedStateHandle guardado) { this.guardado = guardado; }
+
+        float getNota() {
+            Float nota = guardado.get("notaTaxi");
+            return nota == null ? 10f : nota;
+        }
+
+        void enviar(TaxiViewModel taxis, String taxiId) {
+            if (enviando) return;
+            enviando = true;
+            envio.setValue(UiState.loading());
+            taxis.valorar(taxiId, getNota(), new ResultCallback<TaxiService>() {
+                @Override public void onExito(@NonNull TaxiService dato) {
+                    enviando = false;
+                    envio.setValue(UiState.success(dato));
+                }
+                @Override public void onError(@NonNull String mensaje) {
+                    enviando = false;
+                    envio.setValue(UiState.error(mensaje));
+                }
+            });
+        }
+    }
 
     public static ValorarTaxiSheet newInstance(@NonNull String taxiId) {
         ValorarTaxiSheet hoja = new ValorarTaxiSheet();
@@ -60,14 +95,27 @@ public class ValorarTaxiSheet extends BottomSheetDialogFragment {
         // cambia el estado del servicio, y ese estado lo pinta el historial.
         TaxiViewModel viewModel = new ViewModelProvider(requireParentFragment())
                 .get(TaxiViewModel.class);
+        formulario = new ViewModelProvider(this).get(ValoracionViewModel.class);
 
         binding.valorarTaxiCerrar.setOnClickListener(v -> dismiss());
 
-        binding.valorarTaxiSlider.addOnChangeListener((deslizador, valor, delUsuario) ->
-                binding.valorarTaxiValor.setValorEntero(Math.round(valor)));
+        binding.valorarTaxiSlider.setValue(formulario.getNota());
+        binding.valorarTaxiSlider.addOnChangeListener((deslizador, valor, delUsuario) -> {
+            formulario.guardado.set("notaTaxi", valor);
+            binding.valorarTaxiValor.setValorEntero(Math.round(valor));
+        });
         binding.valorarTaxiValor.setValorEntero(Math.round(binding.valorarTaxiSlider.getValue()));
 
         binding.valorarTaxiEnviar.setOnClickListener(v -> enviar(viewModel));
+        formulario.envio.observe(getViewLifecycleOwner(), estado -> {
+            binding.valorarTaxiEnviar.setEnabled(!estado.isLoading());
+            binding.valorarTaxiSlider.setEnabled(!estado.isLoading());
+            binding.valorarTaxiCerrar.setEnabled(!estado.isLoading());
+            setCancelable(!estado.isLoading());
+            binding.valorarTaxiError.setVisibility(estado.isError() ? View.VISIBLE : View.GONE);
+            if (estado.isError()) binding.valorarTaxiError.setText(estado.getMessage());
+            if (estado.isSuccess()) dismiss();
+        });
     }
 
     private void enviar(@NonNull TaxiViewModel viewModel) {
@@ -77,23 +125,7 @@ public class ValorarTaxiSheet extends BottomSheetDialogFragment {
             return;
         }
 
-        binding.valorarTaxiEnviar.setEnabled(false);
-        binding.valorarTaxiError.setVisibility(View.GONE);
-
-        viewModel.valorar(taxiId, binding.valorarTaxiSlider.getValue(),
-                new ResultCallback<TaxiService>() {
-                    @Override
-                    public void onExito(@NonNull TaxiService dato) {
-                        dismiss();
-                    }
-
-                    @Override
-                    public void onError(@NonNull String mensaje) {
-                        binding.valorarTaxiEnviar.setEnabled(true);
-                        binding.valorarTaxiError.setText(mensaje);
-                        binding.valorarTaxiError.setVisibility(View.VISIBLE);
-                    }
-                });
+        formulario.enviar(viewModel, taxiId);
     }
 
     @Override

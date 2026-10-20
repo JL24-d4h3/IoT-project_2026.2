@@ -7,9 +7,11 @@ import java.util.List;
 /**
  * Usuario del sistema en cualquiera de los cuatro roles (§38).
  *
- * <p>Un usuario deshabilitado no puede acceder a las funcionalidades
- * protegidas (RF-009). Los conductores no son usuarios: se habilitan aparte
- * (RF-077, RT-014) y su estado vive en {@link Driver}.
+ * <p>Una cuenta deshabilitada no puede acceder a las funcionalidades
+ * protegidas (RF-009). El directorio del superadministrador representa también
+ * las cuentas de acceso de los conductores; su perfil operativo y la
+ * habilitación del servicio de taxi viven aparte en {@link Driver}. Esa fila
+ * administrativa no convierte al conductor en un cliente o administrador.
  */
 public class User {
 

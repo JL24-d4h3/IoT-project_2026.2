@@ -28,7 +28,26 @@ public interface UserRepository {
     void notificaciones(@NonNull String usuarioId,
                         @NonNull ResultCallback<List<AppNotification>> callback);
 
+    /** Una suscripción debe retirarse cuando su pantalla deja de estar visible. */
+    interface Suscripcion {
+        void cancelar();
+    }
+
+    @NonNull
+    default Suscripcion observarNotificaciones(@NonNull String usuarioId,
+                         @NonNull ResultCallback<List<AppNotification>> callback) {
+        notificaciones(usuarioId, callback);
+        return () -> { };
+    }
+
     void marcarNotificacionesLeidas(@NonNull String usuarioId);
+
+    /** Marca exclusivamente los documentos que la pantalla ya recibió. */
+    default void marcarNotificacionesLeidas(@NonNull String usuarioId,
+                         @NonNull List<String> notificacionIds,
+                         @NonNull ResultCallback<Boolean> callback) {
+        callback.onError("No pudimos marcar las notificaciones como leídas.");
+    }
 
     /**
      * Conversacion de una reserva. RF-065: el chat solo existe con reserva

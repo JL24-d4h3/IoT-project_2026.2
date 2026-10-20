@@ -45,22 +45,28 @@ public interface BookingRepository {
     /** Registra el pago simulado y deja la reserva confirmada (RF-038, RF-039). */
     void pagar(@NonNull String bookingId, @NonNull Payment pago, @NonNull ResultCallback<Booking> callback);
 
+    /** El administrador registra la llegada durante el período contratado. */
+    default void iniciarEstadia(@NonNull String bookingId, @NonNull ResultCallback<Booking> callback) {
+        callback.onError("El registro de llegada no está disponible en este repositorio.");
+    }
+
     /** Checkout: cierra la estadia (RF-045). Solo desde una reserva activa. */
     void finalizar(@NonNull String bookingId, @NonNull ResultCallback<Booking> callback);
 
     /**
-     * Cobra el total a la tarjeta que el cliente registro al reservar (RF-049).
-     *
-     * <p>Es simulado (RF-050) y solo tiene sentido despues del checkout: el
-     * cliente cierra la estadia por su cuenta (RF-045) y es entonces cuando el
-     * hotel entra a cobrar. Falla si la reserva no esta finalizada, si no hay
-     * tarjeta registrada, o si ya se cobro —el cliente pudo pagar en recepcion
-     * y no hay nada que cobrar.
+     * Registra un cobro simulado en recepción después del checkout.
+     * No procesa tarjetas ni representa una transacción bancaria.
      */
     void cobrar(@NonNull String bookingId, @NonNull ResultCallback<Booking> callback);
 
     /** Cargo adicional durante la estadia (RF-052). Exige monto y motivo. */
     void agregarCargo(@NonNull String bookingId, @NonNull Charge cargo, @NonNull ResultCallback<Booking> callback);
+
+    /** Reutiliza operacionId al reintentar un cargo para no duplicarlo. */
+    default void agregarCargo(@NonNull String bookingId, @NonNull String operacionId,
+                              @NonNull Charge cargo, @NonNull ResultCallback<Booking> callback) {
+        agregarCargo(bookingId, cargo, callback);
+    }
 
     /** Valoracion de una reserva finalizada (§22). Escala 1 a 10. */
     void valorar(@NonNull String bookingId, float rating, @NonNull String comentario,

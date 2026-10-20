@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -40,10 +41,17 @@ public class BookingAdapter extends ListAdapter<Booking, BookingAdapter.BookingV
             };
 
     private final OnBookingClickListener oyente;
+    @Nullable private final OnBookingClickListener chat;
 
     public BookingAdapter(@NonNull OnBookingClickListener oyente) {
+        this(oyente, null);
+    }
+
+    public BookingAdapter(@NonNull OnBookingClickListener oyente,
+                          @Nullable OnBookingClickListener chat) {
         super(COMPARADOR);
         this.oyente = oyente;
+        this.chat = chat;
     }
 
     @NonNull
@@ -55,7 +63,7 @@ public class BookingAdapter extends ListAdapter<Booking, BookingAdapter.BookingV
 
     @Override
     public void onBindViewHolder(@NonNull BookingViewHolder holder, int posicion) {
-        holder.bind(getItem(posicion), oyente);
+        holder.bind(getItem(posicion), oyente, chat);
     }
 
     static class BookingViewHolder extends RecyclerView.ViewHolder {
@@ -67,9 +75,12 @@ public class BookingAdapter extends ListAdapter<Booking, BookingAdapter.BookingV
             this.binding = binding;
         }
 
-        void bind(@NonNull Booking reserva, @NonNull OnBookingClickListener oyente) {
+        void bind(@NonNull Booking reserva, @NonNull OnBookingClickListener oyente,
+                  @Nullable OnBookingClickListener chat) {
             binding.bookingCard.bind(reserva);
             binding.bookingCard.setOnClickListener(v -> oyente.onAbrir(reserva));
+            binding.bookingCard.mostrarChat(chat != null && reserva.permiteChat()
+                    ? v -> chat.onAbrir(reserva) : null);
         }
     }
 }

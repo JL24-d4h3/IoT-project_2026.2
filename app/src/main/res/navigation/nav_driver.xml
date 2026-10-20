@@ -2,10 +2,9 @@
 <!--
     Grafo del rol Conductor (§46).
 
-    El conductor no entra con un User sino con un Driver, que es otro modelo
-    (ver SessionManager). Su unica pantalla es la portada: libre enseña las
-    solicitudes que puede aceptar y ocupada enseña el viaje en curso, y cual de
-    las dos caras se ve lo decide el servicio activo, no la navegacion.
+    La identidad y el rol proceden de Firebase Authentication y de su perfil
+    usuarios/{UID}. La portada muestra la cuenta autenticada mientras se
+    conecta el sistema de taxistas.
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

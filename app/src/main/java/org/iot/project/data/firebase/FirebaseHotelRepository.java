@@ -110,6 +110,53 @@ public final class FirebaseHotelRepository implements HotelRepository {
                 });
     }
 
+    @Override
+    public void obtenerDeReserva(@NonNull String bookingId, @NonNull ResultCallback<Hotel> callback) {
+        String uid = identidad(callback);
+        if (uid == null) return;
+        if (SessionManager.getRolActivo() != Role.CLIENTE) {
+            callback.onError("Inicia sesión como cliente para consultar tu alojamiento.");
+            return;
+        }
+        try {
+            BookingFirebase.exigirId(bookingId);
+        } catch (IllegalArgumentException error) {
+            callback.onError(error.getMessage());
+            return;
+        }
+        long version = cacheVersion;
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.runTransaction(transaccion -> {
+            if (PerfilFirebase.usuario(uid, "", transaccion.get(db.collection("usuarios")
+                    .document(uid)).getData()).getRol() != Role.CLIENTE) {
+                throw new IllegalArgumentException("Inicia sesión como cliente para consultar tu alojamiento.");
+            }
+            DocumentSnapshot documento = transaccion.get(db.collection("reservas").document(bookingId));
+            org.iot.project.models.Booking reserva = BookingFirebase.desde(documento.getId(), documento.getData());
+            if (!uid.equals(reserva.getClienteId())) {
+                throw new IllegalArgumentException("Esta reserva no pertenece a tu cuenta.");
+            }
+            DocumentSnapshot ficha = transaccion.get(db.collection("hoteles").document(reserva.getHotelId()));
+            return HotelFirebase.desde(ficha.getId(), ficha.getData());
+        }).addOnSuccessListener(hotel -> {
+            if (vigente(uid, version, callback)) {
+                // Esta ficha solo sirve a la reserva: no vuelve a publicar el hotel en el catálogo.
+                callback.onExito(hotel);
+            }
+        }).addOnFailureListener(error -> {
+            if (!vigente(uid, version, callback)) return;
+            Throwable causa = error;
+            while (causa != null) {
+                if (causa instanceof IllegalArgumentException && causa.getMessage() != null) {
+                    callback.onError(causa.getMessage());
+                    return;
+                }
+                causa = causa.getCause();
+            }
+            callback.onError(mensaje(error));
+        });
+    }
+
     /** El filtro de publicado forma parte de la consulta autorizada por Rules. */
     private void publicados(@NonNull ResultCallback<List<Hotel>> callback) {
         String uid = identidad(callback);
@@ -218,14 +265,7 @@ public final class FirebaseHotelRepository implements HotelRepository {
         }
         obtener(hotelId, new ResultCallback<Hotel>() {
             @Override public void onExito(@NonNull Hotel hotel) {
-                // Inventario habilitado. El calendario de reservas se conecta
-                // en su modulo; no se consulta ninguna reserva simulada.
-                List<Room> habitaciones = new ArrayList<>();
-                for (Room habitacion : hotel.getHabitaciones()) {
-                    if (habitacion.isDisponible()) habitaciones.add(habitacion);
-                }
-                habitaciones.sort(Comparator.comparingDouble(Room::getPrecioNoche));
-                callback.onExito(habitaciones);
+                CalendarioReservasFirebase.disponibles(hotel, entrada, salida, callback);
             }
             @Override public void onError(@NonNull String error) { callback.onError(error); }
         });

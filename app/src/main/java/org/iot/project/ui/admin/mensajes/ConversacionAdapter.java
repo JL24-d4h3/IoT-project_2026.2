@@ -16,6 +16,7 @@ import org.iot.project.models.Message;
 import org.iot.project.utils.DateFormatter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Bandeja de mensajes del hotel (§44, RF-064, RF-068).
@@ -47,16 +48,27 @@ public class ConversacionAdapter
                 @Override
                 public boolean areContentsTheSame(@NonNull ConversacionDeHotel anterior,
                                                   @NonNull ConversacionDeHotel nueva) {
-                    // De una conversación ya abierta solo cambian sus mensajes:
-                    // se añaden por el final y lo leído solo pasa de falso a
-                    // verdadero. Cuántos hay y cuántos faltan por leer cubre las
-                    // dos cosas, y son valores copiados al cruzar la bandeja y
-                    // no lecturas del objeto vivo: es lo que permite que dos
-                    // cruces de la misma conversación se distingan.
                     return anterior.getNumMensajes() == nueva.getNumMensajes()
-                            && anterior.getSinLeer() == nueva.getSinLeer();
+                            && anterior.getSinLeer() == nueva.getSinLeer()
+                            && anterior.getEstadia().getClienteNombre("").equals(
+                                    nueva.getEstadia().getClienteNombre(""))
+                            && anterior.getEstadia().getHabitacionNumero().equals(
+                                    nueva.getEstadia().getHabitacionNumero())
+                            && anterior.getEstadia().getReserva().getCodigo().equals(
+                                    nueva.getEstadia().getReserva().getCodigo())
+                            && mismoUltimo(anterior.getUltimoMensaje(), nueva.getUltimoMensaje());
                 }
             };
+
+    private static boolean mismoUltimo(Message anterior, Message nuevo) {
+        if (anterior == nuevo) return true;
+        return anterior != null && nuevo != null
+                && Objects.equals(anterior.getId(), nuevo.getId())
+                && Objects.equals(anterior.getTexto(), nuevo.getTexto())
+                && Objects.equals(anterior.getTimestamp(), nuevo.getTimestamp())
+                && anterior.getAutor() == nuevo.getAutor()
+                && anterior.isLeido() == nuevo.isLeido();
+    }
 
     @NonNull
     private final AlAbrir oyente;

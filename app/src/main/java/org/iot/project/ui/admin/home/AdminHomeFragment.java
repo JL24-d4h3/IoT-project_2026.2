@@ -18,19 +18,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import org.iot.project.R;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentAdminHomeBinding;
-import org.iot.project.models.ConversacionDeHotel;
 import org.iot.project.models.Hotel;
+import org.iot.project.models.ConversacionDeHotel;
 import org.iot.project.models.IngresoPorServicio;
 import org.iot.project.models.ReservaDeHotel;
 import org.iot.project.models.ResumenHotel;
-import org.iot.project.ui.admin.mensajes.ConversacionAdapter;
 import org.iot.project.ui.components.IngresoListView;
+import org.iot.project.ui.admin.mensajes.ConversacionAdapter;
 import org.iot.project.utils.AvisoDePublicacion;
 import org.iot.project.utils.InsetUtils;
 import org.iot.project.utils.PriceFormatter;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Portada del administrador de hotel (§43).
@@ -85,26 +85,28 @@ public class AdminHomeFragment extends Fragment {
         estadias = new EstadiaAdapter(this::abrirReserva);
         binding.adminEstadias.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.adminEstadias.setAdapter(estadias);
-
         mensajes = new ConversacionAdapter(this::abrirChat);
         binding.adminHomeMensajes.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.adminHomeMensajes.setAdapter(mensajes);
+        binding.adminHomeVerMensajes.setOnClickListener(v -> irA(R.id.adminMensajesFragment));
 
         atarAccionesRapidas();
 
         viewModel = new ViewModelProvider(this).get(AdminHomeViewModel.class);
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
+        viewModel.getMensajes().observe(getViewLifecycleOwner(), this::pintarMensajes);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         viewModel.cargar();
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        // La primera vez no hace nada —la carga con esqueleto acaba de salir de
-        // onViewCreated— y a partir de ahí refresca el tablero sin borrarlo: al
-        // volver de una conversación, sus mensajes ya están leídos y el contador
-        // de esa fila tiene que apagarse.
-        viewModel.refrescarEnSilencio();
+    public void onStop() {
+        viewModel.suspender();
+        super.onStop();
     }
 
     /**
@@ -191,7 +193,6 @@ public class AdminHomeFragment extends Fragment {
         estadias.submitList(resumen.getEstadias());
 
         pintarIngresos(resumen.getIngresos());
-        pintarMensajes(contenido);
     }
 
     /**
@@ -235,40 +236,40 @@ public class AdminHomeFragment extends Fragment {
         binding.adminHomeIngresosVacio.setVisibility(hay ? View.GONE : View.VISIBLE);
     }
 
-    private void pintarMensajes(@NonNull AdminHomeViewModel.Contenido contenido) {
-        boolean hay = contenido.hayMensajes();
-        binding.adminHomeMensajes.setVisibility(hay ? View.VISIBLE : View.GONE);
-        binding.adminHomeMensajesNota.setVisibility(hay ? View.VISIBLE : View.GONE);
-        binding.adminHomeMensajesVacio.setVisibility(hay ? View.GONE : View.VISIBLE);
-
-        // "Ver todos" solo cuando hay más de los que caben: con tres o menos, la
-        // bandeja enseñaría exactamente las mismas filas que ya están aquí, y el
-        // acceso rápido de Mensajes lleva allí sin prometer nada de más.
-        binding.adminHomeVerMensajes.setVisibility(
-                contenido.hayMasConversaciones() ? View.VISIBLE : View.GONE);
-
-        if (!hay) {
+    private void pintarMensajes(@NonNull UiState<List<ConversacionDeHotel>> estado) {
+        binding.adminHomeMensajes.setVisibility(View.GONE);
+        binding.adminHomeMensajesNota.setVisibility(View.GONE);
+        binding.adminHomeVerMensajes.setVisibility(View.GONE);
+        binding.adminHomeMensajesVacio.setVisibility(View.VISIBLE);
+        binding.adminHomeMensajesVacio.setOnClickListener(null);
+        binding.adminHomeMensajesVacio.setClickable(false);
+        binding.adminHomeMensajesVacio.setFocusable(false);
+        if (estado.isLoading()) {
+            binding.adminHomeMensajesVacio.setText(R.string.chat_panel_cargando);
+            return;
+        }
+        if (estado.isError()) {
+            binding.adminHomeMensajesVacio.setText(getString(R.string.chat_panel_error, estado.getMessage()));
+            binding.adminHomeMensajesVacio.setOnClickListener(v -> viewModel.reintentarMensajes());
+            binding.adminHomeMensajesVacio.setClickable(true);
+            binding.adminHomeMensajesVacio.setFocusable(true);
+            return;
+        }
+        if (!estado.isSuccess() || estado.requireData().isEmpty()) {
+            binding.adminHomeMensajesVacio.setText(R.string.admin_mensajes_vacio);
             mensajes.submitList(Collections.emptyList());
             return;
         }
-        binding.adminHomeMensajesNota.setText(avisoDeSinLeer(contenido.mensajesSinLeer));
-        mensajes.submitList(contenido.getConversacionesDestacadas());
-    }
-
-    /**
-     * Cuántos mensajes esperan respuesta, o que no espera ninguno.
-     *
-     * <p>Decirlo también cuando no hay ninguno es deliberado: la línea aparece
-     * bajo un título que sí se ve, y dejarla en blanco haría pensar que el
-     * contador no cargó.
-     */
-    @NonNull
-    private CharSequence avisoDeSinLeer(int sinLeer) {
-        if (sinLeer <= 0) {
-            return getString(R.string.admin_home_mensajes_al_dia);
-        }
-        return getResources().getQuantityString(
-                R.plurals.admin_mensajes_sin_leer, sinLeer, sinLeer);
+        List<ConversacionDeHotel> conversaciones = estado.requireData();
+        binding.adminHomeMensajesVacio.setVisibility(View.GONE);
+        binding.adminHomeMensajes.setVisibility(View.VISIBLE);
+        binding.adminHomeMensajesNota.setVisibility(View.VISIBLE);
+        binding.adminHomeVerMensajes.setVisibility(conversaciones.size() > 3 ? View.VISIBLE : View.GONE);
+        int pendientes = 0;
+        for (ConversacionDeHotel conversacion : conversaciones) pendientes += conversacion.getSinLeer();
+        binding.adminHomeMensajesNota.setText(pendientes == 0 ? getString(R.string.chat_panel_al_dia)
+                : getResources().getQuantityString(R.plurals.admin_mensajes_sin_leer, pendientes, pendientes));
+        mensajes.submitList(new java.util.ArrayList<>(conversaciones.subList(0, Math.min(3, conversaciones.size()))));
     }
 
     // ----------------------------------------------------------------- Abrir
@@ -284,10 +285,7 @@ public class AdminHomeFragment extends Fragment {
     /**
      * Abre la pantalla que cuelga de una reserva.
      *
-     * <p>Las dos —el detalle y el chat— se identifican por la reserva y se
-     * alcanzan desde aquí, así que el argumento se arma en un solo sitio: el
-     * nombre {@code bookingId} lo fija el grafo, y escrito dos veces el día que
-     * cambie se cambia en una.
+     * <p>El detalle usa el identificador real de la reserva que fija el grafo.
      */
     private void abrirDesdeReserva(@IdRes int destino, @NonNull String bookingId) {
         Bundle argumentos = new Bundle();

@@ -340,6 +340,7 @@
             android:id="@+id/taxi_formulario"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/colorBackground"
             android:visibility="gone"
             tools:visibility="gone">
 
@@ -368,6 +369,14 @@
                     android:visibility="gone"
                     tools:visibility="visible" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/taxi_form_reintentar"
+                    style="@style/Widget.App.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/taxi_real_reintentar_reservas"
+                    android:visibility="gone" />
+
                 <LinearLayout
                     android:id="@+id/taxi_reservas"
                     android:layout_width="match_parent"
@@ -382,6 +391,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_base"
                     android:hint="@string/taxi_recogida"
+                    app:helperText="@string/taxi_real_recojo_hotel"
                     app:placeholderText="@string/taxi_recogida_pista">
 
                     <!-- Sin hint propio: el del TextInputLayout ya ocupa ese
@@ -394,6 +404,7 @@
                         android:layout_height="wrap_content"
                         android:imeOptions="actionNext"
                         android:inputType="textCapSentences"
+                        android:maxLength="300"
                         android:maxLines="2"
                         tools:text="Av. Malecón Cisneros 1240, Miraflores" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -413,6 +424,7 @@
                         android:layout_height="wrap_content"
                         android:imeOptions="actionDone"
                         android:inputType="textCapSentences"
+                        android:maxLength="300"
                         android:maxLines="2"
                         tools:text="Aeropuerto Jorge Chávez" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -513,12 +525,35 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_sm" />
 
+                <TextView
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/taxi_real_horario_reserva" />
+
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/taxi_ida_vuelta_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_md"
                     android:text="@string/taxi_ida_vuelta" />
+
+                <TextView
+                    android:id="@+id/taxi_form_precio"
+                    style="@style/TextAppearance.App.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/taxi_real_precio_reserva" />
+
+                <TextView
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/taxi_real_retorno" />
 
                 <TextView
                     android:id="@+id/taxi_form_error"

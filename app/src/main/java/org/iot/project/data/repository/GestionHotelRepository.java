@@ -32,6 +32,23 @@ import java.util.List;
  */
 public interface GestionHotelRepository {
 
+    interface Suscripcion {
+        void cerrar();
+    }
+
+    /** Observación mientras la pantalla está visible; otras implementaciones conservan su consulta única. */
+    default Suscripcion escucharResumen(@NonNull String hotelId,
+                                        @NonNull ResultCallback<ResumenHotel> callback) {
+        resumen(hotelId, callback);
+        return () -> { };
+    }
+
+    default Suscripcion escucharReservas(@NonNull String hotelId,
+                                         @NonNull ResultCallback<List<ReservaDeHotel>> callback) {
+        reservas(hotelId, callback);
+        return () -> { };
+    }
+
     /**
      * Todo lo que la portada del administrador necesita de su hotel (§43).
      *
@@ -79,6 +96,13 @@ public interface GestionHotelRepository {
      */
     void reserva(@NonNull String hotelId, @NonNull String bookingId,
                  @NonNull ResultCallback<ReservaDeHotel> callback);
+
+    /** Cambios de una reserva del hotel mientras su detalle está visible. */
+    default Suscripcion escucharReserva(@NonNull String hotelId, @NonNull String bookingId,
+                                        @NonNull ResultCallback<ReservaDeHotel> callback) {
+        reserva(hotelId, bookingId, callback);
+        return () -> { };
+    }
 
     /**
      * Los clientes que se han alojado en el hotel, del mas reciente al mas

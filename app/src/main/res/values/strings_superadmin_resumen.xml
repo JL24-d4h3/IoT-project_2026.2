@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_resumen_estado_asignaciones">Estado de las asignaciones</string>
+    <string name="sa_resumen_aprobaciones_proximamente">No hay hoteles sin administrador. Las aprobaciones de conductores estarán disponibles próximamente.</string>
+    <string name="sa_resumen_conductores_proximamente">Las aprobaciones de conductores estarán disponibles próximamente.</string>
+</resources>

@@ -445,6 +445,11 @@ public class SearchFragment extends Fragment {
     private void abrirHotel(@NonNull Hotel hotel) {
         Bundle args = new Bundle();
         args.putString("hotelId", hotel.getId());
+        SearchQuery consulta = viewModel.getConsulta().getValue();
+        if (consulta != null && consulta.hasFechas()) {
+            args.putString("fechaEntrada", consulta.getFechaEntrada().toString());
+            args.putString("fechaSalida", consulta.getFechaSalida().toString());
+        }
         Navigation.findNavController(requireView()).navigate(R.id.hotelDetailFragment, args);
     }
 

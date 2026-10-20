@@ -19,9 +19,10 @@ public final class PerfilFirebase {
             throw new IllegalArgumentException("No encontramos el perfil de esta cuenta.");
         }
         Role rol = rol(datos.get("rol"));
-        if (!Boolean.TRUE.equals(datos.get("activo"))) {
-            throw new IllegalArgumentException("Tu cuenta está deshabilitada. Contacta al administrador.");
+        if (rol == Role.CONDUCTOR) {
+            throw new IllegalArgumentException("Esta cuenta corresponde a un taxista, no a un perfil de cliente o administrador.");
         }
+        exigirActivo(datos);
         User usuario = new User(uid, texto(datos, "nombres"), texto(datos, "apellidos"), rol);
         usuario.setHotelId(hotelId(datos));
         usuario.setEmail(email == null ? "" : email);
@@ -35,6 +36,18 @@ public final class PerfilFirebase {
     }
 
     public static Cuenta cuenta(String uid, String email, Map<String, Object> datos) {
+        exigirUid(uid);
+        if (datos == null) {
+            throw new IllegalArgumentException("No encontramos el perfil de esta cuenta.");
+        }
+        // El perfil de acceso del taxista no requiere vehículo ni conexión con su API.
+        // Conserva su UID de Auth como identidad y nunca se trata como un User.
+        if (rol(datos.get("rol")) == Role.CONDUCTOR) {
+            exigirActivo(datos);
+            String correo = email == null ? "" : email;
+            String nombre = (texto(datos, "nombres") + " " + texto(datos, "apellidos")).trim();
+            return new Cuenta(Role.CONDUCTOR, uid, nombre.isEmpty() ? correo : nombre, correo);
+        }
         User usuario = usuario(uid, email, datos);
         String nombre = usuario.getNombreCompleto().trim();
         return new Cuenta(usuario.getRol(), uid, nombre.isEmpty() ? usuario.getEmail() : nombre,
@@ -71,10 +84,13 @@ public final class PerfilFirebase {
         } catch (IllegalArgumentException error) {
             throw new IllegalArgumentException("Tu cuenta no tiene un rol válido. Contacta al administrador.");
         }
-        if (rol == Role.CONDUCTOR) {
-            throw new IllegalArgumentException("El acceso de conductores se gestiona desde el sistema de taxistas.");
-        }
         return rol;
+    }
+
+    private static void exigirActivo(Map<String, Object> datos) {
+        if (!Boolean.TRUE.equals(datos.get("activo"))) {
+            throw new IllegalArgumentException("Tu cuenta está deshabilitada. Contacta al administrador.");
+        }
     }
 
     private static String hotelId(Map<String, Object> datos) {

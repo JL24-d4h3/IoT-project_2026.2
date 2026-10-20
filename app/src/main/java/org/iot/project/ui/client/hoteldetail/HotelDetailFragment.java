@@ -247,6 +247,11 @@ public class HotelDetailFragment extends Fragment {
         Bundle argumentos = new Bundle();
         argumentos.putString("hotelId", room.getHotelId());
         argumentos.putString("roomId", room.getId());
+        Bundle origen = getArguments();
+        if (origen != null) {
+            argumentos.putString("fechaEntrada", origen.getString("fechaEntrada"));
+            argumentos.putString("fechaSalida", origen.getString("fechaSalida"));
+        }
         Navigation.findNavController(requireView())
                 .navigate(R.id.bookingFlowFragment, argumentos);
     }

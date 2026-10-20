@@ -54,8 +54,8 @@ public class HotelDetailViewModel extends ViewModel {
                 if (solicitud != generacion) return;
                 cargando = false;
                 hotel.setValue(UiState.success(datos));
-                // El mismo snapshot autorizado incluye el inventario habilitado.
-                // El calendario de reservas todavia pertenece a otro modulo.
+                // Sin fechas seleccionadas se muestra el inventario habilitado.
+                // El formulario consulta el calendario para el período elegido.
                 List<Room> disponibles = new ArrayList<>();
                 for (Room habitacion : datos.getHabitaciones()) {
                     if (habitacion.isDisponible()) disponibles.add(habitacion);

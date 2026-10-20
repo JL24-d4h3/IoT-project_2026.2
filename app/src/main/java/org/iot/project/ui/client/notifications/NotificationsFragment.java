@@ -12,6 +12,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.iot.project.R;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentNotificationsBinding;
@@ -44,13 +46,50 @@ public class NotificationsFragment extends Fragment {
         binding.header.setTitulo(R.string.titulo_notificaciones);
         binding.header.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
 
-        adaptador = new NotificationAdapter();
+        adaptador = new NotificationAdapter(this::abrir);
         binding.notificacionesLista.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.notificacionesLista.setAdapter(adaptador);
 
         viewModel = new ViewModelProvider(this).get(NotificationsViewModel.class);
         viewModel.getNotificaciones().observe(getViewLifecycleOwner(), this::pintar);
-        viewModel.cargar();
+        viewModel.getAviso().observe(getViewLifecycleOwner(), mensaje -> {
+            if (mensaje == null) return;
+            Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.notificaciones_reintentar_lectura,
+                            v -> viewModel.recargar()).show();
+            viewModel.consumirAviso();
+        });
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.cargar();
+    }
+
+    @Override public void onPause() {
+        if (viewModel != null) viewModel.suspender();
+        super.onPause();
+    }
+
+    private void abrir(@NonNull AppNotification notificacion) {
+        if (binding == null || Navigation.findNavController(binding.getRoot())
+                .getCurrentDestination() == null
+                || Navigation.findNavController(binding.getRoot())
+                .getCurrentDestination().getId() != R.id.notificationsFragment) return;
+        Bundle argumentos = new Bundle();
+        if (notificacion.getTipo() == AppNotification.Tipo.TAXI) {
+            if (notificacion.getTaxiId() == null) return;
+            argumentos.putString("taxiId", notificacion.getTaxiId());
+            if (notificacion.getBookingId() != null) {
+                argumentos.putString("bookingId", notificacion.getBookingId());
+            }
+            Navigation.findNavController(binding.getRoot()).navigate(R.id.taxiFragment, argumentos);
+        } else if (notificacion.getBookingId() != null) {
+            argumentos.putString("bookingId", notificacion.getBookingId());
+            Navigation.findNavController(binding.getRoot())
+                    .navigate(notificacion.getTipo() == AppNotification.Tipo.MENSAJE
+                            ? R.id.chatFragment : R.id.bookingDetailFragment, argumentos);
+        }
     }
 
     private void pintar(@NonNull UiState<List<AppNotification>> estado) {
@@ -66,8 +105,10 @@ public class NotificationsFragment extends Fragment {
                 binding.notificacionesError.setVisibility(View.GONE);
                 binding.notificacionesVacio.setVisibility(View.GONE);
                 binding.notificacionesLista.setVisibility(View.VISIBLE);
-                adaptador.submitList(estado.requireData());
-                viewModel.marcarLeidas();
+                List<AppNotification> entregadas = estado.requireData();
+                adaptador.submitList(entregadas, () -> {
+                    if (binding != null && isResumed()) viewModel.marcarLeidas(entregadas);
+                });
                 break;
             case EMPTY:
                 binding.notificacionesEsqueleto.setVisibility(View.GONE);
@@ -93,6 +134,7 @@ public class NotificationsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        viewModel.suspender();
         binding.notificacionesLista.setAdapter(null);
         binding = null;
     }

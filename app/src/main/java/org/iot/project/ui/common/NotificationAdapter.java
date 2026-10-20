@@ -18,6 +18,7 @@ import org.iot.project.models.AppNotification;
 import org.iot.project.utils.DateFormatter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Centro de notificaciones (§39, §41).
@@ -29,6 +30,12 @@ import java.time.LocalDateTime;
  */
 public class NotificationAdapter
         extends ListAdapter<AppNotification, NotificationAdapter.NotificationViewHolder> {
+
+    public interface AlAbrir {
+        void abrir(@NonNull AppNotification notificacion);
+    }
+
+    private final AlAbrir alAbrir;
 
     private static final DiffUtil.ItemCallback<AppNotification> COMPARADOR =
             new DiffUtil.ItemCallback<AppNotification>() {
@@ -42,12 +49,22 @@ public class NotificationAdapter
                 public boolean areContentsTheSame(@NonNull AppNotification anterior,
                                                   @NonNull AppNotification nueva) {
                     return anterior.isLeida() == nueva.isLeida()
-                            && anterior.getTitulo().equals(nueva.getTitulo());
+                            && anterior.getTipo() == nueva.getTipo()
+                            && anterior.getTitulo().equals(nueva.getTitulo())
+                            && anterior.getMensaje().equals(nueva.getMensaje())
+                            && anterior.getTimestamp().equals(nueva.getTimestamp())
+                            && Objects.equals(anterior.getBookingId(), nueva.getBookingId())
+                            && Objects.equals(anterior.getTaxiId(), nueva.getTaxiId());
                 }
             };
 
     public NotificationAdapter() {
+        this(notificacion -> { });
+    }
+
+    public NotificationAdapter(@NonNull AlAbrir alAbrir) {
         super(COMPARADOR);
+        this.alAbrir = alAbrir;
     }
 
     @NonNull
@@ -59,7 +76,7 @@ public class NotificationAdapter
 
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int posicion) {
-        holder.bind(getItem(posicion));
+        holder.bind(getItem(posicion), alAbrir);
     }
 
     static class NotificationViewHolder extends RecyclerView.ViewHolder {
@@ -71,7 +88,7 @@ public class NotificationAdapter
             this.binding = binding;
         }
 
-        void bind(@NonNull AppNotification notificacion) {
+        void bind(@NonNull AppNotification notificacion, @NonNull AlAbrir alAbrir) {
             binding.notificationTitle.setText(notificacion.getTitulo());
             binding.notificationMessage.setText(notificacion.getMensaje());
             binding.notificationTime.setText(DateFormatter.relativo(
@@ -81,6 +98,12 @@ public class NotificationAdapter
             tintar(binding.notificationIcon, colorDe(notificacion.getTipo()));
             binding.notificationUnread.setVisibility(
                     notificacion.isLeida() ? View.GONE : View.VISIBLE);
+            boolean puedeAbrir = notificacion.getTipo() == AppNotification.Tipo.TAXI
+                    ? notificacion.getTaxiId() != null : notificacion.getBookingId() != null;
+            binding.getRoot().setClickable(puedeAbrir);
+            binding.getRoot().setFocusable(puedeAbrir);
+            binding.getRoot().setOnClickListener(puedeAbrir
+                    ? vista -> alAbrir.abrir(notificacion) : null);
         }
 
         private void tintar(@NonNull ImageView vista, int colorRes) {

@@ -56,15 +56,37 @@
                         tools:text="¿A dónde viajas esta vez?" />
                 </LinearLayout>
 
-                <ImageButton
-                    android:id="@+id/action_notifications"
+                <FrameLayout
                     android:layout_width="@dimen/button_height"
-                    android:layout_height="@dimen/button_height"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/cd_notificaciones"
-                    android:padding="@dimen/space_md"
-                    android:src="@drawable/ic_notifications"
-                    app:tint="@color/colorTextPrimary" />
+                    android:layout_height="@dimen/button_height">
+
+                    <ImageButton
+                        android:id="@+id/action_notifications"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/cd_notificaciones"
+                        android:padding="@dimen/space_md"
+                        android:src="@drawable/ic_notifications"
+                        app:tint="@color/colorTextPrimary" />
+
+                    <TextView
+                        android:id="@+id/notifications_count"
+                        style="@style/TextAppearance.App.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:minWidth="20dp"
+                        android:minHeight="20dp"
+                        android:background="@drawable/bg_badge_error"
+                        android:gravity="center"
+                        android:importantForAccessibility="no"
+                        android:paddingHorizontal="4dp"
+                        android:textColor="@color/colorOnErrorContainer"
+                        android:visibility="gone"
+                        tools:text="3"
+                        tools:visibility="visible" />
+                </FrameLayout>
             </LinearLayout>
 
             <!-- Campo de búsqueda: al tocarlo se abre la pantalla de búsqueda.

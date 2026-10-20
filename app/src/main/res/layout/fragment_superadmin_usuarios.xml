@@ -69,10 +69,43 @@
                         android:layout_height="wrap_content" />
 
                     <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/sa_filtro_conductores"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <org.iot.project.ui.components.FilterChipView
                         android:id="@+id/sa_filtro_superadmins"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </com.google.android.material.chip.ChipGroup>
+
+                <LinearLayout
+                    android:id="@+id/sa_usuarios_aviso"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:background="@drawable/bg_badge_error"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/sa_usuarios_aviso_texto"
+                        style="@style/TextAppearance.App.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:accessibilityLiveRegion="polite"
+                        android:textColor="@color/colorOnErrorContainer"
+                        tools:text="No se pudieron actualizar las cuentas." />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/sa_usuarios_reintentar"
+                        style="@style/Widget.App.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:text="@string/sa_usuarios_firebase_reintentar" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/sa_usuarios_lista"

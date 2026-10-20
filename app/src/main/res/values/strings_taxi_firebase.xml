@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="taxi_real_cargando_reservas">Consultando tus reservas…</string>
+    <string name="taxi_real_reserva_requerida">Necesitas una reserva confirmada, activa o finalizada cuya fecha de salida aún no haya pasado. Cada reserva permite solicitar un traslado.</string>
+    <string name="taxi_real_reintentar_reservas">Volver a consultar reservas</string>
+    <string name="taxi_real_recojo_hotel">El punto del mapa será la ubicación de tu hotel. Puedes añadir aquí una referencia para el recojo.</string>
+    <string name="taxi_real_horario_reserva">El traslado debe ser en una fecha y hora futuras dentro de tu estancia, incluido el día de salida.</string>
+    <string name="taxi_real_pasajeros_limite">Hasta %1$d pasajeros, según los huéspedes de tu reserva.</string>
+    <string name="taxi_real_precio_reserva">Elige una reserva para consultar la tarifa del traslado.</string>
+    <string name="taxi_real_precio_cargando">Consultando la tarifa del hotel…</string>
+    <string name="taxi_real_precio_gratis">Traslado incluido: tu reserva cumple el monto mínimo del hotel.</string>
+    <string name="taxi_real_precio_fijo">Tarifa fija del servicio: %1$s. El pago se coordina con el proveedor del traslado.</string>
+    <string name="taxi_real_retorno">Si eliges ida y vuelta, el horario de retorno se coordina con el conductor. La tarifa es única para el servicio.</string>
+    <string name="taxi_real_guardando">Enviando solicitud…</string>
+    <string name="taxi_real_solicitud_enviada">Solicitud registrada. Te avisaremos cuando se asigne un conductor.</string>
+    <string name="taxi_real_valoracion_guardando">Guardando valoración…</string>
+</resources>

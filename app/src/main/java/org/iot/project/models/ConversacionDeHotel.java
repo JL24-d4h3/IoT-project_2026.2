@@ -50,7 +50,7 @@ public final class ConversacionDeHotel {
         this.conversacion = conversacion;
         this.estadia = estadia;
         this.sinLeer = conversacion.getNumNoLeidosPara(Message.Autor.HOTEL);
-        this.numMensajes = conversacion.getMensajes().size();
+        this.numMensajes = conversacion.getTotalMensajes();
         this.ultimoMensaje = conversacion.getUltimoMensaje();
     }
 

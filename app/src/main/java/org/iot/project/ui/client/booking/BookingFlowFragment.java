@@ -13,6 +13,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -20,6 +22,7 @@ import org.iot.project.R;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentBookingFlowBinding;
 import org.iot.project.models.Booking;
+import org.iot.project.models.BookingStatus;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.Room;
 import org.iot.project.ui.components.PriceBreakdownView;
@@ -30,7 +33,9 @@ import org.iot.project.utils.PriceFormatter;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
+import java.util.Locale;
 
 /**
  * Pantalla de reserva: fechas, huéspedes y confirmación.
@@ -44,7 +49,6 @@ public class BookingFlowFragment extends Fragment {
 
     private FragmentBookingFlowBinding binding;
     private BookingFlowViewModel viewModel;
-    private boolean confirmando;
 
     @Nullable
     @Override
@@ -74,6 +78,9 @@ public class BookingFlowFragment extends Fragment {
         binding.reservaConfirmar.setOnClickListener(v -> confirmar());
         binding.reservaVerLista.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.bookingsFragment));
+        binding.reservaContinuarPago.setOnClickListener(v -> abrirPagoOReserva());
+        binding.reservaDisponibilidad.setOnClickListener(v -> viewModel.reintentarDisponibilidad());
+        binding.reservaExitoAviso.setText(R.string.reserva_firebase_aviso);
 
         observar();
 
@@ -84,7 +91,24 @@ public class BookingFlowFragment extends Fragment {
             Navigation.findNavController(vista).navigateUp();
             return;
         }
-        viewModel.cargar(hotelId, roomId);
+        viewModel.cargar(hotelId, roomId,
+                fechaInicial(argumentos.getString("fechaEntrada")),
+                fechaInicial(argumentos.getString("fechaSalida")));
+    }
+
+    @Nullable private LocalDate fechaInicial(@Nullable String valor) {
+        if (valor == null || valor.trim().isEmpty()) return null;
+        try {
+            return LocalDate.parse(valor);
+        } catch (DateTimeParseException error) {
+            return null;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.refrescarReservaCreada();
     }
 
     private void observar() {
@@ -94,6 +118,7 @@ public class BookingFlowFragment extends Fragment {
         viewModel.getSalida().observe(getViewLifecycleOwner(), f -> pintarFechas());
         viewModel.getHuespedes().observe(getViewLifecycleOwner(), n -> pintarHuespedes());
         viewModel.getCreacion().observe(getViewLifecycleOwner(), this::pintarCreacion);
+        viewModel.getDisponibilidad().observe(getViewLifecycleOwner(), this::pintarDisponibilidad);
     }
 
     // ----------------------------------------------------------- Formulario
@@ -102,12 +127,18 @@ public class BookingFlowFragment extends Fragment {
         if (estado.isSuccess()) {
             binding.reservaHotel.setText(estado.requireData().getNombre());
         } else if (estado.isError()) {
-            avisar(estado.getMessage());
+            Snackbar.make(binding.getRoot(), estado.getMessage(), Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.accion_reintentar, v -> viewModel.reintentarCarga())
+                    .show();
         }
         actualizarBoton();
     }
 
-    private void pintarHabitacion(@NonNull Room room) {
+    private void pintarHabitacion(@Nullable Room room) {
+        if (room == null) {
+            actualizarBoton();
+            return;
+        }
         binding.reservaHabitacion.setText(getString(R.string.reserva_habitacion,
                 room.getTipo(), room.getResumenCapacidad()));
         binding.reservaCapacidad.setText(
@@ -141,6 +172,7 @@ public class BookingFlowFragment extends Fragment {
                 || viewModel.getHuespedesActuales() < room.getCapacidadTotal());
         binding.reservaMenos.setEnabled(viewModel.getHuespedesActuales() > 1);
         pintarDesglose();
+        pintarDisponibilidad(viewModel.getDisponibilidad().getValue());
     }
 
     private void pintarDesglose() {
@@ -165,17 +197,55 @@ public class BookingFlowFragment extends Fragment {
     }
 
     private void actualizarBoton() {
-        binding.reservaConfirmar.setEnabled(viewModel.puedeConfirmar() && !confirmando);
+        boolean cargando = viewModel.estaConfirmando();
+        binding.reservaConfirmar.setEnabled(viewModel.puedeConfirmar());
+        binding.reservaConfirmar.setText(cargando
+                ? R.string.reserva_firebase_guardando : viewModel.esReintentoMismoBorrador()
+                ? R.string.reserva_firebase_reintentar : R.string.reserva_confirmar);
+        binding.reservaContinuarPago.setEnabled(!cargando);
+        binding.reservaCampoEntrada.setEnabled(!cargando);
+        binding.reservaCampoSalida.setEnabled(!cargando);
+        Room room = viewModel.getHabitacion().getValue();
+        binding.reservaMas.setEnabled(!cargando && room != null
+                && viewModel.getHuespedesActuales() < room.getCapacidadTotal());
+        binding.reservaMenos.setEnabled(!cargando && viewModel.getHuespedesActuales() > 1);
+    }
+
+    private void pintarDisponibilidad(@Nullable UiState<Boolean> estado) {
+        boolean error = estado != null && estado.isError();
+        if (viewModel.esReintentoMismoBorrador()) {
+            binding.reservaDisponibilidad.setText(R.string.reserva_firebase_recuperar_intento);
+        } else if (estado == null || estado.isLoading()) {
+            binding.reservaDisponibilidad.setText(R.string.reserva_firebase_consultando);
+        } else if (error) {
+            binding.reservaDisponibilidad.setText(getString(
+                    R.string.reserva_firebase_disponibilidad_error, estado.getMessage()));
+        } else {
+            binding.reservaDisponibilidad.setText(estado.isSuccess() && estado.requireData()
+                    ? R.string.reserva_firebase_disponible : R.string.reserva_firebase_ocupada);
+        }
+        binding.reservaDisponibilidad.setEnabled(!viewModel.estaConfirmando());
+        binding.reservaDisponibilidad.setClickable(error && !viewModel.estaConfirmando());
+        binding.reservaDisponibilidad.setFocusable(error && !viewModel.estaConfirmando());
+        actualizarBoton();
     }
 
     private void elegirFechas() {
+        if (viewModel.estaConfirmando()
+                || getParentFragmentManager().isStateSaved()
+                || getParentFragmentManager().findFragmentByTag("selector_fechas") != null) return;
         LocalDate desde = viewModel.getEntrada().getValue();
         LocalDate hasta = viewModel.getSalida().getValue();
 
         MaterialDatePicker.Builder<Pair<Long, Long>> constructor =
                 MaterialDatePicker.Builder.dateRangePicker()
-                        .setTitleText(R.string.reserva_fechas_titulo);
-        if (desde != null && hasta != null) {
+                        .setTitleText(R.string.reserva_fechas_titulo)
+                        .setCalendarConstraints(new CalendarConstraints.Builder()
+                                .setValidator(DateValidatorPointForward.from(LocalDate.now()
+                                        .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()))
+                                .build());
+        if (desde != null && hasta != null && !desde.isBefore(LocalDate.now())
+                && hasta.isAfter(desde)) {
             constructor.setSelection(new Pair<>(
                     desde.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
                     hasta.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()));
@@ -200,25 +270,28 @@ public class BookingFlowFragment extends Fragment {
     // ---------------------------------------------------------- Confirmación
 
     private void confirmar() {
-        confirmando = true;
-        actualizarBoton();
         viewModel.confirmar();
     }
 
     private void pintarCreacion(@Nullable UiState<Booking> estado) {
+        pintarDisponibilidad(viewModel.getDisponibilidad().getValue());
         if (estado == null) {
             return;
         }
         if (estado.isLoading()) {
             return;
         }
-        confirmando = false;
-        actualizarBoton();
-
         if (estado.isError()) {
             // El repositorio es quien rechaza el cruce de fechas (RF-032, §22):
             // su mensaje explica el motivo mejor que uno genérico de pantalla.
-            avisar(estado.getMessage());
+            if (viewModel.puedeRecuperarCreada()) {
+                Snackbar.make(binding.getRoot(), estado.getMessage(), Snackbar.LENGTH_INDEFINITE)
+                        .setAction(R.string.accion_reintentar, v -> viewModel.reintentarCarga())
+                        .show();
+            } else {
+                avisar(estado.getMessage());
+            }
+            viewModel.limpiarCreacion();
             return;
         }
         mostrarExito(estado.requireData());
@@ -230,11 +303,31 @@ public class BookingFlowFragment extends Fragment {
 
         binding.reservaExitoMensaje.setText(getString(R.string.reserva_creada_mensaje,
                 reserva.getCodigo(),
-                hotel != null ? hotel.getNombre() : "",
+                hotel != null ? hotel.getNombre() : reserva.getHotelNombre(),
                 DateFormatter.rangoConNoches(reserva.getFechaEntrada(),
                         reserva.getFechaSalida(), reserva.getNumNoches())));
         binding.reservaFormulario.setVisibility(View.GONE);
         binding.reservaExito.setVisibility(View.VISIBLE);
+        binding.reservaExitoAviso.setText(reserva.getEstado() == BookingStatus.PENDIENTE
+                ? getString(R.string.reserva_firebase_aviso)
+                : getString(R.string.reserva_firebase_estado_actual,
+                reserva.getEstado().getDisplayName().toLowerCase(Locale.getDefault())));
+        binding.reservaContinuarPago.setText(reserva.getEstado() == BookingStatus.PENDIENTE
+                ? R.string.reserva_firebase_continuar_pago : R.string.accion_ver_reserva);
+    }
+
+    private void abrirPagoOReserva() {
+        if (Navigation.findNavController(requireView()).getCurrentDestination() == null
+                || Navigation.findNavController(requireView()).getCurrentDestination().getId()
+                != R.id.bookingFlowFragment) return;
+        UiState<Booking> estado = viewModel.getCreacion().getValue();
+        if (estado == null || !estado.isSuccess()) return;
+        Booking reserva = estado.requireData();
+        Bundle argumentos = new Bundle();
+        argumentos.putString("bookingId", reserva.getId());
+        Navigation.findNavController(requireView()).navigate(
+                reserva.getEstado() == BookingStatus.PENDIENTE
+                        ? R.id.paymentFragment : R.id.bookingDetailFragment, argumentos);
     }
 
     private void avisar(@Nullable String mensaje) {

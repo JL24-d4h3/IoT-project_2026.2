@@ -19,6 +19,12 @@ public class Booking {
     private final String hotelId;
     private final String roomId;
     private final String clienteId;
+    private String hotelNombre = "";
+    private String hotelCiudad = "";
+    private String hotelDistrito = "";
+    private String hotelFotoUrl = "";
+    private String habitacionTipo = "";
+    private String habitacionNumero = "";
     private LocalDate fechaEntrada;
     private LocalDate fechaSalida;
     private int numHuespedes;
@@ -31,19 +37,7 @@ public class Booking {
 
     private Review valoracion;
 
-    /**
-     * Si el hotel ya cobro el total a la tarjeta registrada (RF-049).
-     *
-     * <p>Hace falta un indicador propio y no basta con mirar el estado de la
-     * reserva: el cliente hace el checkout por su cuenta (RF-045), asi que una
-     * reserva puede estar finalizada y sin cobrar, que es justo el estado en el
-     * que el hotel tiene que poder entrar a cobrar. Sin esta marca, el boton de
-     * cobro seguiria ahi despues de cobrar y se podria pulsar dos veces.
-     *
-     * <p>Lo que no se guarda es el resultado de la transaccion: el cobro es
-     * simulado (RF-050, RT-010) y no hay ninguna operacion bancaria que
-     * confirmar.
-     */
+    /** Registro de cobro simulado en recepción, independiente del checkout del cliente. */
     private boolean cobrado;
 
     public Booking(String id,
@@ -93,6 +87,46 @@ public class Booking {
         return clienteId;
     }
 
+    /** Conserva los datos del alojamiento aunque deje de aparecer en el catálogo. */
+    public Booking withAlojamiento(String nombre, String ciudad, String distrito,
+                                   String fotoUrl, String tipo, String numero) {
+        hotelNombre = textoSeguro(nombre);
+        hotelCiudad = textoSeguro(ciudad);
+        hotelDistrito = textoSeguro(distrito);
+        hotelFotoUrl = textoSeguro(fotoUrl);
+        habitacionTipo = textoSeguro(tipo);
+        habitacionNumero = textoSeguro(numero);
+        return this;
+    }
+
+    public String getHotelNombre() {
+        return hotelNombre;
+    }
+
+    public String getHotelCiudad() {
+        return hotelCiudad;
+    }
+
+    public String getHotelDistrito() {
+        return hotelDistrito;
+    }
+
+    public String getHotelFotoUrl() {
+        return hotelFotoUrl;
+    }
+
+    public String getHabitacionTipo() {
+        return habitacionTipo;
+    }
+
+    public String getHabitacionNumero() {
+        return habitacionNumero;
+    }
+
+    private static String textoSeguro(String texto) {
+        return texto == null ? "" : texto.trim();
+    }
+
     public LocalDate getFechaEntrada() {
         return fechaEntrada;
     }
@@ -125,19 +159,7 @@ public class Booking {
         this.tarjeta = tarjeta;
     }
 
-    /**
-     * Si el hotel ya cobro el total a la tarjeta registrada (RF-049).
-     *
-     * <p>Hace falta un indicador propio y no basta con mirar el estado de la
-     * reserva: el cliente hace el checkout por su cuenta (RF-045), asi que una
-     * reserva puede estar finalizada y sin cobrar, que es justo el estado en el
-     * que el hotel tiene que poder entrar a cobrar. Sin esta marca, el boton de
-     * cobro seguiria ahi despues de cobrar y se podria pulsar dos veces.
-     *
-     * <p>Lo que no se guarda es el resultado de la transaccion: el cobro es
-     * simulado (RF-050, RT-010) y no hay ninguna operacion bancaria que
-     * confirmar.
-     */
+    /** Si el hotel ya registró el cobro simulado después del checkout. */
     public boolean isCobrado() {
         return cobrado;
     }
@@ -226,7 +248,7 @@ public class Booking {
      * (ese dia es de rotacion). Una reserva cancelada libera la habitacion.
      */
     public boolean seSuperponeCon(Booking otra) {
-        if (otra == null || !roomId.equals(otra.roomId)) {
+        if (otra == null || !hotelId.equals(otra.hotelId) || !roomId.equals(otra.roomId)) {
             return false;
         }
         if (estado == BookingStatus.CANCELADA || otra.estado == BookingStatus.CANCELADA) {

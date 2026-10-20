@@ -1,6 +1,8 @@
 package org.iot.project.ui.client.taxi;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +15,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.CompositeDateValidator;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.snackbar.Snackbar;
@@ -20,7 +24,6 @@ import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
 import org.iot.project.R;
-import org.iot.project.core.ResultCallback;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentTaxiBinding;
 import org.iot.project.models.Booking;
@@ -39,6 +42,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -49,9 +53,7 @@ import java.util.Locale;
  * en curso, donde esta el conductor, y que traslados hizo antes. La segunda es
  * el formulario, que se abre encima y solo cuando se puede pedir algo.
  *
- * <p>El formulario no es un destino de navegacion aparte porque no sobrevive
- * por si mismo: si el cliente se va a otra pantalla a mitad de rellenarlo, lo
- * que quiere es volver al estado, no encontrarse un formulario a medias.
+ * <p>El borrador conserva reserva, referencias y horario al recrear la vista.
  */
 public class TaxiFragment extends Fragment {
 
@@ -90,6 +92,8 @@ public class TaxiFragment extends Fragment {
     private LocalTime hora;
 
     private int pasajeros = 1;
+    private boolean pintandoBorrador;
+    @Nullable private String enfoquePendiente;
 
     @Nullable
     @Override
@@ -107,50 +111,56 @@ public class TaxiFragment extends Fragment {
         binding.header.setTitulo(R.string.taxi_titulo);
         binding.header.setSubtitulo(getString(R.string.taxi_subtitulo));
 
+        viewModel = new ViewModelProvider(this).get(TaxiViewModel.class);
+        viewModel.cargar();
+        enfoquePendiente = getArguments() == null ? null : getArguments().getString("taxiId");
+        if (enfoquePendiente != null && !enfoquePendiente.isEmpty()) {
+            viewModel.enfocarServicio(enfoquePendiente);
+            viewModel.setFormularioAbierto(false);
+        }
+
         binding.taxiPedir.setOnClickListener(v -> abrirFormulario());
         binding.taxiIrReservas.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.bookingsFragment));
         binding.taxiQr.setOnClickListener(v -> mostrarQr());
         binding.taxiConfirmar.setOnClickListener(v -> confirmar());
         binding.taxiCancelar.setOnClickListener(v -> cerrarFormulario());
+        binding.taxiFormReintentar.setOnClickListener(v -> viewModel.refrescarEnSilencio());
         binding.taxiFilaFecha.setOnClickListener(v -> elegirFecha());
         binding.taxiFilaHora.setOnClickListener(v -> elegirHora());
 
         binding.taxiPasajeros.configurar(R.string.taxi_pasajeros,
                 getString(R.string.taxi_pasajeros_nota), 1, MAX_PASAJEROS);
-        binding.taxiPasajeros.setOnValorCambiadoListener(valor -> pasajeros = valor);
+        binding.taxiPasajeros.setOnValorCambiadoListener(valor -> {
+            if (viewModel.isEnviando()) {
+                binding.taxiPasajeros.setValor(pasajeros);
+                return;
+            }
+            pasajeros = valor;
+            guardarBorrador();
+        });
         pasajeros = binding.taxiPasajeros.getValor();
 
-        viewModel = new ViewModelProvider(this).get(TaxiViewModel.class);
+        restaurarBorrador();
+        binding.taxiRecogida.addTextChangedListener(observarTexto());
+        binding.taxiDestino.addTextChangedListener(observarTexto());
+        binding.taxiIdaVueltaSwitch.setOnCheckedChangeListener((boton, marcado) -> guardarBorrador());
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getReservas().observe(getViewLifecycleOwner(), this::pintarReservas);
         viewModel.getHotelElegido().observe(getViewLifecycleOwner(), this::pintarHotel);
-
-        // Las fechas ya elegidas sobreviven a una rotacion: son parte de lo que
-        // el cliente estaba rellenando, no estado de la pantalla.
-        if (savedInstanceState != null) {
-            restaurarFormulario(savedInstanceState);
-        }
-        if (fecha == null) {
-            fecha = LocalDate.now().plusDays(1);
-        }
-        if (hora == null) {
-            hora = LocalTime.of(9, 0);
-        }
-        pintarFechaHora();
-
-        viewModel.cargar();
+        viewModel.getSolicitud().observe(getViewLifecycleOwner(), this::pintarSolicitud);
+        binding.taxiFormulario.setVisibility(viewModel.isFormularioAbierto() ? View.VISIBLE : View.GONE);
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // El conductor reporta posicion mientras el servicio esta vivo: al
-        // volver a la pantalla el plano tiene que enseñar la ultima, no la de
-        // hace diez minutos.
-        if (viewModel != null) {
-            viewModel.refrescarEnSilencio();
-        }
+    @Override public void onStart() {
+        super.onStart();
+        if (viewModel != null) viewModel.iniciarSeguimiento();
+    }
+
+    @Override public void onStop() {
+        guardarBorrador();
+        if (viewModel != null) viewModel.detenerSeguimiento();
+        super.onStop();
     }
 
     // ------------------------------------------------------------------
@@ -186,13 +196,19 @@ public class TaxiFragment extends Fragment {
     private void pintarBloques(@NonNull TaxiViewModel.Estado estado) {
         boolean hayActivo = estado.tieneActivo();
         binding.taxiBloqueActivo.setVisibility(hayActivo ? View.VISIBLE : View.GONE);
-        binding.taxiBloqueLibre.setVisibility(hayActivo ? View.GONE : View.VISIBLE);
+        binding.taxiBloqueLibre.setVisibility(!hayActivo || !reservasDisponibles().isEmpty()
+                ? View.VISIBLE : View.GONE);
 
         if (hayActivo) {
             pintarActivo(estado.activo);
-        } else {
-            ajustarBloqueLibre();
+            if (estado.activo.getId().equals(enfoquePendiente)) {
+                binding.taxiContenido.post(() -> {
+                    if (binding != null) binding.taxiContenido.smoothScrollTo(0, 0);
+                });
+                enfoquePendiente = null;
+            }
         }
+        ajustarBloqueLibre();
 
         pintarHistorial(estado.anteriores);
     }
@@ -218,6 +234,10 @@ public class TaxiFragment extends Fragment {
                 ? R.string.taxi_sin_pasajeros : R.string.taxi_sin_reserva);
         binding.taxiPedir.setVisibility(hayReservas ? View.VISIBLE : View.GONE);
         binding.taxiIrReservas.setVisibility(hayReservas ? View.GONE : View.VISIBLE);
+        UiState<TaxiViewModel.Estado> actual = viewModel.getContenido().getValue();
+        boolean hayActivo = actual != null && actual.getData() != null
+                && actual.getData().tieneActivo();
+        binding.taxiBloqueLibre.setVisibility(!hayActivo || hayReservas ? View.VISIBLE : View.GONE);
     }
 
     private void pintarActivo(@NonNull TaxiService servicio) {
@@ -340,11 +360,27 @@ public class TaxiFragment extends Fragment {
             }
             tarjeta.bind(servicio);
             tarjeta.setOnValorar(v -> abrirValoracion(servicio.getId()));
+            tarjeta.setOnAceptar(null);
+            tarjeta.setOnClickListener(v -> {
+                if (servicio.getEstado().isActive()) {
+                    viewModel.enfocarServicio(servicio.getId());
+                    binding.taxiContenido.smoothScrollTo(0, 0);
+                }
+            });
             binding.taxiHistorial.addView(tarjeta);
+            if (servicio.getId().equals(enfoquePendiente)) {
+                enfoquePendiente = null;
+                tarjeta.post(() -> {
+                    if (binding != null) binding.taxiContenido.smoothScrollTo(0,
+                            binding.taxiSeccionHistorial.getTop() + binding.taxiHistorial.getTop()
+                                    + tarjeta.getTop());
+                });
+            }
         }
     }
 
     private void abrirValoracion(@NonNull String taxiId) {
+        if (getChildFragmentManager().findFragmentByTag(TAG_VALORAR) != null) return;
         ValorarTaxiSheet.newInstance(taxiId).show(getChildFragmentManager(), TAG_VALORAR);
     }
 
@@ -353,10 +389,10 @@ public class TaxiFragment extends Fragment {
     // ------------------------------------------------------------------
 
     private void abrirFormulario() {
+        viewModel.consumirSolicitud();
+        viewModel.setFormularioAbierto(true);
         binding.taxiFormulario.setVisibility(View.VISIBLE);
         binding.taxiFormError.setVisibility(View.GONE);
-        binding.taxiRecogida.setText("");
-        binding.taxiDestino.setText("");
 
         // Si solo hay una reserva posible, elegirla ya: obligar a pulsar la
         // unica opcion que existe es un paso que no decide nada.
@@ -367,6 +403,9 @@ public class TaxiFragment extends Fragment {
     }
 
     private void cerrarFormulario() {
+        if (viewModel.isEnviando()) return;
+        guardarBorrador();
+        viewModel.setFormularioAbierto(false);
         binding.taxiFormulario.setVisibility(View.GONE);
     }
 
@@ -377,6 +416,10 @@ public class TaxiFragment extends Fragment {
         List<Booking> disponibles = reservasDisponibles();
         boolean hay = !disponibles.isEmpty();
         binding.taxiFormSinReserva.setVisibility(hay ? View.GONE : View.VISIBLE);
+        binding.taxiFormSinReserva.setText(estado.isError() ? estado.getMessage()
+                : getString(estado.isLoading() ? R.string.taxi_real_cargando_reservas
+                : R.string.taxi_real_reserva_requerida));
+        binding.taxiFormReintentar.setVisibility(estado.isError() ? View.VISIBLE : View.GONE);
         binding.taxiReservas.setVisibility(hay ? View.VISIBLE : View.GONE);
 
         LayoutInflater inflador = LayoutInflater.from(requireContext());
@@ -401,22 +444,12 @@ public class TaxiFragment extends Fragment {
         // y no por instancia: la lista se reconstruye en cada refresco y dar por
         // hecho que trae los mismos objetos es apostar a como esta implementado
         // el repositorio.
-        if (reservaElegida != null && !contiene(disponibles, reservaElegida.getId())) {
-            reservaElegida = null;
-        }
+        reservaElegida = viewModel.getReservaElegida();
         marcarReservaElegida();
+        configurarPasajeros();
 
         // El bloque sin servicio depende de esta misma lista.
         ajustarBloqueLibre();
-    }
-
-    private static boolean contiene(@NonNull List<Booking> reservas, @NonNull String id) {
-        for (Booking reserva : reservas) {
-            if (id.equals(reserva.getId())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @NonNull
@@ -429,9 +462,13 @@ public class TaxiFragment extends Fragment {
     }
 
     private void elegirReserva(@NonNull Booking reserva) {
-        reservaElegida = reserva;
-        marcarReservaElegida();
+        if (viewModel.isEnviando()) return;
+        guardarBorrador();
         viewModel.elegirReserva(reserva);
+        reservaElegida = viewModel.getReservaElegida();
+        restaurarBorrador();
+        marcarReservaElegida();
+        configurarPasajeros();
     }
 
     private void marcarReservaElegida() {
@@ -445,26 +482,32 @@ public class TaxiFragment extends Fragment {
     /**
      * La direccion de recojo la propone el hotel de la reserva.
      *
-     * <p>Se rellena el campo en vez de fijarlo: la direccion del hotel es donde
-     * el cliente se aloja, pero puede querer que lo recojan en otro sitio, y
-     * escribir encima es mas rapido que borrar.
+     * <p>La referencia es editable; el punto geográfico sigue siendo el hotel.
      */
-    private void pintarHotel(@NonNull UiState<Hotel> estado) {
+    private void pintarHotel(@Nullable UiState<Hotel> estado) {
+        if (estado == null) {
+            binding.taxiFormPrecio.setText(R.string.taxi_real_precio_reserva);
+            return;
+        }
         switch (estado.getStatus()) {
             case SUCCESS:
                 binding.taxiCampoRecogida.setError(null);
-                Hotel hotel = estado.getData();
-                if (hotel != null && binding.taxiRecogida.getText() != null
-                        && binding.taxiRecogida.getText().length() == 0) {
-                    binding.taxiRecogida.setText(hotel.getDireccion());
-                }
+                binding.taxiFormPrecio.setText(viewModel.esGratuito()
+                        ? getString(R.string.taxi_real_precio_gratis)
+                        : getString(R.string.taxi_real_precio_fijo,
+                        PriceFormatter.format(TaxiService.TARIFA_AEROPUERTO)));
+                reservaElegida = viewModel.getReservaElegida();
+                restaurarBorrador();
+                configurarPasajeros();
                 break;
             case ERROR:
                 // Sin hotel no hay coordenadas, y sin coordenadas el repositorio
                 // rechaza la solicitud: mejor decirlo ahora que al confirmar.
                 binding.taxiCampoRecogida.setError(estado.getMessage());
+                binding.taxiFormPrecio.setText(R.string.taxi_real_precio_reserva);
                 break;
             default:
+                binding.taxiFormPrecio.setText(R.string.taxi_real_precio_cargando);
                 break;
         }
     }
@@ -483,8 +526,23 @@ public class TaxiFragment extends Fragment {
     }
 
     private void elegirFecha() {
+        if (viewModel.isEnviando()) return;
+        if (reservaElegida != null && reservaElegida.getFechaSalida().isBefore(LocalDate.now())) {
+            avisar(getString(R.string.taxi_real_reserva_requerida));
+            return;
+        }
+        LocalDate minimo = LocalDate.now();
+        if (reservaElegida != null && reservaElegida.getFechaEntrada().isAfter(minimo)) {
+            minimo = reservaElegida.getFechaEntrada();
+        }
+        final long desde = minimo.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+        final long hasta = (reservaElegida != null ? reservaElegida.getFechaSalida()
+                : minimo.plusYears(1)).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
         CalendarConstraints restricciones = new CalendarConstraints.Builder()
-                .setValidator(DateValidatorPointForward.now())
+                .setValidator(CompositeDateValidator.allOf(Arrays.asList(
+                        DateValidatorPointForward.from(desde), DateValidatorPointBackward.before(hasta))))
+                .setStart(desde)
+                .setEnd(hasta)
                 .build();
         MaterialDatePicker.Builder<Long> constructor = MaterialDatePicker.Builder
                 .datePicker()
@@ -492,7 +550,8 @@ public class TaxiFragment extends Fragment {
                 .setPositiveButtonText(R.string.accion_aplicar)
                 .setNegativeButtonText(R.string.accion_cancelar)
                 .setCalendarConstraints(restricciones);
-        if (fecha != null) {
+        if (fecha != null && !fecha.isBefore(minimo)
+                && (reservaElegida == null || !fecha.isAfter(reservaElegida.getFechaSalida()))) {
             constructor.setSelection(fecha.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli());
         }
         MaterialDatePicker<Long> selector = constructor.build();
@@ -500,12 +559,14 @@ public class TaxiFragment extends Fragment {
             if (millis != null) {
                 fecha = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate();
                 pintarFechaHora();
+                guardarBorrador();
             }
         });
         selector.show(getChildFragmentManager(), TAG_FECHA);
     }
 
     private void elegirHora() {
+        if (viewModel.isEnviando()) return;
         MaterialTimePicker selector = new MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
                 .setTitleText(R.string.taxi_hora)
@@ -517,11 +578,13 @@ public class TaxiFragment extends Fragment {
         selector.addOnPositiveButtonClickListener(v -> {
             hora = LocalTime.of(selector.getHour(), selector.getMinute());
             pintarFechaHora();
+            guardarBorrador();
         });
         selector.show(getChildFragmentManager(), TAG_HORA);
     }
 
     private void confirmar() {
+        if (viewModel.isEnviando()) return;
         CharSequence recogida = binding.taxiRecogida.getText();
         CharSequence destino = binding.taxiDestino.getText();
 
@@ -544,30 +607,29 @@ public class TaxiFragment extends Fragment {
             return;
         }
 
-        binding.taxiConfirmar.setEnabled(false);
         binding.taxiFormError.setVisibility(View.GONE);
 
         viewModel.solicitar(recogida.toString(), destino.toString(), fecha, hora,
-                pasajeros, binding.taxiIdaVueltaSwitch.isChecked(),
-                new ResultCallback<TaxiService>() {
-            @Override
-            public void onExito(@NonNull TaxiService dato) {
-                binding.taxiConfirmar.setEnabled(true);
-                cerrarFormulario();
-                reservaElegida = null;
-                Snackbar.make(binding.getRoot(), getString(R.string.taxi_solicitado_titulo),
-                        Snackbar.LENGTH_SHORT).show();
-            }
+                pasajeros, binding.taxiIdaVueltaSwitch.isChecked());
+    }
 
-            @Override
-            public void onError(@NonNull String mensaje) {
-                binding.taxiConfirmar.setEnabled(true);
-                // El motivo va junto al boton y no en un aviso que se va: el
-                // cliente tiene que poder leerlo mientras corrige el formulario.
-                binding.taxiFormError.setText(mensaje);
-                binding.taxiFormError.setVisibility(View.VISIBLE);
-            }
-        });
+    private void pintarSolicitud(@Nullable UiState<TaxiService> estado) {
+        boolean cargando = estado != null && estado.isLoading();
+        binding.taxiConfirmar.setEnabled(!cargando);
+        binding.taxiCancelar.setEnabled(!cargando);
+        binding.taxiRecogida.setEnabled(!cargando);
+        binding.taxiDestino.setEnabled(!cargando);
+        binding.taxiIdaVueltaSwitch.setEnabled(!cargando);
+        binding.taxiConfirmar.setText(cargando ? R.string.taxi_real_guardando : R.string.taxi_confirmar);
+        if (estado == null) return;
+        if (estado.isError()) avisar(estado.getMessage() != null ? estado.getMessage() : "No se pudo guardar el traslado.");
+        if (estado.isSuccess()) {
+            boolean estabaAbierto = binding.taxiFormulario.getVisibility() == View.VISIBLE;
+            binding.taxiFormulario.setVisibility(View.GONE);
+            if (estabaAbierto) Snackbar.make(binding.getRoot(), R.string.taxi_real_solicitud_enviada,
+                    Snackbar.LENGTH_LONG).show();
+            viewModel.consumirSolicitud();
+        }
     }
 
     private void avisar(@NonNull String mensaje) {
@@ -576,6 +638,7 @@ public class TaxiFragment extends Fragment {
     }
 
     private void mostrarQr() {
+        if (getChildFragmentManager().findFragmentByTag(QrSheet.TAG) != null) return;
         UiState<TaxiViewModel.Estado> estado = viewModel.getContenido().getValue();
         if (estado == null || estado.getData() == null || estado.getData().activo == null) {
             return;
@@ -590,30 +653,46 @@ public class TaxiFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle salida) {
+        guardarBorrador();
         super.onSaveInstanceState(salida);
-        salida.putInt("pasajeros", pasajeros);
-        salida.putBoolean("ida_vuelta", binding.taxiIdaVueltaSwitch.isChecked());
-        if (fecha != null) {
-            salida.putLong("fecha", fecha.toEpochDay());
-        }
-        if (hora != null) {
-            salida.putLong("hora", hora.toSecondOfDay());
-        }
-        if (reservaElegida != null) {
-            salida.putString("reserva", reservaElegida.getId());
-        }
     }
 
-    private void restaurarFormulario(@NonNull Bundle entrada) {
-        pasajeros = entrada.getInt("pasajeros", 1);
+    private void restaurarBorrador() {
+        pintandoBorrador = true;
+        pasajeros = viewModel.getPasajeros();
+        fecha = viewModel.getFecha();
+        hora = viewModel.getHora();
+        binding.taxiRecogida.setText(viewModel.getOrigen());
+        binding.taxiDestino.setText(viewModel.getDestino());
         binding.taxiPasajeros.setValor(pasajeros);
-        binding.taxiIdaVueltaSwitch.setChecked(entrada.getBoolean("ida_vuelta", false));
-        if (entrada.containsKey("fecha")) {
-            fecha = LocalDate.ofEpochDay(entrada.getLong("fecha"));
-        }
-        if (entrada.containsKey("hora")) {
-            hora = LocalTime.ofSecondOfDay(entrada.getLong("hora"));
-        }
+        binding.taxiIdaVueltaSwitch.setChecked(viewModel.isIdaYVuelta());
+        pintarFechaHora();
+        pintandoBorrador = false;
+    }
+
+    private void configurarPasajeros() {
+        int maximo = reservaElegida == null ? MAX_PASAJEROS
+                : Math.max(1, Math.min(MAX_PASAJEROS, reservaElegida.getNumHuespedes()));
+        binding.taxiPasajeros.configurar(R.string.taxi_pasajeros,
+                getString(R.string.taxi_real_pasajeros_limite, maximo), 1, maximo);
+        pasajeros = Math.min(pasajeros, maximo);
+        binding.taxiPasajeros.setValor(pasajeros);
+    }
+
+    private TextWatcher observarTexto() {
+        return new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable texto) { guardarBorrador(); }
+        };
+    }
+
+    private void guardarBorrador() {
+        if (pintandoBorrador || binding == null || viewModel == null || fecha == null || hora == null) return;
+        viewModel.guardarFormulario(binding.taxiRecogida.getText() == null ? ""
+                        : binding.taxiRecogida.getText().toString(),
+                binding.taxiDestino.getText() == null ? "" : binding.taxiDestino.getText().toString(),
+                fecha, hora, pasajeros, binding.taxiIdaVueltaSwitch.isChecked());
     }
 
     @Override

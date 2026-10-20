@@ -11,10 +11,12 @@ import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
 import org.iot.project.models.Booking;
 import org.iot.project.models.BookingStatus;
+import org.iot.project.models.Role;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Estado de "Mis reservas" (§30 a §32).
@@ -47,19 +49,23 @@ public class BookingsViewModel extends ViewModel {
 
     private final MutableLiveData<UiState<Secciones>> secciones = new MutableLiveData<>();
     private boolean cargado;
+    private boolean cargando;
+    private String cuentaId;
+    private long generacion;
 
     public LiveData<UiState<Secciones>> getSecciones() {
         return secciones;
     }
 
     public void cargar() {
-        if (cargado) {
+        if (cargado && Objects.equals(cuentaId, SessionManager.getUsuarioId())) {
             return;
         }
         recargar();
     }
 
     public void recargar() {
+        if (cargando && Objects.equals(cuentaId, SessionManager.getUsuarioId())) return;
         cargado = true;
         secciones.setValue(UiState.loading());
         pedir();
@@ -80,11 +86,31 @@ public class BookingsViewModel extends ViewModel {
         pedir();
     }
 
+    /** Conserva la lista visible; una respuesta anterior ya no sustituye la próxima recarga. */
+    public void suspender() {
+        generacion++;
+        cargando = false;
+    }
+
     private void pedir() {
-        ServiceLocator.reservas().reservasDe(SessionManager.getUsuarioIdSeguro(),
+        String uid = SessionManager.getUsuarioId();
+        if (uid == null || SessionManager.getRolActivo() != Role.CLIENTE) {
+            generacion++;
+            cargando = false;
+            cuentaId = null;
+            secciones.setValue(UiState.error("Inicia sesión como cliente para ver tus reservas."));
+            return;
+        }
+        if (cargando && uid.equals(cuentaId)) return;
+        cuentaId = uid;
+        long solicitud = ++generacion;
+        cargando = true;
+        ServiceLocator.reservas().reservasDe(uid,
                 new ResultCallback<List<Booking>>() {
                     @Override
                     public void onExito(@NonNull List<Booking> datos) {
+                        if (!vigente(uid, solicitud)) return;
+                        cargando = false;
                         Secciones agrupadas = agrupar(datos);
                         secciones.setValue(agrupadas.estaVacio()
                                 ? UiState.empty() : UiState.success(agrupadas));
@@ -92,9 +118,21 @@ public class BookingsViewModel extends ViewModel {
 
                     @Override
                     public void onError(@NonNull String mensaje) {
+                        if (!vigente(uid, solicitud)) return;
+                        cargando = false;
                         secciones.setValue(UiState.error(mensaje));
                     }
                 });
+    }
+
+    private boolean vigente(String uid, long solicitud) {
+        return solicitud == generacion && uid.equals(SessionManager.getUsuarioId())
+                && SessionManager.getRolActivo() == Role.CLIENTE;
+    }
+
+    @Override protected void onCleared() {
+        generacion++;
+        super.onCleared();
     }
 
     private Secciones agrupar(@NonNull List<Booking> reservas) {

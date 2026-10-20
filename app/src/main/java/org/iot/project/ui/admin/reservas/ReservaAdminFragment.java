@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
@@ -15,6 +16,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
 import org.iot.project.core.UiState;
+import org.iot.project.core.SessionManager;
 import org.iot.project.core.ViewModelGrafo;
 import org.iot.project.databinding.FragmentAdminReservaBinding;
 import org.iot.project.models.Booking;
@@ -32,16 +34,16 @@ import org.iot.project.utils.PriceFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.time.LocalDate;
 
 /**
  * Detalle de una reserva, vista del administrador (§44).
  *
- * <p>Es donde el hotel hace las tres cosas que puede hacer sobre una reserva:
- * registrar un consumo mientras el huésped está alojado (RF-051), cobrarle el
- * total a la tarjeta cuando ya se fue (RF-049) y cancelarla si todavía no llegó
- * (RC-013). Las tres aparecen y desaparecen según el estado, porque el
- * repositorio rechaza las que no corresponden y ofrecer un botón que va a
- * fallar es prometer algo que no se puede cumplir.
+ * <p>Recepción registra el ingreso de una reserva confirmada, añade consumos
+ * durante la estadía, registra el cobro después del checkout y cancela antes
+ * de la llegada. El ingreso tiene una acción fija y explica cuándo está
+ * disponible; el resto de acciones depende del estado de la reserva.
  *
  * <p>No hay botón de checkout: RF-045 se lo da al cliente, y el hotel espera a
  * que el huésped cierre la estadía desde su aplicación. Lo único que el hotel
@@ -51,6 +53,7 @@ public class ReservaAdminFragment extends Fragment {
 
     private FragmentAdminReservaBinding binding;
     private ReservaAdminViewModel viewModel;
+    @Nullable private AlertDialog confirmacionIngreso;
 
     /** Identificador de la reserva abierta, tal como llegó en los argumentos. */
     @Nullable
@@ -68,6 +71,7 @@ public class ReservaAdminFragment extends Fragment {
     public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applyTopPadding(binding.adminReservaHeader);
+        InsetUtils.applyBottomPadding(binding.adminReservaIngresoAcciones);
         binding.adminReservaHeader.setTitulo(R.string.nav_reserva_detalle);
         binding.adminReservaHeader.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
 
@@ -79,12 +83,16 @@ public class ReservaAdminFragment extends Fragment {
                 ? getArguments().getString(ReservasAdminFragment.ARG_BOOKING_ID) : null;
 
         viewModel = ViewModelGrafo.de(this, R.id.nav_hotel_admin, ReservaAdminViewModel.class);
+        if (bookingId != null) viewModel.cargar(bookingId);
         viewModel.getReserva().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getOperacion().observe(getViewLifecycleOwner(), this::pintarOperacion);
+        viewModel.getOcupado().observe(getViewLifecycleOwner(), this::pintarOcupado);
 
         binding.adminReservaCargo.setOnClickListener(v -> abrirHojaCargo());
-        binding.adminReservaChat.setOnClickListener(v -> abrirChat());
+        binding.adminReservaIniciar.setOnClickListener(v -> confirmarIngreso());
+        binding.adminReservaCobrar.setOnClickListener(v -> confirmarCobro());
         binding.adminReservaCancelar.setOnClickListener(v -> confirmarCancelacion());
+        binding.adminReservaChat.setOnClickListener(v -> abrirChat());
 
         if (bookingId == null) {
             // Sin identificador no hay nada que pedir. Se dice y se deja el
@@ -92,7 +100,20 @@ public class ReservaAdminFragment extends Fragment {
             pintarError(getString(R.string.admin_reserva_no_encontrada));
             return;
         }
-        viewModel.cargar(bookingId);
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        if (bookingId != null) {
+            viewModel.cargar(bookingId);
+            viewModel.iniciarSeguimiento();
+        }
+    }
+
+    @Override public void onStop() {
+        cerrarConfirmacionIngreso();
+        viewModel.detenerSeguimiento();
+        super.onStop();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -100,6 +121,7 @@ public class ReservaAdminFragment extends Fragment {
     private void pintar(@NonNull UiState<ReservaDeHotel> estado) {
         switch (estado.getStatus()) {
             case LOADING:
+                binding.adminReservaIngresoAcciones.setVisibility(View.GONE);
                 binding.adminReservaEsqueleto.setVisibility(View.VISIBLE);
                 binding.adminReservaContenido.setVisibility(View.GONE);
                 binding.adminReservaError.setVisibility(View.GONE);
@@ -233,7 +255,9 @@ public class ReservaAdminFragment extends Fragment {
             // Sin tarjeta no se enseña la fila: el aviso que la sustituye ya
             // explica dónde se cobra, y una fila vacía debajo solo estorbaría.
             binding.adminReservaFilaTarjeta.setVisibility(View.GONE);
-            binding.adminReservaTarjetaNota.setText(R.string.admin_reserva_sin_tarjeta);
+            binding.adminReservaTarjetaNota.setText(reserva.isCobrado()
+                    ? R.string.admin_firestore_cobro_registrado
+                    : R.string.admin_firestore_cobro_recepcion_nota);
             return;
         }
         binding.adminReservaFilaTarjeta.setVisibility(View.VISIBLE);
@@ -242,7 +266,8 @@ public class ReservaAdminFragment extends Fragment {
         binding.adminReservaFilaTarjeta.bind(R.string.admin_reserva_fila_tarjeta,
                 describirTarjeta(tarjeta), R.string.perfil_sin_dato);
         binding.adminReservaTarjetaNota.setText(reserva.isCobrado()
-                ? R.string.admin_reserva_cobrado : R.string.admin_reserva_cobro_simulado);
+                ? R.string.admin_firestore_cobro_registrado
+                : R.string.admin_firestore_cobro_recepcion_nota);
     }
 
     /**
@@ -263,10 +288,9 @@ public class ReservaAdminFragment extends Fragment {
     /**
      * Enseña las acciones que el estado de la reserva permite.
      *
-     * <p>La regla es la misma en las cuatro: un botón solo se muestra si tiene
-     * algo que hacer. Cancelar una estadía en curso o cobrar antes del checkout
-     * no son operaciones que el repositorio vaya a aceptar, y un botón que
-     * siempre falla enseña a desconfiar de los botones.
+     * <p>El ingreso sigue visible antes de la llegada, con la explicación de
+     * pago o fechas cuando está deshabilitado. Las demás acciones se ofrecen
+     * únicamente en los estados que admite el repositorio.
      */
     private void pintarAcciones(@NonNull Booking reserva) {
         BookingStatus estado = reserva.getEstado();
@@ -277,12 +301,25 @@ public class ReservaAdminFragment extends Fragment {
         binding.adminReservaCargo.setVisibility(
                 estado == BookingStatus.ACTIVA ? View.VISIBLE : View.GONE);
 
-        // El cobro del total, solo después del checkout y con tarjeta (RF-049).
+        LocalDate hoy = LocalDate.now();
+        boolean esperando = estado == BookingStatus.PENDIENTE || estado == BookingStatus.CONFIRMADA;
+        binding.adminReservaIngresoAcciones.setVisibility(esperando ? View.VISIBLE : View.GONE);
+        if (esperando) {
+            binding.adminReservaIngresoNota.setText(estado == BookingStatus.PENDIENTE
+                    ? R.string.admin_firestore_ingreso_pendiente
+                    : hoy.isBefore(reserva.getFechaEntrada())
+                    ? R.string.admin_firestore_ingreso_anticipado
+                    : !hoy.isBefore(reserva.getFechaSalida())
+                    ? R.string.admin_firestore_ingreso_vencido
+                    : R.string.admin_firestore_ingreso_listo);
+        }
+
+        // El registro de recepción es simulado y no requiere una tarjeta almacenada.
         boolean puedeCobrar = estado == BookingStatus.FINALIZADA
-                && reserva.getTarjeta() != null && !reserva.isCobrado();
+                && !reserva.isCobrado();
         binding.adminReservaCobrar.setVisibility(puedeCobrar ? View.VISIBLE : View.GONE);
         if (puedeCobrar) {
-            binding.adminReservaCobrar.setText(getString(R.string.admin_reserva_cobrar,
+            binding.adminReservaCobrar.setText(getString(R.string.admin_firestore_cobrar,
                     PriceFormatter.format(reserva.getTotal())));
         }
 
@@ -294,9 +331,12 @@ public class ReservaAdminFragment extends Fragment {
         // que comprueba el repositorio antes de cancelar.
         binding.adminReservaCancelar.setVisibility(
                 estado.allowsCancellation() ? View.VISIBLE : View.GONE);
+        pintarOcupado(viewModel.estaOcupado());
     }
 
     private void pintarError(@Nullable String mensaje) {
+        binding.adminReservaIngresoAcciones.setVisibility(View.GONE);
+        cerrarConfirmacionIngreso();
         binding.adminReservaEsqueleto.setVisibility(View.GONE);
         binding.adminReservaContenido.setVisibility(View.GONE);
         binding.adminReservaError.setVisibility(View.VISIBLE);
@@ -318,9 +358,13 @@ public class ReservaAdminFragment extends Fragment {
             // El mensaje se elige por el estado en que quedó la reserva y no por
             // recordar qué botón se pulsó: si se canceló, está cancelada, y eso
             // no depende de que esta pantalla se acuerde de lo que hizo.
-            avisar(reserva != null && reserva.getEstado() == BookingStatus.CANCELADA
-                    ? getString(R.string.admin_reserva_cancelada)
-                    : getString(R.string.admin_reserva_cobrado_hecho));
+            if (reserva != null) {
+                avisar(getString(reserva.getEstado() == BookingStatus.CANCELADA
+                        ? R.string.admin_reserva_cancelada
+                        : reserva.getEstado() == BookingStatus.ACTIVA
+                        ? R.string.admin_firestore_ingreso_hecho
+                        : R.string.admin_firestore_cobro_hecho));
+            }
         } else if (estado.isError()) {
             avisar(estado.getMessage() != null
                     ? estado.getMessage() : getString(R.string.estado_error_descripcion));
@@ -333,17 +377,86 @@ public class ReservaAdminFragment extends Fragment {
     }
 
     private void abrirHojaCargo() {
+        if (viewModel.estaOcupado() || getChildFragmentManager().findFragmentByTag(CargoSheet.TAG) != null) return;
         CargoSheet.para(bookingId).show(getChildFragmentManager(), CargoSheet.TAG);
     }
 
+    private void pintarOcupado(@Nullable Boolean guardando) {
+        boolean libre = !Boolean.TRUE.equals(guardando);
+        binding.adminReservaIniciar.setEnabled(libre && puedeRegistrarIngreso());
+        binding.adminReservaIniciar.setText(libre
+                ? R.string.admin_firestore_ingreso : R.string.admin_firestore_guardando);
+        binding.adminReservaCargo.setEnabled(libre);
+        binding.adminReservaCobrar.setEnabled(libre);
+        binding.adminReservaCancelar.setEnabled(libre);
+        binding.adminReservaChat.setEnabled(libre);
+        binding.adminReservaOperacion.setVisibility(libre ? View.GONE : View.VISIBLE);
+    }
+
     private void abrirChat() {
+        UiState<ReservaDeHotel> actual = viewModel.getReserva().getValue();
+        if (viewModel.estaOcupado() || actual == null || !actual.isSuccess()
+                || !actual.requireData().getReserva().permiteChat() || bookingId == null) return;
         Bundle argumentos = new Bundle();
         argumentos.putString(ReservasAdminFragment.ARG_BOOKING_ID, bookingId);
-        Navigation.findNavController(requireView())
-                .navigate(R.id.adminChatFragment, argumentos);
+        Navigation.findNavController(requireView()).navigate(R.id.adminChatFragment, argumentos);
+    }
+
+    private void confirmarIngreso() {
+        if (viewModel.estaOcupado() || !puedeRegistrarIngreso() || confirmacionIngreso != null) return;
+        final String reservaConfirmada = bookingId;
+        final String cuenta = SessionManager.getIdentidadId();
+        final String hotel = SessionManager.getHotelAdministrado();
+        confirmacionIngreso = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.admin_firestore_ingreso_titulo)
+                .setMessage(R.string.admin_firestore_ingreso_mensaje)
+                .setNegativeButton(R.string.accion_volver, null)
+                .setPositiveButton(R.string.admin_firestore_ingreso,
+                        (dialogo, cual) -> {
+                            if (Objects.equals(reservaConfirmada, bookingId)
+                                    && Objects.equals(cuenta, SessionManager.getIdentidadId())
+                                    && Objects.equals(hotel, SessionManager.getHotelAdministrado())
+                                    && puedeRegistrarIngreso()) {
+                                viewModel.iniciarEstadia();
+                            }
+                        })
+                .create();
+        confirmacionIngreso.setOnDismissListener(dialogo -> confirmacionIngreso = null);
+        confirmacionIngreso.show();
+    }
+
+    private boolean puedeRegistrarIngreso() {
+        UiState<ReservaDeHotel> actual = viewModel.getReserva().getValue();
+        if (bookingId == null || actual == null || !actual.isSuccess()) return false;
+        Booking reserva = actual.requireData().getReserva();
+        LocalDate hoy = LocalDate.now();
+        return bookingId.equals(reserva.getId()) && reserva.getEstado() == BookingStatus.CONFIRMADA
+                && !hoy.isBefore(reserva.getFechaEntrada()) && hoy.isBefore(reserva.getFechaSalida());
+    }
+
+    private void cerrarConfirmacionIngreso() {
+        if (confirmacionIngreso != null) {
+            confirmacionIngreso.dismiss();
+            confirmacionIngreso = null;
+        }
+    }
+
+    private void confirmarCobro() {
+        UiState<ReservaDeHotel> estado = viewModel.getReserva().getValue();
+        ReservaDeHotel detalle = estado == null ? null : estado.getData();
+        if (viewModel.estaOcupado() || detalle == null) return;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.admin_firestore_cobro_titulo,
+                        PriceFormatter.format(detalle.getReserva().getTotal())))
+                .setMessage(R.string.admin_firestore_cobro_mensaje)
+                .setNegativeButton(R.string.accion_volver, null)
+                .setPositiveButton(R.string.admin_firestore_cobro_confirmar,
+                        (dialogo, cual) -> viewModel.cobrar())
+                .show();
     }
 
     private void confirmarCancelacion() {
+        if (viewModel.estaOcupado()) return;
         UiState<ReservaDeHotel> estado = viewModel.getReserva().getValue();
         ReservaDeHotel detalle = estado != null ? estado.getData() : null;
         if (detalle == null) {
@@ -361,6 +474,7 @@ public class ReservaAdminFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        cerrarConfirmacionIngreso();
         super.onDestroyView();
         binding = null;
     }

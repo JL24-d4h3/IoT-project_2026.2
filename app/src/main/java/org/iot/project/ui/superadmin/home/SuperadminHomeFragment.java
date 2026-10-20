@@ -84,18 +84,25 @@ public class SuperadminHomeFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(SuperadminHomeViewModel.class);
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
-        viewModel.cargar();
+        SessionManager.sesion().observe(getViewLifecycleOwner(), cuenta -> viewModel.iniciar());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        viewModel.iniciar();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         binding.saInicioCrearHotel.setEnabled(true);
-        // Las cifras cambian desde las otras pantallas del panel —desactivar una
-        // cuenta, habilitar un conductor, dar de alta un hotel— y volver a Inicio
-        // tiene que enseñarlas al dia. Sin esqueleto: el tablero ya esta pintado
-        // y no hay motivo para borrarlo mientras llega el refresco.
-        viewModel.refrescarEnSilencio();
+    }
+
+    @Override
+    public void onStop() {
+        viewModel.suspender();
+        super.onStop();
     }
 
     // ------------------------------------------------------------------ Pinta
@@ -162,14 +169,18 @@ public class SuperadminHomeFragment extends Fragment {
         int hoteles = resumen.getHotelesSinAdministrador();
         boolean hayConductores = conductores > 0;
         boolean hayHoteles = hoteles > 0;
+        boolean conductoresSinConsultar = conductores < 0;
 
         binding.saPendientesTitulo.setText(hayConductores || hayHoteles
                 ? R.string.sa_pendientes_titulo
+                : conductoresSinConsultar ? R.string.sa_resumen_estado_asignaciones
                 : R.string.sa_sin_pendientes_titulo);
 
         binding.saPendientesConductores.setVisibility(hayConductores ? View.VISIBLE : View.GONE);
-        binding.saPendientesConductoresTexto.setText(getResources()
-                .getQuantityString(R.plurals.sa_conductores_pendientes, conductores, conductores));
+        if (hayConductores) {
+            binding.saPendientesConductoresTexto.setText(getResources()
+                    .getQuantityString(R.plurals.sa_conductores_pendientes, conductores, conductores));
+        }
 
         binding.saPendientesHoteles.setVisibility(hayHoteles ? View.VISIBLE : View.GONE);
         binding.saPendientesHotelesTexto.setText(getResources()
@@ -177,6 +188,9 @@ public class SuperadminHomeFragment extends Fragment {
 
         binding.saPendientesVacio.setVisibility(
                 hayConductores || hayHoteles ? View.GONE : View.VISIBLE);
+        binding.saPendientesVacio.setText(conductoresSinConsultar
+                ? R.string.sa_resumen_aprobaciones_proximamente
+                : R.string.sa_sin_pendientes_mensaje);
     }
 
     /**
@@ -215,6 +229,7 @@ public class SuperadminHomeFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        viewModel.suspender();
         super.onDestroyView();
         // El adaptador se suelta antes que el binding: si el RecyclerView
         // conservara las vistas, seguirian apuntando a un binding ya liberado.

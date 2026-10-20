@@ -115,6 +115,15 @@
             android:layout_height="@dimen/button_height"
             android:layout_marginTop="@dimen/space_lg"
             android:text="@string/cargo_guardar" />
+
+        <TextView
+            android:id="@+id/cargo_reintento_nota"
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/admin_firestore_cargo_reintento_nota"
+            android:visibility="gone" />
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

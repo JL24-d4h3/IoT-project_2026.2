@@ -200,6 +200,19 @@ public class TaxiService {
         return this;
     }
 
+    /** Hidrata el estado recibido del servidor sin ejecutar ni inventar transiciones. */
+    public TaxiService withEstadoPersistido(TaxiStatus estado, Driver conductor, float rating) {
+        if (estado == null || !Float.isFinite(rating) || rating < 0f || rating > 10f
+                || (rating > 0f && rating < 1f)
+                || (rating > 0f && !estado.isFinished())) {
+            throw new IllegalArgumentException("El servicio de taxi tiene un estado o valoración inválidos.");
+        }
+        this.estado = estado;
+        this.driver = conductor;
+        this.ratingCliente = rating;
+        return this;
+    }
+
     /**
      * RF-107: aceptar un pedido mueve el estado a ASIGNADO y deja el servicio
      * ligado al conductor que lo acepto (RF-091).

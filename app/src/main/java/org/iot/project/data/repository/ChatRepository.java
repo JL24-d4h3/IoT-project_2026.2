@@ -25,6 +25,47 @@ import java.util.List;
  */
 public interface ChatRepository {
 
+    interface Suscripcion { void cerrar(); }
+
+    @NonNull
+    default Suscripcion escucharConversacionDe(@NonNull String bookingId,
+                                               @NonNull ResultCallback<Conversation> callback) {
+        conversacionDe(bookingId, callback);
+        return () -> { };
+    }
+
+    @NonNull
+    default Suscripcion escucharConversacionDeHotel(@NonNull String bookingId,
+                                                    @NonNull ResultCallback<ConversacionDeHotel> callback) {
+        conversacionDeHotel(bookingId, callback);
+        return () -> { };
+    }
+
+    @NonNull
+    default Suscripcion escucharConversacionesDeHotel(@NonNull String hotelId,
+                                  @NonNull ResultCallback<List<ConversacionDeHotel>> callback) {
+        conversacionesDeHotel(hotelId, callback);
+        return () -> { };
+    }
+
+    /** El UUID se conserva al reintentar un envío cuyo resultado se desconoce. */
+    default void enviar(@NonNull String bookingId, @NonNull String messageId,
+                        @NonNull String texto, @NonNull ResultCallback<Conversation> callback) {
+        enviar(bookingId, texto, callback);
+    }
+
+    default void responder(@NonNull String bookingId, @NonNull String messageId,
+                           @NonNull String texto, @NonNull ResultCallback<Conversation> callback) {
+        responder(bookingId, texto, callback);
+    }
+
+    /** Solo acusa recibo de los mensajes que la pantalla recibió realmente. */
+    default void marcarLeido(@NonNull String bookingId, @NonNull Message.Autor lector,
+                             @NonNull List<String> idsEntregados,
+                             @NonNull ResultCallback<Conversation> callback) {
+        marcarLeido(bookingId, lector, callback);
+    }
+
     /**
      * Devuelve la conversacion de una reserva, vista desde el cliente.
      *

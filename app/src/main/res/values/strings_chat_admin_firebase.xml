@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_chat_firebase_reintentar">Reintentar</string>
+    <string name="admin_chat_firebase_enviando">Enviando mensaje…</string>
+    <string name="admin_chat_firebase_envio_pendiente">Mensaje pendiente de confirmación. Reintenta para comprobar su envío.</string>
+    <string name="admin_chat_firebase_vacio_reservas">Aquí aparecen las conversaciones de los huéspedes alojados. Para iniciar una, abre una reserva activa y pulsa el botón de chat. El chat se cierra al hacer el checkout.</string>
+</resources>

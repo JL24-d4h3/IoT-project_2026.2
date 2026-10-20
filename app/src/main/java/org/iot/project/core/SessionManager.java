@@ -13,6 +13,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.MetadataChanges;
 
 import org.iot.project.data.firebase.FirebaseErrores;
 import org.iot.project.data.firebase.PerfilFirebase;
@@ -32,12 +33,11 @@ import org.iot.project.data.firebase.PerfilFirebase;
  * de cada rol necesitan saber a quien estan atendiendo, y volver a preguntarlo
  * al repositorio en cada una seria pedir cuatro veces el mismo dato.
  *
- * <p><b>Un conductor no es un usuario.</b> Los roles de cliente, administrador
- * y superadmin entran con un {@link org.iot.project.models.User}; el conductor
- * entra con un {@link org.iot.project.models.Driver}, que es otro modelo. Por
- * eso la identidad se expone por separado: quien necesite al conductor llama a
- * {@link #getConductorId()} y no puede recibir por error el identificador de un
- * usuario.
+ * <p>Todos los roles autentican su UID con Firebase y cargan su perfil de acceso
+ * desde usuarios/{uid}. El perfil operativo del conductor ({@link
+ * org.iot.project.models.Driver}) se gestionará por separado con el sistema de
+ * taxistas. Su identidad se expone mediante {@link #getConductorId()} para que
+ * no se use como cliente o administrador en los repositorios de usuarios.
  */
 public final class SessionManager {
 
@@ -142,7 +142,7 @@ public final class SessionManager {
 
     private static void observarPerfil(String uid, long solicitud) {
         perfilListener = FirebaseFirestore.getInstance().collection("usuarios").document(uid)
-                .addSnapshotListener((documento, error) -> {
+                .addSnapshotListener(MetadataChanges.INCLUDE, (documento, error) -> {
                     FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
                     if (solicitud != version || usuario == null || !uid.equals(usuario.getUid())) {
                         return;

@@ -70,7 +70,19 @@ public class SuperadminPerfilFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(SuperadminPerfilViewModel.class);
         viewModel.getPerfil().observe(getViewLifecycleOwner(), this::pintarPerfil);
         viewModel.getPlataforma().observe(getViewLifecycleOwner(), this::pintarPlataforma);
-        viewModel.cargar();
+        SessionManager.sesion().observe(getViewLifecycleOwner(), cuenta -> viewModel.iniciar());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        viewModel.iniciar();
+    }
+
+    @Override
+    public void onStop() {
+        viewModel.suspender();
+        super.onStop();
     }
 
     // ------------------------------------------------------------------ Cuenta
@@ -183,11 +195,15 @@ public class SuperadminPerfilFragment extends Fragment {
         // Esta no va "de totales" porque no es una parte de un todo: es lo que
         // espera una decision suya, y el numero solo ya lo dice todo.
         binding.saPerfilFilaPendientes.bind(R.string.sa_stat_pendientes,
-                String.valueOf(resumen.getConductoresPendientes()), R.string.perfil_sin_dato);
+                resumen.getConductoresPendientes() < 0 ? "—"
+                        : String.valueOf(resumen.getConductoresPendientes()), R.string.perfil_sin_dato);
+        binding.saPerfilConductoresAviso.setVisibility(resumen.getConductoresPendientes() < 0
+                ? View.VISIBLE : View.GONE);
     }
 
     @NonNull
     private CharSequence deTotales(int parte, int total) {
+        if (parte < 0 || total < 0) return "—";
         return getString(R.string.sa_de_total, parte, total);
     }
 
@@ -211,6 +227,7 @@ public class SuperadminPerfilFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        viewModel.suspender();
         super.onDestroyView();
         binding = null;
     }

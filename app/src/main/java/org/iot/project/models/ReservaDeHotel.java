@@ -108,7 +108,8 @@ public final class ReservaDeHotel {
      */
     @NonNull
     public String getClienteNombre(@NonNull String porDefecto) {
-        return cliente != null ? cliente.getNombreCompleto() : porDefecto;
+        String nombre = cliente == null ? "" : cliente.getNombreCompleto().trim();
+        return nombre.isEmpty() ? porDefecto : nombre;
     }
 
     @NonNull

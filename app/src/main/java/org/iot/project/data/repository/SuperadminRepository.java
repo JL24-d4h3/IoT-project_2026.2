@@ -23,11 +23,22 @@ import java.util.List;
  */
 public interface SuperadminRepository {
 
+    /** Una escucha se cierra cuando la pantalla deja de estar visible. */
+    interface Suscripcion {
+        void cerrar();
+    }
+
     /** Cifras de la plataforma y ultimos movimientos, en una sola llamada. */
     void resumen(@NonNull ResultCallback<ResumenSuperadmin> callback);
 
-    /** RF-005: cuentas de cliente, administrador y superadministrador. */
+    /** RF-005: cuentas de acceso de todos los roles, incluidos los taxistas. */
     void usuarios(@NonNull ResultCallback<List<User>> callback);
+
+    /** Directorio actualizado desde el servidor mientras la pantalla está visible. */
+    default Suscripcion escucharUsuarios(@NonNull ResultCallback<List<User>> callback) {
+        usuarios(callback);
+        return () -> { };
+    }
 
     /** RF-006: activar o desactivar una cuenta. */
     void cambiarActivo(@NonNull String usuarioId, boolean activo,
