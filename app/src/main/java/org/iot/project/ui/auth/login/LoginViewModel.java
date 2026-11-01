@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel;
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.ServiceLocator;
 import org.iot.project.core.UiState;
+import org.iot.project.data.api.TaxiApi;
 import org.iot.project.models.Cuenta;
 
 /**
@@ -46,7 +47,30 @@ public class LoginViewModel extends ViewModel {
 
             @Override
             public void onError(@NonNull String mensaje) {
+                // No es cliente ni administrador: puede ser un taxista, que entra por la API.
+                probarComoTaxista(correo, contrasena, mensaje);
+            }
+        });
+    }
+
+    private void probarComoTaxista(@NonNull String correo, @NonNull String contrasena,
+                                   @NonNull String mensajeFirebase) {
+        TaxiApi.get().loginConductor(correo, contrasena, new TaxiApi.LoginCallback() {
+            @Override
+            public void onExito(@NonNull Cuenta cuenta) {
+                acceso.setValue(UiState.success(cuenta));
+            }
+
+            @Override
+            public void onRechazado(@NonNull String mensaje) {
+                // Credenciales de taxista correctas, pero cuenta en revision o desactivada.
                 acceso.setValue(UiState.error(mensaje));
+            }
+
+            @Override
+            public void onNoReconocido(@NonNull String mensaje) {
+                // Para quien no es taxista, el error es el de siempre.
+                acceso.setValue(UiState.error(mensajeFirebase));
             }
         });
     }

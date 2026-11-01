@@ -542,6 +542,8 @@
     <string name="driver_codigo_campo">Código</string>
     <string name="driver_codigo_confirmar">Cerrar servicio</string>
     <string name="driver_servicio_cerrado">Servicio cerrado. Ya puedes aceptar otro.</string>
+    <string name="driver_confirmar_aceptar_titulo">¿Aceptar este traslado?</string>
+    <string name="driver_confirmar_aceptar_mensaje">%1$s → %2$s\n\nNo podrás tomar otro servicio hasta cerrar este.</string>
 
     <!-- ==================== PANEL DEL SUPERADMIN (§47) ==================== -->
     <string name="sa_titulo_inicio">Panel de la plataforma</string>

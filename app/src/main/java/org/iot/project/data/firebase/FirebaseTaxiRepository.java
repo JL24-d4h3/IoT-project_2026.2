@@ -17,6 +17,7 @@ import com.google.firebase.firestore.Source;
 
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.SessionManager;
+import org.iot.project.data.api.TaxiApi;
 import org.iot.project.data.repository.TaxiRepository;
 import org.iot.project.models.AppNotification;
 import org.iot.project.models.Booking;
@@ -437,24 +438,29 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
         }
     }
 
+    // ------------------------------------------------------------------
+    //  Lado del conductor: sistema de taxistas por REST (RT-006, RT-023).
+    //  El cliente HTTP vive en data/api/TaxiApi.
+    // ------------------------------------------------------------------
+
     @Override public void perfilDe(@NonNull String conductorId, @NonNull ResultCallback<Driver> callback) {
-        callback.onError("El perfil de conductores todavía no está conectado al sistema de taxistas.");
+        TaxiApi.get().perfilDe(conductorId, callback);
     }
     @Override public void disponibles(@NonNull String conductorId, @NonNull ResultCallback<List<OfertaDeTaxi>> callback) {
-        callback.onError("Las ofertas para conductores todavía no están conectadas al sistema de taxistas.");
+        TaxiApi.get().disponibles(conductorId, callback);
     }
     @Override public void serviciosEnCursoDe(@NonNull String conductorId, @NonNull ResultCallback<List<TaxiService>> callback) {
-        callback.onError("Los servicios del conductor todavía no están conectados al sistema de taxistas.");
+        TaxiApi.get().serviciosEnCursoDe(conductorId, callback);
     }
     @Override public void aceptar(@NonNull String taxiId, @NonNull String conductorId, @NonNull ResultCallback<TaxiService> callback) {
-        callback.onError("La asignación del conductor debe realizarse desde el sistema de taxistas.");
+        TaxiApi.get().aceptar(taxiId, conductorId, callback);
     }
     @Override public void avanzarComoConductor(@NonNull String taxiId, @NonNull String conductorId,
                                              @NonNull ResultCallback<TaxiService> callback) {
-        callback.onError("Los estados del traslado deben actualizarse desde el sistema de taxistas.");
+        TaxiApi.get().avanzar(taxiId, conductorId, callback);
     }
     @Override public void validarCodigo(@NonNull String taxiId, @NonNull String conductorId,
                                        @NonNull String codigo, @NonNull ResultCallback<TaxiService> callback) {
-        callback.onError("La finalización del traslado debe validarse desde el sistema de taxistas.");
+        TaxiApi.get().finalizar(taxiId, conductorId, codigo, callback);
     }
 }

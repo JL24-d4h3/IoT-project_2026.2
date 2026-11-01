@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import org.iot.project.data.api.ApiSesion;
 import org.iot.project.models.Cuenta;
 import org.iot.project.models.Role;
 
@@ -66,6 +67,10 @@ public final class SessionManager {
         FirebaseAuth.getInstance().addAuthStateListener(auth -> {
             FirebaseUser usuario = auth.getCurrentUser();
             Cuenta cuenta = SESION.getValue();
+            // El taxista entra por la API y no tiene usuario de Firebase: su sesion no depende de este listener.
+            if (cuenta != null && cuenta.getRol() == Role.CONDUCTOR) {
+                return;
+            }
             if (usuario == null || (cuenta != null
                     && !cuenta.getIdentidadId().equals(usuario.getUid()))) {
                 quitarPerfilListener();
@@ -120,6 +125,10 @@ public final class SessionManager {
      * <p>Se llama desde el hilo principal tras cargar el perfil autorizado.
      */
     public static void iniciarSesion(@NonNull Cuenta cuenta) {
+        if (cuenta.getRol() == Role.CONDUCTOR) {
+            iniciarSesionConductor(cuenta);
+            return;
+        }
         FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
         if (usuario == null || !usuario.getUid().equals(cuenta.getIdentidadId())) {
             return;
@@ -132,7 +141,23 @@ public final class SessionManager {
         observarPerfil(usuario.getUid(), version);
     }
 
+    /**
+     * Sesion del taxista: se autentica contra la API (JWT en {@link ApiSesion}),
+     * no con Firebase, asi que no hay UID ni perfil de Firestore que observar.
+     */
+    private static void iniciarSesionConductor(@NonNull Cuenta cuenta) {
+        if (!ApiSesion.activa() || !cuenta.getIdentidadId().equals(ApiSesion.taxistaId())) {
+            return;
+        }
+        version++;
+        quitarPerfilListener();
+        AVISO.setValue(null);
+        SESION.setValue(cuenta);
+        RESTAURANDO.setValue(false);
+    }
+
     public static void cerrarSesion() {
+        ApiSesion.cerrar();
         version++;
         quitarPerfilListener();
         SESION.setValue(null);
