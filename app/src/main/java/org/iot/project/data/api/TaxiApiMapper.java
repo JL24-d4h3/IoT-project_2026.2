@@ -58,18 +58,23 @@ final class TaxiApiMapper {
     @NonNull
     static Driver taxista(@NonNull JSONObject o) throws JSONException {
         Vehicle vehiculo = new Vehicle(texto(o, "placaVehiculo"))
-                .withFoto(textoONulo(o, "fotoVehiculoUrl"));
+                .withFoto(urlPublica(textoONulo(o, "fotoVehiculoUrl")));
         double promedio = o.isNull("valoracionPromedio") ? 0d : o.getDouble("valoracionPromedio");
         Driver conductor = new Driver(String.valueOf(o.getLong("id")),
                 texto(o, "nombres"), texto(o, "apellidos"))
                 .withDocumento(texto(o, "tipoDocumento"), texto(o, "documentoEnmascarado"))
                 .withContacto("", texto(o, "telefono"), "")
-                .withFoto(textoONulo(o, "fotoUrl"))
+                .withFoto(urlPublica(textoONulo(o, "fotoUrl")))
                 .withVehiculo(vehiculo)
                 .withRating((float) (promedio * ApiConfig.FACTOR_VALORACION),
                         o.isNull("totalValoraciones") ? 0 : o.getInt("totalValoraciones"));
         conductor.setHabilitado("HABILITADO".equals(texto(o, "estadoHabilitacion")));
         return conductor;
+    }
+
+    /** Escala de la app (1 a 10) a la de la API (1 a 5); ver {@link ApiConfig#FACTOR_VALORACION}. */
+    static int puntosApi(float nota) {
+        return Math.max(1, Math.min(5, Math.round(nota / ApiConfig.FACTOR_VALORACION)));
     }
 
     /** Mensaje de un {@code ApiErrorResponse}, o {@code null} si el cuerpo no lo trae. */
@@ -85,6 +90,24 @@ final class TaxiApiMapper {
         } catch (JSONException ignorado) {
             return null;
         }
+    }
+
+    /**
+     * Deja la URL de una foto lista para cargarla desde el telefono. Con el
+     * almacenamiento local la API arma URL con "localhost" (o relativas), que
+     * en el emulador o en un celular no son la PC: se apuntan a {@link ApiConfig#BASE_URL}.
+     * Las URL de Cloudinary y otras nubes no se tocan.
+     */
+    @Nullable
+    static String urlPublica(@Nullable String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return null;
+        }
+        String limpia = url.trim();
+        if (limpia.startsWith("/")) {
+            return ApiConfig.BASE_URL + limpia;
+        }
+        return limpia.replaceFirst("^https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?", ApiConfig.BASE_URL);
     }
 
     @NonNull

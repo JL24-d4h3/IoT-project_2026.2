@@ -25,10 +25,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -57,7 +62,14 @@ public final class TaxiApi {
         return INSTANCIA;
     }
 
-    private final ExecutorService hilo = Executors.newFixedThreadPool(2);
+    /** Servicios ya cerrados: no cambian, asi que se consultan una sola vez por sesion. */
+    private static final Map<String, TaxiVivo> FINALIZADOS = new ConcurrentHashMap<>();
+    /** Notas del cliente que la API ya tiene (o que ya reconocio como repetidas). */
+    private static final Set<String> VALORADAS = ConcurrentHashMap.newKeySet();
+    private static final long VIGENCIA_CONDUCTOR_MS = 60_000L;
+    private final Map<String, CacheConductor> conductores = new ConcurrentHashMap<>();
+
+    private final ExecutorService hilo = Executors.newFixedThreadPool(3);
     private final Handler principal = new Handler(Looper.getMainLooper());
 
     private TaxiApi() {
@@ -202,6 +214,207 @@ public final class TaxiApi {
             return TaxiApiMapper.servicio(
                     leerObjeto("PUT", "/api/servicios/" + taxiId + "/finalizar", cuerpo, true));
         }, callback);
+    }
+
+    // =====================================================================
+    //  Lado del cliente (las usa FirebaseTaxiRepository)
+    // =====================================================================
+
+    /** Resultado de contrastar las solicitudes del cliente con el sistema de taxistas. */
+    public static final class Enriquecimiento {
+        /** Las mismas solicitudes, en el mismo orden, con el estado real. */
+        @NonNull public final List<TaxiService> servicios;
+        /** Reservas cuya solicitud todavia no existe en la API: la app debe registrarlas. */
+        @NonNull public final Set<String> sinRegistrar;
+        /** {@code true} si la API no respondio: se conserva lo que guardo Firestore. */
+        public final boolean apiCaida;
+
+        Enriquecimiento(@NonNull List<TaxiService> servicios, @NonNull Set<String> sinRegistrar, boolean apiCaida) {
+            this.servicios = servicios;
+            this.sinRegistrar = sinRegistrar;
+            this.apiCaida = apiCaida;
+        }
+    }
+
+    /**
+     * RF-113 a RF-116: para cada solicitud del cliente consulta su estado, su taxista
+     * asignado y su ubicacion. Si la API no responde no falla: devuelve las solicitudes
+     * tal como estaban, para que reservas y hoteles sigan funcionando (RC-019, RC-020).
+     */
+    public void enriquecer(@NonNull List<TaxiService> base, @NonNull ResultCallback<Enriquecimiento> callback) {
+        hilo.execute(() -> {
+            List<TaxiService> salida = new ArrayList<>(base.size());
+            Set<String> sinRegistrar = new LinkedHashSet<>();
+            boolean caida = false;
+            for (TaxiService taxi : base) {
+                String reserva = taxi.getBookingId();
+                TaxiVivo cerrado = FINALIZADOS.get(reserva);
+                if (cerrado != null) {
+                    salida.add(TaxiVivo.aplicar(taxi, cerrado));
+                    continue;
+                }
+                boolean completo = taxi.getEstado() == TaxiStatus.FINALIZADO && taxi.getDriver() != null;
+                if (caida || completo) {
+                    salida.add(taxi);
+                    continue;
+                }
+                try {
+                    TaxiVivo vivo = vivo(reserva);
+                    if (vivo == null) {
+                        sinRegistrar.add(reserva);
+                        salida.add(taxi);
+                        continue;
+                    }
+                    if (vivo.estado == TaxiStatus.FINALIZADO) {
+                        FINALIZADOS.put(reserva, vivo);
+                        reenviarNota(taxi, vivo);
+                    }
+                    salida.add(TaxiVivo.aplicar(taxi, vivo));
+                } catch (IOException e) {
+                    caida = true;
+                    salida.add(taxi);
+                } catch (ErrorApi | JSONException | RuntimeException e) {
+                    salida.add(taxi);
+                }
+            }
+            final boolean apiCaida = caida;
+            principal.post(() -> callback.onExito(new Enriquecimiento(salida, sinRegistrar, apiCaida)));
+        });
+    }
+
+    /**
+     * RF-083: registra en el sistema de taxistas la solicitud que el cliente ya guardo.
+     * Si la reserva ya tenia servicio, tambien es exito: repetirlo es seguro.
+     */
+    public void registrar(@NonNull TaxiService taxi, @NonNull String hotelId, @NonNull String nombreCliente,
+                          @Nullable String telefono, @NonNull ResultCallback<Boolean> callback) {
+        llamar(() -> {
+            String nombre = nombreCliente.trim().isEmpty() ? "Cliente de Estadía" : nombreCliente.trim();
+            JSONObject o = new JSONObject()
+                    .put("clienteId", taxi.getClienteId())
+                    .put("nombreCliente", recortar(nombre, 120))
+                    .put("direccionOrigen", recortar(taxi.getOrigen(), 200))
+                    .put("latitudOrigen", taxi.getLatRecojo())
+                    .put("longitudOrigen", taxi.getLngRecojo())
+                    .put("direccionDestino", recortar(taxi.getDestino(), 200))
+                    .put("latitudDestino", ApiConfig.AEROPUERTO_LATITUD)
+                    .put("longitudDestino", ApiConfig.AEROPUERTO_LONGITUD)
+                    .put("tarifa", taxi.getPrecio())
+                    .put("bookingId", taxi.getBookingId())
+                    .put("numPasajeros", taxi.getNumPasajeros())
+                    .put("fechaProgramada", taxi.getFecha().toString())
+                    .put("horaProgramada", taxi.getHora().withSecond(0).withNano(0).toString())
+                    .put("idaYVuelta", taxi.isIdaYVuelta())
+                    .put("codigoQr", taxi.getCodigo());
+            if (!hotelId.isEmpty()) {
+                o.put("hotelId", recortar(hotelId, 60));
+            }
+            if (telefono != null && telefono.trim().matches("^[0-9+\\- ]{6,20}$")) {
+                o.put("telefonoCliente", telefono.trim());
+            }
+            Respuesta r = ejecutar("POST", "/api/servicios", o, false);
+            if ((r.codigo >= 200 && r.codigo < 300) || r.codigo == 409) {
+                return true;
+            }
+            throw new ErrorApi(mensajeDeError(r));
+        }, callback);
+    }
+
+    /**
+     * RF-105: manda la nota del cliente al taxista del servicio. La API acepta una sola
+     * por servicio, asi que reintentarla es seguro. La nota llega de 1 a 10 y se
+     * convierte a la escala de la API en {@link TaxiApiMapper#puntosApi(float)}.
+     */
+    public void valorar(@NonNull String bookingId, float nota, @NonNull ResultCallback<Boolean> callback) {
+        llamar(() -> {
+            TaxiVivo vivo = vivo(bookingId);
+            if (vivo == null || vivo.taxistaId == null) {
+                throw new ErrorApi("Este traslado todavía no tiene un taxista asignado.");
+            }
+            enviarNota(vivo, nota);
+            VALORADAS.add(bookingId);
+            return true;
+        }, callback);
+    }
+
+    private void enviarNota(TaxiVivo vivo, float nota) throws IOException, JSONException, ErrorApi {
+        JSONObject cuerpo = new JSONObject().put("puntuacion", TaxiApiMapper.puntosApi(nota)).put("servicioId", vivo.servicioId);
+        Respuesta r = ejecutar("POST", "/api/taxistas/" + vivo.taxistaId + "/valoracion", cuerpo, false);
+        boolean yaRegistrada = r.codigo == 409;
+        if ((r.codigo < 200 || r.codigo >= 300) && !yaRegistrada) {
+            throw new ErrorApi(mensajeDeError(r));
+        }
+    }
+
+    /** Si el cliente valoro pero la nota no llego a la API (estaba caida), se reenvia aqui. */
+    private void reenviarNota(TaxiService taxi, TaxiVivo vivo) {
+        if (!taxi.isValorado() || vivo.taxistaId == null || !VALORADAS.add(taxi.getBookingId())) {
+            return;
+        }
+        try {
+            enviarNota(vivo, taxi.getRatingCliente());
+        } catch (IOException | ErrorApi | JSONException | RuntimeException e) {
+            VALORADAS.remove(taxi.getBookingId()); // se intentara de nuevo en la proxima consulta
+        }
+    }
+
+    /** GET /api/servicios/reserva/{id} + taxista + ubicacion; {@code null} si la reserva no tiene servicio. */
+    @Nullable
+    private TaxiVivo vivo(String bookingId) throws IOException, JSONException, ErrorApi {
+        Respuesta r = ejecutar("GET", "/api/servicios/reserva/" + URLEncoder.encode(bookingId, "UTF-8"), null, false);
+        if (r.codigo == 404) {
+            return null;
+        }
+        if (r.codigo < 200 || r.codigo >= 300) {
+            throw new ErrorApi(mensajeDeError(r));
+        }
+        JSONObject servicio = new JSONObject(r.cuerpo);
+        Driver conductor = null;
+        JSONObject ubicacion = null;
+        if (!servicio.isNull("taxistaId")) {
+            String taxistaId = String.valueOf(servicio.getLong("taxistaId"));
+            conductor = conductor(taxistaId);
+            String estado = servicio.optString("estado", "");
+            if (estado.equals("ASIGNADO") || estado.equals("EN_CAMINO") || estado.equals("EN_TRASLADO")) {
+                try {
+                    ubicacion = leerObjeto("GET", "/api/taxistas/" + taxistaId + "/ubicacion", null, false);
+                } catch (ErrorApi | JSONException sinPosicion) {
+                    ubicacion = null;
+                }
+            }
+        }
+        return TaxiVivo.desde(servicio, conductor, ubicacion);
+    }
+
+    /** Ficha del taxista con una vigencia corta: no cambia entre un sondeo y el siguiente. */
+    @Nullable
+    private Driver conductor(String taxistaId) throws IOException {
+        CacheConductor guardado = conductores.get(taxistaId);
+        long ahora = System.currentTimeMillis();
+        if (guardado != null && ahora - guardado.momento < VIGENCIA_CONDUCTOR_MS) {
+            return guardado.conductor;
+        }
+        try {
+            Driver nuevo = TaxiApiMapper.taxista(leerObjeto("GET", "/api/taxistas/" + taxistaId, null, false));
+            conductores.put(taxistaId, new CacheConductor(nuevo, ahora));
+            return nuevo;
+        } catch (ErrorApi | JSONException e) {
+            return guardado != null ? guardado.conductor : null; // TaxiVivo lo arma con los datos del servicio
+        }
+    }
+
+    private static String recortar(String texto, int maximo) {
+        return texto.length() <= maximo ? texto : texto.substring(0, maximo);
+    }
+
+    private static final class CacheConductor {
+        final Driver conductor;
+        final long momento;
+
+        CacheConductor(Driver conductor, long momento) {
+            this.conductor = conductor;
+            this.momento = momento;
+        }
     }
 
     // =====================================================================

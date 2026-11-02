@@ -1,6 +1,12 @@
 package org.iot.project.data.firebase;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.google.android.gms.tasks.Tasks;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -27,20 +33,31 @@ import org.iot.project.models.OfertaDeTaxi;
 import org.iot.project.models.Role;
 import org.iot.project.models.TaxiService;
 import org.iot.project.models.TaxiStatus;
+import org.iot.project.models.User;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Solicitudes reales del cliente; la asignación y ubicación deben llegar del servicio de taxistas. */
 public final class FirebaseTaxiRepository implements TaxiRepository {
+    /** Cada cuanto se pregunta a la API por el estado real mientras hay un traslado en curso. */
+    private static final long INTERVALO_SONDEO_MS = 8_000L;
+
     private final AtomicLong generacion = new AtomicLong();
+    /** Reservas que se estan registrando en la API ahora mismo (evita registros duplicados). */
+    private final Set<String> registrando = ConcurrentHashMap.newKeySet();
+    /** Traslados cuyo cierre ya se anoto en Firestore en esta sesion. */
+    private final Set<String> finalesAnotados = ConcurrentHashMap.newKeySet();
     private volatile String identidad;
     private boolean autenticacionObservada;
 
@@ -70,7 +87,7 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
                 .addOnSuccessListener(documentos -> {
                     if (!vigente(acceso, callback)) return;
                     try {
-                        callback.onExito(servicios(documentos, acceso.uid));
+                        conEstadoReal(acceso, servicios(documentos, acceso.uid), callback);
                     } catch (IllegalArgumentException error) {
                         callback.onError(error.getMessage());
                     }
@@ -101,7 +118,7 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
         if (acceso == null || !propio(clienteId, acceso, callback)) return escucha;
         ResultCallback<List<TaxiService>> destino = new ResultCallback<List<TaxiService>>() {
             @Override public void onExito(@NonNull List<TaxiService> datos) {
-                if (!escucha.cerrada) callback.onExito(datos);
+                if (!escucha.cerrada) recibirBase(acceso, escucha, datos, callback);
             }
             @Override public void onError(@NonNull String mensaje) {
                 if (!escucha.cerrada) callback.onError(mensaje);
@@ -177,7 +194,7 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
         conPerfil(acceso, callback, () -> referencia(taxiId).get(Source.SERVER).addOnSuccessListener(documento -> {
             if (!vigente(acceso, callback)) return;
             try {
-                callback.onExito(leerPropio(documento, acceso.uid));
+                conEstadoReal(acceso, Collections.singletonList(leerPropio(documento, acceso.uid)), unico(callback));
             } catch (IllegalArgumentException error) {
                 callback.onError(error.getMessage());
             }
@@ -227,7 +244,10 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
                     taxi.getBookingId(), taxi.getId());
             return taxi;
         }).addOnSuccessListener(taxi -> {
-            if (vigente(acceso, callback)) callback.onExito(taxi);
+            if (!vigente(acceso, callback)) return;
+            // La solicitud ya esta guardada. Ahora llega al sistema de taxistas para que los conductores la
+            // vean. Si ese sistema no responde, el pedido sigue ahi y se registra solo en cuanto vuelva.
+            registrarEnApi(acceso, taxi, () -> conEstadoReal(acceso, Collections.singletonList(taxi), unico(callback)));
         }).addOnFailureListener(error -> fallo(acceso, error, callback));
     }
 
@@ -239,30 +259,47 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
             callback.onError("Califica el traslado con una nota de 1 a 10.");
             return;
         }
+        // El estado real lo lleva el sistema de taxistas: antes de guardar la nota se confirma que terminó.
+        obtener(taxiId, new ResultCallback<TaxiService>() {
+            @Override public void onExito(@NonNull TaxiService vivo) {
+                if (vivo.getEstado() != TaxiStatus.FINALIZADO) {
+                    callback.onError("Solo puedes valorar un traslado finalizado.");
+                    return;
+                }
+                guardarNota(acceso, vivo, rating, callback);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
+    }
+
+    private void guardarNota(Acceso acceso, TaxiService vivo, float rating, ResultCallback<TaxiService> callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference referencia = referencia(taxiId);
+        DocumentReference referencia = referencia(vivo.getId());
         db.runTransaction(transaccion -> {
             exigirSesion(acceso);
             perfil(transaccion.get(db.collection("usuarios").document(acceso.uid)), acceso.uid);
             TaxiService taxi = leerPropio(transaccion.get(referencia), acceso.uid);
-            if (taxi.getEstado() != TaxiStatus.FINALIZADO) {
-                throw new IllegalArgumentException("Solo puedes valorar un traslado finalizado.");
-            }
             if (taxi.isValorado()) {
-                if (Math.abs(taxi.getRatingCliente() - rating) < 0.0001f) return taxi;
+                if (Math.abs(taxi.getRatingCliente() - rating) < 0.0001f) return true;
                 throw new IllegalArgumentException("Ya valoraste este traslado.");
             }
             exigirSesion(acceso);
             transaccion.update(referencia, "ratingCliente", rating, "valoradoEn", FieldValue.serverTimestamp(),
                     "actualizadoEn", FieldValue.serverTimestamp());
-            NotificacionFirebase.registrar(transaccion, acceso.uid, evento(taxiId, "VALORADO"),
+            NotificacionFirebase.registrar(transaccion, acceso.uid, evento(vivo.getId(), "VALORADO"),
                     AppNotification.Tipo.TAXI, "Valoración del traslado", "Guardamos tu calificación de "
                             + Math.round(rating * 10f) / 10f + " sobre 10. Gracias por compartir tu experiencia.",
-                    taxi.getBookingId(), taxiId);
-            taxi.valorar(rating);
-            return taxi;
-        }).addOnSuccessListener(taxi -> {
-            if (vigente(acceso, callback)) callback.onExito(taxi);
+                    taxi.getBookingId(), vivo.getId());
+            return true;
+        }).addOnSuccessListener(listo -> {
+            if (!vigente(acceso, callback)) return;
+            if (!vivo.isValorado()) vivo.valorar(rating);
+            // La nota también llega al taxista. Si la API no responde ahora, se reenvía sola al volver a consultar.
+            TaxiApi.get().valorar(vivo.getBookingId(), rating, new ResultCallback<Boolean>() {
+                @Override public void onExito(@NonNull Boolean enviada) { }
+                @Override public void onError(@NonNull String mensaje) { }
+            });
+            callback.onExito(vivo);
         }).addOnFailureListener(error -> fallo(acceso, error, callback));
     }
 
@@ -271,12 +308,21 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
     public void sincronizarAvisoEstado(@NonNull String taxiId, @NonNull ResultCallback<Boolean> callback) {
         Acceso acceso = cliente(callback);
         if (acceso == null || !idValido(taxiId, callback)) return;
+        obtener(taxiId, new ResultCallback<TaxiService>() {
+            @Override public void onExito(@NonNull TaxiService vivo) {
+                registrarAviso(acceso, taxiId, vivo.getEstado(), callback);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
+    }
+
+    private void registrarAviso(Acceso acceso, String taxiId, TaxiStatus estadoReal, ResultCallback<Boolean> callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.runTransaction(transaccion -> {
             exigirSesion(acceso);
             perfil(transaccion.get(db.collection("usuarios").document(acceso.uid)), acceso.uid);
             TaxiService taxi = leerPropio(transaccion.get(referencia(taxiId)), acceso.uid);
-            TaxiStatus estado = taxi.getEstado();
+            TaxiStatus estado = estadoReal;
             if (estado == TaxiStatus.SOLICITADO) return false;
             String eventoId = evento(taxiId, estado.name());
             DocumentSnapshot aviso = transaccion.get(db.collection("usuarios").document(acceso.uid)
@@ -297,6 +343,160 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
         }).addOnSuccessListener(creado -> {
             if (vigente(acceso, callback)) callback.onExito(creado);
         }).addOnFailureListener(error -> fallo(acceso, error, callback));
+    }
+
+    // ------------------------------------------------------------------
+    //  Estado real: lo que el cliente guardo (Firestore) + lo que lleva el
+    //  sistema de taxistas (API). El estado, el conductor y la ubicacion
+    //  salen siempre de la API (RT-006).
+    // ------------------------------------------------------------------
+
+    private static ResultCallback<List<TaxiService>> unico(ResultCallback<TaxiService> destino) {
+        return new ResultCallback<List<TaxiService>>() {
+            @Override public void onExito(@NonNull List<TaxiService> lista) { destino.onExito(lista.get(0)); }
+            @Override public void onError(@NonNull String mensaje) { destino.onError(mensaje); }
+        };
+    }
+
+    /** Una sola consulta: si la API no responde, entrega lo guardado en Firestore. */
+    private void conEstadoReal(Acceso acceso, List<TaxiService> base, ResultCallback<List<TaxiService>> destino) {
+        TaxiApi.get().enriquecer(base, new ResultCallback<TaxiApi.Enriquecimiento>() {
+            @Override public void onExito(@NonNull TaxiApi.Enriquecimiento resultado) {
+                if (!vigente(acceso, destino)) return;
+                reconciliar(acceso, base, resultado);
+                destino.onExito(resultado.servicios);
+            }
+            @Override public void onError(@NonNull String mensaje) {
+                if (vigente(acceso, destino)) destino.onExito(base);
+            }
+        });
+    }
+
+    /** Registra en la API lo que aun no esta y anota en Firestore los traslados que ya terminaron. */
+    private void reconciliar(Acceso acceso, List<TaxiService> base, TaxiApi.Enriquecimiento resultado) {
+        for (int i = 0; i < base.size() && i < resultado.servicios.size(); i++) {
+            TaxiService antes = base.get(i);
+            TaxiService ahora = resultado.servicios.get(i);
+            if (resultado.sinRegistrar.contains(antes.getBookingId())) {
+                registrarEnApi(acceso, antes, null);
+            } else if (antes.getEstado() != TaxiStatus.FINALIZADO && ahora.getEstado() == TaxiStatus.FINALIZADO
+                    && finalesAnotados.add(antes.getId())) {
+                // Mejor esfuerzo: deja el cierre en el historial aunque la API no responda despues.
+                // Si las reglas de Firestore no lo permiten, el estado real sigue viniendo de la API.
+                referencia(antes.getId()).update("estado", TaxiStatus.FINALIZADO.name(),
+                        "actualizadoEn", FieldValue.serverTimestamp()).addOnFailureListener(error -> { });
+            }
+        }
+    }
+
+    /** Lleva la solicitud guardada al sistema de taxistas (con el codigo QR que ya tiene el cliente). */
+    private void registrarEnApi(Acceso acceso, TaxiService taxi, @Nullable Runnable alTerminar) {
+        final String reserva = taxi.getBookingId();
+        if (!registrando.add(reserva)) {
+            if (alTerminar != null) alTerminar.run();
+            return;
+        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Tasks.whenAllSuccess(db.collection("usuarios").document(acceso.uid).get(Source.SERVER),
+                referencia(taxi.getId()).get(Source.SERVER))
+                .addOnSuccessListener(resultados -> {
+                    try {
+                        User usuario = PerfilFirebase.usuario(acceso.uid, "",
+                                ((DocumentSnapshot) resultados.get(0)).getData());
+                        Object hotel = ((DocumentSnapshot) resultados.get(1)).get("hotelId");
+                        TaxiApi.get().registrar(taxi, hotel instanceof String ? (String) hotel : "",
+                                usuario.getNombreCompleto(), usuario.getTelefono(), new ResultCallback<Boolean>() {
+                                    @Override public void onExito(@NonNull Boolean ok) { terminarRegistro(reserva, alTerminar); }
+                                    @Override public void onError(@NonNull String mensaje) { terminarRegistro(reserva, alTerminar); }
+                                });
+                    } catch (RuntimeException error) {
+                        terminarRegistro(reserva, alTerminar);
+                    }
+                })
+                .addOnFailureListener(error -> terminarRegistro(reserva, alTerminar));
+    }
+
+    private void terminarRegistro(String reserva, @Nullable Runnable alTerminar) {
+        registrando.remove(reserva);
+        if (alTerminar != null) alTerminar.run();
+    }
+
+    // ---- Seguimiento: Firestore avisa de cambios; la API se consulta cada pocos segundos ----
+
+    private void recibirBase(Acceso acceso, Escucha escucha, List<TaxiService> base,
+                             ResultCallback<List<TaxiService>> callback) {
+        escucha.base = base;
+        entregar(escucha, base, callback); // lo guardado, sin esperar a la API
+        refrescarApi(acceso, escucha, callback);
+    }
+
+    private void refrescarApi(Acceso acceso, Escucha escucha, ResultCallback<List<TaxiService>> callback) {
+        if (escucha.cerrada || !activa(acceso)) return;
+        if (escucha.consultando) {
+            escucha.repetir = true;
+            return;
+        }
+        escucha.consultando = true;
+        final List<TaxiService> base = escucha.base;
+        TaxiApi.get().enriquecer(base, new ResultCallback<TaxiApi.Enriquecimiento>() {
+            @Override public void onExito(@NonNull TaxiApi.Enriquecimiento resultado) {
+                escucha.consultando = false;
+                if (escucha.cerrada || !activa(acceso)) return;
+                reconciliar(acceso, base, resultado);
+                if (base == escucha.base) entregar(escucha, resultado.servicios, callback);
+                if (escucha.repetir) {
+                    escucha.repetir = false;
+                    refrescarApi(acceso, escucha, callback);
+                } else {
+                    programarSondeo(acceso, escucha, callback, resultado.servicios);
+                }
+            }
+            @Override public void onError(@NonNull String mensaje) {
+                escucha.consultando = false;
+                programarSondeo(acceso, escucha, callback, base);
+            }
+        });
+    }
+
+    private void programarSondeo(Acceso acceso, Escucha escucha, ResultCallback<List<TaxiService>> callback,
+                                 List<TaxiService> actuales) {
+        if (escucha.cerrada) return;
+        boolean hayEnCurso = false;
+        for (TaxiService taxi : actuales) {
+            if (taxi.getEstado() != TaxiStatus.FINALIZADO) {
+                hayEnCurso = true;
+                break;
+            }
+        }
+        if (!hayEnCurso) return; // sin traslados abiertos no hay nada que consultar
+        if (escucha.sondeo != null) escucha.reloj.removeCallbacks(escucha.sondeo);
+        escucha.sondeo = () -> refrescarApi(acceso, escucha, callback);
+        escucha.reloj.postDelayed(escucha.sondeo, INTERVALO_SONDEO_MS);
+    }
+
+    /** Solo avisa a la pantalla cuando algo que se ve cambio de verdad. */
+    private static void entregar(Escucha escucha, List<TaxiService> lista, ResultCallback<List<TaxiService>> callback) {
+        StringBuilder firma = new StringBuilder();
+        for (TaxiService taxi : lista) {
+            firma.append(taxi.getId()).append('|').append(taxi.getEstado()).append('|')
+                    .append(taxi.getDriver() == null ? "" : taxi.getDriver().getId()).append('|')
+                    .append(taxi.getLatConductor()).append('|').append(taxi.getLngConductor()).append('|')
+                    .append(taxi.getUltimaActualizacionUbicacion()).append('|')
+                    .append(taxi.getRatingCliente()).append(';');
+        }
+        String nueva = firma.toString();
+        if (nueva.equals(escucha.ultimaFirma)) return;
+        escucha.ultimaFirma = nueva;
+        callback.onExito(lista);
+    }
+
+    private boolean activa(Acceso acceso) {
+        try {
+            exigirSesion(acceso);
+            return true;
+        } catch (IllegalArgumentException error) {
+            return false;
+        }
     }
 
     private static Query consulta(String uid) {
@@ -429,12 +629,21 @@ public final class FirebaseTaxiRepository implements TaxiRepository {
         volatile boolean cerrada;
         ListenerRegistration perfil;
         ListenerRegistration datos;
+        // Seguimiento del estado real (siempre en el hilo principal)
+        List<TaxiService> base = Collections.emptyList();
+        String ultimaFirma;
+        boolean consultando;
+        boolean repetir;
+        final Handler reloj = new Handler(Looper.getMainLooper());
+        Runnable sondeo;
         @Override public void cerrar() {
             cerrada = true;
             if (perfil != null) perfil.remove();
             if (datos != null) datos.remove();
             perfil = null;
             datos = null;
+            if (sondeo != null) reloj.removeCallbacks(sondeo);
+            sondeo = null;
         }
     }
 

@@ -1,11 +1,13 @@
 package org.iot.project.ui.driver.home;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +16,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.Target;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
@@ -115,6 +123,7 @@ public class DriverHomeFragment extends Fragment {
         binding.driverNombre.setText(panel.cuenta.getNombreCompleto());
         binding.driverCorreo.bind(R.string.perfil_correo, panel.cuenta.getEmail(),
                 R.string.perfil_sin_dato);
+        pintarFoto(panel.perfil != null ? panel.perfil.getFotoUrl() : null);
         boolean hayPlaca = panel.perfil != null && panel.perfil.getVehiculo() != null
                 && !panel.perfil.getVehiculo().getPlaca().isEmpty();
         binding.driverPlaca.setVisibility(hayPlaca ? View.VISIBLE : View.GONE);
@@ -134,6 +143,40 @@ public class DriverHomeFragment extends Fragment {
             binding.driverVacio.setVisibility(vacio ? View.VISIBLE : View.GONE);
             binding.driverSolicitudes.setVisibility(vacio ? View.GONE : View.VISIBLE);
         }
+    }
+
+    /** La foto va encima de las iniciales; si no hay o no carga, se quedan las iniciales. */
+    private void pintarFoto(@Nullable String url) {
+        final ImageView vista = binding.driverFoto;
+        if (url == null || url.isEmpty()) {
+            vista.setVisibility(View.GONE);
+            return;
+        }
+        if (url.equals(vista.getTag())) {
+            return; // ya cargada: el refresco periodico no la vuelve a pedir
+        }
+        vista.setTag(url);
+        vista.setVisibility(View.VISIBLE);
+        Glide.with(vista)
+                .load(url)
+                .apply(RequestOptions.circleCropTransform())
+                .listener(new RequestListener<Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object modelo,
+                                                Target<Drawable> destino, boolean primeraVez) {
+                        vista.setTag(null);
+                        vista.setVisibility(View.GONE);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Drawable recurso, Object modelo,
+                                                   Target<Drawable> destino, DataSource origen,
+                                                   boolean primeraVez) {
+                        return false;
+                    }
+                })
+                .into(vista);
     }
 
     private void pintarActivo(@NonNull TaxiService servicio) {

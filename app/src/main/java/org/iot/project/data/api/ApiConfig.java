@@ -31,6 +31,10 @@ public final class ApiConfig {
      */
     public static final float FACTOR_VALORACION = 2f;
 
+    /** Destino de los traslados: Aeropuerto Internacional Jorge Chavez (RT-011). */
+    public static final double AEROPUERTO_LATITUD = -12.0219;
+    public static final double AEROPUERTO_LONGITUD = -77.1143;
+
     private ApiConfig() {
     }
 }

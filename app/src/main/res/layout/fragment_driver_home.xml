@@ -56,16 +56,31 @@
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
-                            <TextView
-                                android:id="@+id/driver_iniciales"
-                                style="@style/TextAppearance.App.H2"
+                            <!-- La foto y el círculo de iniciales ocupan el mismo hueco:
+                                 si la foto carga se ve encima; si no, quedan las iniciales. -->
+                            <FrameLayout
                                 android:layout_width="@dimen/avatar_lg"
-                                android:layout_height="@dimen/avatar_lg"
-                                android:background="@drawable/bg_circulo_primario"
-                                android:gravity="center"
-                                android:importantForAccessibility="no"
-                                android:textColor="@color/colorOnPrimaryContainer"
-                                tools:text="JP" />
+                                android:layout_height="@dimen/avatar_lg">
+
+                                <TextView
+                                    android:id="@+id/driver_iniciales"
+                                    style="@style/TextAppearance.App.H2"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:background="@drawable/bg_circulo_primario"
+                                    android:gravity="center"
+                                    android:importantForAccessibility="no"
+                                    android:textColor="@color/colorOnPrimaryContainer"
+                                    tools:text="JP" />
+
+                                <ImageView
+                                    android:id="@+id/driver_foto"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:contentDescription="@string/cd_foto_conductor"
+                                    android:scaleType="centerCrop"
+                                    android:visibility="gone" />
+                            </FrameLayout>
 
                             <LinearLayout
                                 android:layout_width="0dp"
