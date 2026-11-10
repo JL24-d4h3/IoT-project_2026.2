@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/estilos :: cabecera('Taxistas registrados | Panel')}"></head>
+<body>
+
+<div th:replace="~{fragments/estilos :: navegacion('admin')}"></div>
+
+<main class="container my-4 my-lg-5">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Taxistas registrados</h1>
+            <p class="text-secondary mb-0">
+                Habilita a quien ya paso la revision de documentos y desactiva cuentas
+                cuando necesites sacar a alguien de circulacion sin borrar su historial.
+            </p>
+        </div>
+        <form th:action="@{/logout}" method="post" class="mb-1">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Cerrar sesion</button>
+        </form>
+    </div>
+
+    <div class="alert alert-success" role="alert" th:if="${exito}" th:text="${exito}"></div>
+    <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="panel p-3">
+                <div class="cifra" th:text="${totalPendientes}">0</div>
+                <div class="text-secondary small">En revision</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="panel p-3">
+                <div class="cifra" th:text="${totalHabilitados}">0</div>
+                <div class="text-secondary small">Habilitados</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="panel p-3">
+                <div class="cifra" th:text="${totalInactivos}">0</div>
+                <div class="text-secondary small">Cuentas desactivadas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="panel p-3">
+                <div class="cifra" th:text="${#lists.size(taxistas)}">0</div>
+                <div class="text-secondary small">Total registrados</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="table-responsive">
+            <table class="table tabla-taxistas align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Taxista</th>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Vehiculo</th>
+                    <th scope="col">Valoracion</th>
+                    <th scope="col">Habilitacion</th>
+                    <th scope="col">Cuenta</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${taxistas}"
+                    th:classappend="${!t.cuentaActiva} ? 'fila-inactiva'">
+
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <a th:if="${t.fotoUrl != null}" th:href="${t.fotoUrl}" target="_blank" rel="noopener">
+                                <img class="avatar" th:src="${t.fotoUrl}" th:alt="'Foto de ' + ${t.nombreCompleto}">
+                            </a>
+                            <span th:if="${t.fotoUrl == null}" class="avatar avatar-vacio"
+                                  th:text="${#strings.substring(t.nombres,0,1) + #strings.substring(t.apellidos,0,1)}">AB</span>
+                            <div>
+                                <div class="fw-semibold" th:text="${t.nombreCompleto}">Nombre</div>
+                                <div class="small text-secondary" th:text="${t.correo}">correo</div>
+                                <div class="small text-secondary" th:text="${t.telefono}">telefono</div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div th:text="${t.tipoDocumento.etiqueta}">DNI</div>
+                        <div class="small text-secondary" th:text="${t.numeroDocumento}">00000000</div>
+                    </td>
+
+                    <td>
+                        <div class="fw-semibold" th:text="${t.placaVehiculo}">ABC-123</div>
+                        <a class="small" th:if="${t.fotoVehiculoUrl != null}"
+                           th:href="${t.fotoVehiculoUrl}" target="_blank" rel="noopener">Ver foto</a>
+                        <span class="small text-secondary" th:if="${t.fotoVehiculoUrl == null}">Sin foto</span>
+                    </td>
+
+                    <td>
+                        <span th:if="${t.totalValoraciones > 0}">
+                            <span class="fw-semibold"
+                                  th:text="${#numbers.formatDecimal(t.valoracionPromedio, 1, 2)}">0.00</span>
+                            <span class="small text-secondary"
+                                  th:text="'(' + ${t.totalValoraciones} + ')'">(0)</span>
+                        </span>
+                        <span class="small text-secondary" th:if="${t.totalValoraciones == 0}">
+                            Aun sin viajes valorados
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="indicador" th:if="${t.estadoHabilitacion.name() == 'HABILITADO'}">
+                            <span class="punto punto-ok"></span> Habilitado
+                        </span>
+                        <span class="indicador" th:if="${t.estadoHabilitacion.name() == 'PENDIENTE'}">
+                            <span class="punto punto-espera"></span> En revision
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="indicador" th:if="${t.cuentaActiva}">
+                            <span class="punto punto-ok"></span> Activa
+                        </span>
+                        <span class="indicador" th:unless="${t.cuentaActiva}">
+                            <span class="punto punto-off"></span> Desactivada
+                        </span>
+                        <div class="small text-secondary mt-1" th:text="${t.disponibilidad.etiqueta}">
+                            Disponible
+                        </div>
+                    </td>
+
+                    <td class="text-end">
+                        <div class="d-inline-flex flex-wrap gap-2 justify-content-end">
+
+                            <!-- Habilitacion inicial -->
+                            <form th:action="@{'/admin/taxistas/' + ${t.id} + '/habilitacion'}"
+                                  method="post" class="d-inline"
+                                  th:if="${t.estadoHabilitacion.name() == 'PENDIENTE'}">
+                                <input type="hidden" name="estado" value="HABILITADO">
+                                <button type="submit" class="btn btn-primario btn-sm">Habilitar</button>
+                            </form>
+
+                            <form th:action="@{'/admin/taxistas/' + ${t.id} + '/habilitacion'}"
+                                  method="post" class="d-inline"
+                                  th:if="${t.estadoHabilitacion.name() == 'HABILITADO'}">
+                                <input type="hidden" name="estado" value="PENDIENTE">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    Devolver a revision
+                                </button>
+                            </form>
+
+                            <!-- Interruptor de cuenta, independiente de la habilitacion -->
+                            <form th:action="@{'/admin/taxistas/' + ${t.id} + '/cuenta'}"
+                                  method="post" class="d-inline" th:if="${t.cuentaActiva}">
+                                <input type="hidden" name="activa" value="false">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    Desactivar cuenta
+                                </button>
+                            </form>
+
+                            <form th:action="@{'/admin/taxistas/' + ${t.id} + '/cuenta'}"
+                                  method="post" class="d-inline" th:unless="${t.cuentaActiva}">
+                                <input type="hidden" name="activa" value="true">
+                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                    Activar cuenta
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(taxistas)}">
+                    <td colspan="7" class="text-center py-5">
+                        <p class="mb-1 fw-semibold">Todavia no hay taxistas registrados</p>
+                        <p class="text-secondary mb-0">
+                            Comparte el enlace de registro para que empiecen a postular.
+                        </p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="text-secondary small mt-3 mb-0">
+        La habilitacion certifica que los documentos estan conformes. El estado de la cuenta
+        es un interruptor aparte: un taxista habilitado con la cuenta desactivada no recibe
+        viajes ni aparece en la busqueda de la app.
+    </p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+</body>
+</html>

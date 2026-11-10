@@ -15,88 +15,102 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.iot.project.R;
+import org.iot.project.core.SessionManager;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentSuperadminConductoresBinding;
-import org.iot.project.models.Driver;
+import org.iot.project.models.TaxistaAdministrado;
 import org.iot.project.utils.InsetUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
-/**
- * Conductores de la plataforma (RF-077, RF-078).
- *
- * <p>Es donde se aprueba a un conductor nuevo, y por eso la lista llega con los
- * pendientes primero: son los unicos sobre los que hay algo que decidir.
- *
- * <p>Retirar la habilitacion se pregunta y habilitar no. Retirar deja a alguien
- * sin poder trabajar y puede ser un error de dedo sobre la fila de al lado;
- * habilitar devuelve el acceso y no quita nada a nadie. Es la misma regla que
- * sigue la lista de cuentas.
- */
+/** Aprobación para trabajar y acceso de las cuentas del sistema web de taxistas. */
 public class SuperadminConductoresFragment extends Fragment {
-
     private FragmentSuperadminConductoresBinding binding;
     private SuperadminConductoresViewModel viewModel;
     private ConductorSaAdapter adaptador;
+    @Nullable private AlertDialog confirmacion;
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflador, @Nullable ViewGroup contenedor,
-                             @Nullable Bundle savedInstanceState) {
+    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflador,
+            @Nullable ViewGroup contenedor, @Nullable Bundle savedInstanceState) {
         binding = FragmentSuperadminConductoresBinding.inflate(inflador, contenedor, false);
         return binding.getRoot();
     }
 
-    @Override
-    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+    @Override public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applyTopPadding(binding.saHeader);
         binding.saHeader.setTitulo(R.string.nav_conductores);
-
         adaptador = new ConductorSaAdapter(this::confirmar);
         binding.saConductoresLista.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.saConductoresLista.setAdapter(adaptador);
-
         viewModel = new ViewModelProvider(this).get(SuperadminConductoresViewModel.class);
+        binding.saConductoresFiltros.check(viewModel.isSoloPendientes()
+                ? R.id.sa_filtro_solo_pendientes : R.id.sa_filtro_todos);
         viewModel.getContenido().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.getCambio().observe(getViewLifecycleOwner(), this::avisarDelCambio);
-
-        // Despues de tener el ViewModel: el grupo puede anunciar el chip que ya
-        // venia marcado en cuanto se registra el oyente.
+        viewModel.getPendientes().observe(getViewLifecycleOwner(), ids -> {
+            adaptador.mostrarPendientes(ids);
+            actualizarBotonLectura();
+        });
+        viewModel.getLeyendo().observe(getViewLifecycleOwner(), leyendo -> actualizarBotonLectura());
+        viewModel.getAviso().observe(getViewLifecycleOwner(), mensaje -> {
+            binding.saConductoresAviso.setVisibility(mensaje == null ? View.GONE : View.VISIBLE);
+            binding.saConductoresAviso.setText(mensaje);
+        });
+        binding.saConductoresActualizar.setOnClickListener(v -> viewModel.reintentar());
         binding.saConductoresFiltros.setOnCheckedStateChangeListener((grupo, marcados) ->
                 viewModel.filtrar(!marcados.isEmpty()
                         && marcados.get(0) == R.id.sa_filtro_solo_pendientes));
-
-        viewModel.cargar();
     }
 
-    /**
-     * Retirar la habilitacion deja a alguien sin poder trabajar, asi que se
-     * pregunta antes. Habilitar no se pregunta: devuelve el acceso y no quita
-     * nada.
-     *
-     * <p>Llega el identificador y el nombre en vez del conductor porque es la
-     * fila quien lo pide, y la fila guarda una copia de lo que pinta.
-     */
-    private void confirmar(@NonNull String conductorId, @NonNull String nombre, boolean habilitado) {
-        if (habilitado) {
-            viewModel.habilitar(conductorId, true);
+    @Override public void onStart() {
+        super.onStart();
+        viewModel.iniciar();
+    }
+
+    @Override public void onStop() {
+        viewModel.detener();
+        cerrarConfirmacion();
+        super.onStop();
+    }
+
+    private void confirmar(String id, String nombre, SuperadminConductoresViewModel.Accion accion,
+                           boolean valor) {
+        if (!viewModel.puedeCambiar(id) || confirmacion != null) return;
+        if (valor) {
+            cambiar(id, accion, true);
             return;
         }
-        new AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.sa_retirar_titulo, nombre))
-                .setMessage(R.string.sa_retirar_mensaje)
+        final String cuenta = SessionManager.getIdentidadId();
+        boolean habilitacion = accion == SuperadminConductoresViewModel.Accion.HABILITACION;
+        confirmacion = new AlertDialog.Builder(requireContext())
+                .setTitle(getString(habilitacion ? R.string.sa_taxistas_retirar_titulo
+                        : R.string.sa_taxistas_desactivar_titulo, nombre))
+                .setMessage(habilitacion ? R.string.sa_taxistas_retirar_mensaje
+                        : R.string.sa_taxistas_desactivar_mensaje)
                 .setNegativeButton(R.string.accion_cancelar, null)
-                .setPositiveButton(R.string.sa_retirar_habilitacion,
-                        (dialogo, cual) -> viewModel.habilitar(conductorId, false))
-                .show();
+                .setPositiveButton(habilitacion ? R.string.sa_taxistas_retirar : R.string.sa_taxistas_desactivar,
+                        (dialogo, cual) -> {
+                            if (Objects.equals(cuenta, SessionManager.getIdentidadId())) cambiar(id, accion, false);
+                        })
+                .create();
+        confirmacion.setOnDismissListener(dialogo -> confirmacion = null);
+        confirmacion.show();
     }
 
-    // ------------------------------------------------------------------ Pinta
+    private void cambiar(String id, SuperadminConductoresViewModel.Accion accion, boolean valor) {
+        if (accion == SuperadminConductoresViewModel.Accion.HABILITACION) viewModel.habilitar(id, valor);
+        else viewModel.cambiarCuenta(id, valor);
+    }
 
-    private void pintar(@NonNull UiState<List<Driver>> estado) {
+    private void pintar(@NonNull UiState<List<TaxistaAdministrado>> estado) {
         switch (estado.getStatus()) {
             case LOADING:
+                cerrarConfirmacion();
+                adaptador.mostrar(Collections.emptyList());
                 mostrar(false, true, false);
                 break;
             case SUCCESS:
@@ -106,35 +120,23 @@ public class SuperadminConductoresFragment extends Fragment {
                 adaptador.mostrar(estado.requireData());
                 break;
             case EMPTY:
+                adaptador.mostrar(Collections.emptyList());
                 mostrar(true, false, false);
                 binding.saConductoresLista.setVisibility(View.GONE);
                 binding.saConductoresVacio.setVisibility(View.VISIBLE);
-                pintarVacio();
+                binding.saConductoresVacio.conIcono(R.drawable.ic_taxi)
+                        .conTitulo(viewModel.isSoloPendientes()
+                                ? R.string.sa_taxistas_sin_aprobar_titulo : R.string.sa_conductores_nadie_titulo)
+                        .conMensaje(viewModel.isSoloPendientes()
+                                ? R.string.sa_taxistas_sin_aprobar_vacio : R.string.sa_conductores_nadie_mensaje);
                 break;
             case ERROR:
             default:
+                adaptador.mostrar(Collections.emptyList());
+                cerrarConfirmacion();
                 mostrar(false, false, true);
                 binding.saError.conReintento(estado.getMessage(), v -> viewModel.reintentar());
-                break;
         }
-    }
-
-    /**
-     * El vacio dice cosas distintas segun el filtro.
-     *
-     * <p>Con "Por aprobar" puesto, que no haya nadie es una buena noticia y se
-     * dice como tal; sin filtro significa que la plataforma no tiene ningun
-     * conductor registrado, que es otra cosa completamente distinta.
-     */
-    private void pintarVacio() {
-        boolean soloPendientes = viewModel.isSoloPendientes();
-        binding.saConductoresVacio.conIcono(R.drawable.ic_taxi)
-                .conTitulo(soloPendientes
-                        ? R.string.sa_conductores_vacio_titulo
-                        : R.string.sa_conductores_nadie_titulo)
-                .conMensaje(soloPendientes
-                        ? R.string.sa_conductores_vacio_mensaje
-                        : R.string.sa_conductores_nadie_mensaje);
     }
 
     private void mostrar(boolean contenido, boolean esqueleto, boolean error) {
@@ -143,42 +145,44 @@ public class SuperadminConductoresFragment extends Fragment {
         binding.saError.setVisibility(error ? View.VISIBLE : View.GONE);
     }
 
-    /**
-     * El aviso de una sola vez tras habilitar o retirar.
-     *
-     * <p>El texto se arma aqui y no en el ViewModel porque lleva el nombre
-     * dentro y los textos de la aplicacion viven en {@code strings.xml}: el
-     * ViewModel no tiene {@code Context} con el que leerlos.
-     */
-    private void avisarDelCambio(@Nullable UiState<Driver> estado) {
-        if (estado == null) {
-            return;
+    private void actualizarBotonLectura() {
+        boolean leyendo = Boolean.TRUE.equals(viewModel.getLeyendo().getValue());
+        Set<String> ids = viewModel.getPendientes().getValue();
+        binding.saConductoresActualizar.setEnabled(!leyendo && (ids == null || ids.isEmpty()));
+        binding.saConductoresActualizar.setText(leyendo
+                ? R.string.sa_taxistas_actualizando : R.string.sa_taxistas_actualizar);
+    }
+
+    private void avisarDelCambio(@Nullable UiState<SuperadminConductoresViewModel.Cambio> estado) {
+        if (estado == null || estado.isLoading()) return;
+        if (estado.isSuccess()) {
+            SuperadminConductoresViewModel.Cambio resultado = estado.requireData();
+            TaxistaAdministrado taxista = resultado.taxista;
+            int texto = resultado.accion == SuperadminConductoresViewModel.Accion.HABILITACION
+                    ? taxista.isHabilitado() ? R.string.sa_taxistas_aprobacion_hecha : R.string.sa_taxistas_retiro_hecho
+                    : taxista.isCuentaActiva() ? R.string.sa_taxistas_activacion_hecha : R.string.sa_taxistas_desactivacion_hecha;
+            Snackbar.make(binding.getRoot(), getString(texto, taxista.getPerfil().getNombreCompleto()),
+                    Snackbar.LENGTH_LONG).show();
+        } else if (estado.isError()) {
+            String mensaje = estado.getMessage() == null ? getString(R.string.estado_error_descripcion) : estado.getMessage();
+            Snackbar.make(binding.getRoot(), getString(R.string.sa_taxistas_error_cambio, mensaje),
+                    Snackbar.LENGTH_LONG).setAction(R.string.sa_taxistas_actualizar, v -> viewModel.reintentar()).show();
         }
-        Driver conductor = estado.getData();
-        avisar(conductor != null
-                ? getString(conductor.isHabilitado()
-                        ? R.string.sa_conductor_ya_puede_recibir
-                        : R.string.sa_conductor_ya_no_recibe, conductor.getNombreCompleto())
-                : mensajeDe(estado));
         viewModel.consumirCambio();
     }
 
-    @NonNull
-    private CharSequence mensajeDe(@NonNull UiState<Driver> estado) {
-        String mensaje = estado.getMessage();
-        return mensaje != null && !mensaje.isEmpty()
-                ? mensaje : getString(R.string.estado_error_descripcion);
+    private void cerrarConfirmacion() {
+        if (confirmacion != null) {
+            confirmacion.dismiss();
+            confirmacion = null;
+        }
     }
 
-    private void avisar(@NonNull CharSequence mensaje) {
-        Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    @Override public void onDestroyView() {
+        cerrarConfirmacion();
         binding.saConductoresLista.setAdapter(null);
         adaptador = null;
+        super.onDestroyView();
         binding = null;
     }
 }

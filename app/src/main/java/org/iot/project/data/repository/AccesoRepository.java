@@ -12,6 +12,11 @@ public interface AccesoRepository {
     void iniciarSesion(@NonNull String email, @NonNull String contrasena,
                        @NonNull ResultCallback<Cuenta> callback);
 
+    /** Intercambia el ID token de Google por una sesión Firebase y valida el perfil por UID. */
+    default void iniciarSesionGoogle(@NonNull String idToken, @NonNull ResultCallback<Cuenta> callback) {
+        callback.onError("El acceso con Google no está disponible en este proveedor.");
+    }
+
     void registrar(@NonNull User borrador, @NonNull String contrasena,
                    @NonNull ResultCallback<Cuenta> callback);
 

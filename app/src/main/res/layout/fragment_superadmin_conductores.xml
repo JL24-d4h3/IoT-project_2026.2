@@ -44,10 +44,34 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:paddingBottom="@dimen/space_lg">
 
+                <TextView
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sa_taxistas_directorio_nota" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sa_conductores_actualizar"
+                    style="@style/Widget.App.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/sa_taxistas_actualizar" />
+
+                <TextView
+                    android:id="@+id/sa_conductores_aviso"
+                    style="@style/TextAppearance.App.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:accessibilityLiveRegion="polite"
+                    android:visibility="gone" />
+
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/sa_conductores_filtros"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
                     app:selectionRequired="true"
                     app:singleSelection="true">
 
@@ -62,7 +86,7 @@
                         android:id="@+id/sa_filtro_solo_pendientes"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/sa_conductores_solo_pendientes" />
+                        android:text="@string/sa_taxistas_filtro_sin_aprobar" />
                 </com.google.android.material.chip.ChipGroup>
 
                 <androidx.recyclerview.widget.RecyclerView

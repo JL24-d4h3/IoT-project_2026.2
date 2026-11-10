@@ -6,6 +6,9 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
+    <!-- El historial de permisos pertenece al dispositivo, no a otra instalación. -->
+    <exclude domain="sharedpref" path="permisos_aplicacion.xml" />
+    <exclude domain="sharedpref" path="permisos_notificaciones.xml" />
     <!--
    <include domain="sharedpref" path="."/>
    <exclude domain="sharedpref" path="device.xml"/>

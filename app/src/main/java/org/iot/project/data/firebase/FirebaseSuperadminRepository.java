@@ -22,12 +22,15 @@ import com.google.firebase.firestore.Source;
 import org.iot.project.core.ResultCallback;
 import org.iot.project.core.SessionManager;
 import org.iot.project.data.repository.SuperadminRepository;
+import org.iot.project.data.repository.TaxistasAdminRepository;
+import org.iot.project.data.rest.TaxistasAdminApiRepository;
 import org.iot.project.models.Cuenta;
 import org.iot.project.models.Driver;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.LogEntry;
 import org.iot.project.models.ResumenSuperadmin;
 import org.iot.project.models.Role;
+import org.iot.project.models.TaxistaAdministrado;
 import org.iot.project.models.User;
 
 import java.time.LocalDateTime;
@@ -51,9 +54,15 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
     private static Role rolSesion;
 
     private final FirebaseHotelRepository hoteles;
+    private final TaxistasAdminRepository taxistas;
 
     public FirebaseSuperadminRepository(FirebaseHotelRepository hoteles) {
+        this(hoteles, new TaxistasAdminApiRepository());
+    }
+
+    public FirebaseSuperadminRepository(FirebaseHotelRepository hoteles, TaxistasAdminRepository taxistas) {
         this.hoteles = hoteles;
+        this.taxistas = taxistas;
     }
 
     @Override
@@ -316,9 +325,24 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
                     if (hotel.getAdministradorId() == null) sinAdmin++;
                 }
                 List<LogEntry> ultimos = mapearEventos(eventos.getResult());
-                callback.onExito(new ResumenSuperadmin(activos, usuarios.size(), -1, -1,
+                ResumenSuperadmin resumen = new ResumenSuperadmin(activos, usuarios.size(), -1, -1,
                         publicados, lista.size(), sinAdmin,
-                        new ArrayList<>(ultimos.subList(0, Math.min(3, ultimos.size())))));
+                        new ArrayList<>(ultimos.subList(0, Math.min(3, ultimos.size()))));
+                taxistas.listar(new ResultCallback<List<TaxistaAdministrado>>() {
+                    @Override public void onExito(@NonNull List<TaxistaAdministrado> conductores) {
+                        if (!acceso.vigente()) return;
+                        int aprobados = 0;
+                        for (TaxistaAdministrado conductor : conductores) if (conductor.isHabilitado()) aprobados++;
+                        callback.onExito(new ResumenSuperadmin(resumen.getUsuariosActivos(),
+                                resumen.getUsuariosTotales(), aprobados, conductores.size(),
+                                resumen.getHotelesPublicados(), resumen.getHotelesTotales(),
+                                resumen.getHotelesSinAdministrador(), resumen.getUltimos()));
+                    }
+                    @Override public void onError(@NonNull String mensaje) {
+                        // Los demás módulos siguen disponibles si el backend web está apagado.
+                        if (acceso.vigente()) callback.onExito(resumen);
+                    }
+                });
             } catch (IllegalArgumentException error) {
                 callback.onError(mensaje(error));
             }
@@ -377,13 +401,23 @@ public final class FirebaseSuperadminRepository implements SuperadminRepository 
 
     @Override
     public void conductores(@NonNull ResultCallback<List<Driver>> callback) {
-        callback.onError("La gestión de conductores está pendiente de conectar con su API.");
+        taxistas.listar(new ResultCallback<List<TaxistaAdministrado>>() {
+            @Override public void onExito(@NonNull List<TaxistaAdministrado> datos) {
+                List<Driver> perfiles = new ArrayList<>();
+                for (TaxistaAdministrado dato : datos) perfiles.add(dato.getPerfil());
+                callback.onExito(perfiles);
+            }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     @Override
     public void habilitarConductor(@NonNull String conductorId, boolean habilitado,
                                    @NonNull ResultCallback<Driver> callback) {
-        callback.onError("La gestión de conductores está pendiente de conectar con su API.");
+        taxistas.cambiarHabilitacion(conductorId, habilitado, new ResultCallback<TaxistaAdministrado>() {
+            @Override public void onExito(@NonNull TaxistaAdministrado dato) { callback.onExito(dato.getPerfil()); }
+            @Override public void onError(@NonNull String mensaje) { callback.onError(mensaje); }
+        });
     }
 
     private void entregar(String uid, Hotel hotel, ResultCallback<Hotel> callback) {

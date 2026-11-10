@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/estilos :: cabecera('Registro de taxistas')}"></head>
+<body>
+
+<div th:replace="~{fragments/estilos :: navegacion('registro')}"></div>
+
+<main class="container my-4 my-lg-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+
+            <header class="mb-4">
+                <h1 class="h3 mb-2">Registra tu unidad para empezar a manejar</h1>
+                <p class="text-secondary mb-0" style="max-width: 62ch;">
+                    Completa tus datos y los de tu vehiculo. Revisamos cada solicitud a mano:
+                    cuando tu cuenta quede habilitada te escribimos al correo y ya podras
+                    recibir viajes desde la app.
+                </p>
+            </header>
+
+            <!-- Confirmacion tras un registro correcto -->
+            <div class="alert alert-success d-flex align-items-start gap-2" role="alert"
+                 th:if="${exito}">
+                <span aria-hidden="true">&#10003;</span>
+                <span th:text="${exito}">Registro enviado.</span>
+            </div>
+
+            <!-- Errores que no pertenecen a un campo concreto (correo duplicado, edad minima) -->
+            <div class="alert alert-danger" role="alert" th:if="${errorGeneral}"
+                 th:text="${errorGeneral}">
+                No pudimos completar el registro.
+            </div>
+
+            <div class="panel p-4 p-md-5">
+                <form th:action="@{/registro}" th:object="${registroForm}" method="post" enctype="multipart/form-data" novalidate>
+
+                    <section class="grupo-campos">
+                        <h2 class="fuente-titulo">Tus datos</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="nombres">Nombres</label>
+                                <input type="text" id="nombres" class="form-control"
+                                       th:field="*{nombres}"
+                                       th:classappend="${#fields.hasErrors('nombres')} ? 'is-invalid'"
+                                       autocomplete="given-name" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombres')}"
+                                     th:errors="*{nombres}"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="apellidos">Apellidos</label>
+                                <input type="text" id="apellidos" class="form-control"
+                                       th:field="*{apellidos}"
+                                       th:classappend="${#fields.hasErrors('apellidos')} ? 'is-invalid'"
+                                       autocomplete="family-name" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('apellidos')}"
+                                     th:errors="*{apellidos}"></div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label class="form-label" for="tipoDocumento">Tipo de documento</label>
+                                <select id="tipoDocumento" class="form-select" th:field="*{tipoDocumento}"
+                                        th:classappend="${#fields.hasErrors('tipoDocumento')} ? 'is-invalid'"
+                                        required>
+                                    <option value="">Selecciona</option>
+                                    <option th:each="tipo : ${tiposDocumento}"
+                                            th:value="${tipo}"
+                                            th:text="${tipo.etiqueta}">DNI</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('tipoDocumento')}"
+                                     th:errors="*{tipoDocumento}"></div>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label" for="numeroDocumento">Numero de documento</label>
+                                <input type="text" id="numeroDocumento" class="form-control"
+                                       th:field="*{numeroDocumento}"
+                                       th:classappend="${#fields.hasErrors('numeroDocumento')} ? 'is-invalid'"
+                                       required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('numeroDocumento')}"
+                                     th:errors="*{numeroDocumento}"></div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label class="form-label" for="fechaNacimiento">Fecha de nacimiento</label>
+                                <input type="date" id="fechaNacimiento" class="form-control"
+                                       th:field="*{fechaNacimiento}"
+                                       th:classappend="${#fields.hasErrors('fechaNacimiento')} ? 'is-invalid'"
+                                       required>
+                                <div class="form-text">Debes ser mayor de 18 anios.</div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaNacimiento')}"
+                                     th:errors="*{fechaNacimiento}"></div>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label" for="domicilio">Domicilio</label>
+                                <input type="text" id="domicilio" class="form-control"
+                                       th:field="*{domicilio}"
+                                       th:classappend="${#fields.hasErrors('domicilio')} ? 'is-invalid'"
+                                       placeholder="Av. Arequipa 1234, Lince, Lima"
+                                       autocomplete="street-address" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('domicilio')}"
+                                     th:errors="*{domicilio}"></div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label" for="fotoPerfil">Tu foto</label>
+                                <input type="file" id="fotoPerfil" class="form-control"
+                                       th:field="*{fotoPerfil}"
+                                       th:classappend="${#fields.hasErrors('fotoPerfil')} ? 'is-invalid'"
+                                       accept="image/jpeg,image/png" data-max-mb="5" required>
+                                <div class="form-text">Foto reciente con el rostro descubierto. JPG o PNG, maximo 5 MB.</div>
+                                <div id="fotoPerfilAviso" class="text-danger small mt-1 d-none">
+                                    La foto pesa mas de 5 MB. Elige otra.
+                                </div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fotoPerfil')}"
+                                     th:errors="*{fotoPerfil}"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="grupo-campos">
+                        <h2 class="fuente-titulo">Tu vehiculo</h2>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="placaVehiculo">Placa</label>
+                                <input type="text" id="placaVehiculo" class="form-control text-uppercase"
+                                       th:field="*{placaVehiculo}"
+                                       th:classappend="${#fields.hasErrors('placaVehiculo')} ? 'is-invalid'"
+                                       placeholder="ABC-123" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('placaVehiculo')}"
+                                     th:errors="*{placaVehiculo}"></div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label" for="fotoVehiculo">Foto del vehiculo</label>
+                                <input type="file" id="fotoVehiculo" class="form-control"
+                                       th:field="*{fotoVehiculo}"
+                                       th:classappend="${#fields.hasErrors('fotoVehiculo')} ? 'is-invalid'"
+                                       accept="image/jpeg,image/png" data-max-mb="5" required>
+                                <div class="form-text">Tomala de frente, con la placa legible. JPG o PNG, maximo 5 MB.</div>
+                                <div id="fotoVehiculoAviso" class="text-danger small mt-1 d-none">
+                                    La foto pesa mas de 5 MB. Elige otra.
+                                </div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fotoVehiculo')}"
+                                     th:errors="*{fotoVehiculo}"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="grupo-campos">
+                        <h2 class="fuente-titulo">Acceso a la app</h2>
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label class="form-label" for="correo">Correo electronico</label>
+                                <input type="email" id="correo" class="form-control"
+                                       th:field="*{correo}"
+                                       th:classappend="${#fields.hasErrors('correo')} ? 'is-invalid'"
+                                       autocomplete="email" required>
+                                <div class="form-text">Con este correo inicias sesion en la app.</div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('correo')}"
+                                     th:errors="*{correo}"></div>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" for="telefono">Telefono</label>
+                                <input type="tel" id="telefono" class="form-control"
+                                       th:field="*{telefono}"
+                                       th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid'"
+                                       placeholder="987654321" autocomplete="tel" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('telefono')}"
+                                     th:errors="*{telefono}"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" for="password">Contrasena</label>
+                                <input type="password" id="password" class="form-control"
+                                       th:field="*{password}"
+                                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                       autocomplete="new-password" required>
+                                <div class="form-text">Minimo 8 caracteres.</div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                                     th:errors="*{password}"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="confirmacionPassword">Repite la contrasena</label>
+                                <input type="password" id="confirmacionPassword" class="form-control"
+                                       th:field="*{confirmacionPassword}"
+                                       th:classappend="${#fields.hasErrors('confirmacionPassword')
+                                            or #fields.hasErrors('passwordConfirmada')} ? 'is-invalid'"
+                                       autocomplete="new-password" required>
+                                <div class="invalid-feedback d-block"
+                                     th:if="${#fields.hasErrors('confirmacionPassword')}"
+                                     th:errors="*{confirmacionPassword}"></div>
+                                <div class="invalid-feedback d-block"
+                                     th:if="${#fields.hasErrors('passwordConfirmada')}"
+                                     th:errors="*{passwordConfirmada}"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-primario px-4 py-2">Enviar registro</button>
+                        <span class="text-secondary small">
+                            Tu cuenta queda en revision hasta que un administrador la habilite.
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="container pb-5 text-secondary small">
+    Sistema de gestion de taxistas
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+<script>
+    // Aviso inmediato si una foto supera los 5 MB; el servidor lo vuelve a validar siempre.
+    document.querySelectorAll('input[type="file"][data-max-mb]').forEach(function (campo) {
+        campo.addEventListener('change', function () {
+            var limite = parseFloat(campo.dataset.maxMb) * 1024 * 1024;
+            var aviso = document.getElementById(campo.id + 'Aviso');
+            var excede = campo.files.length > 0 && campo.files[0].size > limite;
+            if (excede) { campo.value = ''; }
+            aviso.classList.toggle('d-none', !excede);
+        });
+    });
+</script>
+</body>
+</html>

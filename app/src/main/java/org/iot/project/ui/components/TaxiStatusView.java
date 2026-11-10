@@ -74,6 +74,11 @@ public class TaxiStatusView extends LinearLayout {
         pintar(servicio, notaDelConductor(servicio));
     }
 
+    /** Seguimiento del cliente desde recepción, sin acciones ni voz del pasajero. */
+    public void bindParaHotel(@NonNull TaxiService servicio) {
+        pintar(servicio, notaDelHotel(servicio));
+    }
+
     private void pintar(@NonNull TaxiService servicio, CharSequence nota) {
         TaxiStatus actual = servicio.getEstado();
 
@@ -133,6 +138,25 @@ public class TaxiStatusView extends LinearLayout {
                         servicio.getDestino());
             case FINALIZADO:
                 return getContext().getString(R.string.taxi_nota_conductor_finalizado);
+        }
+        return "";
+    }
+
+    private CharSequence notaDelHotel(@NonNull TaxiService servicio) {
+        Driver conductor = servicio.getDriver();
+        String nombre = conductor == null ? getContext().getString(R.string.driver_auth_rol)
+                : conductor.getNombreCompleto();
+        switch (servicio.getEstado()) {
+            case SOLICITADO:
+                return getContext().getString(R.string.taxi_hotel_solicitado);
+            case ASIGNADO:
+                return getContext().getString(R.string.taxi_hotel_asignado, nombre);
+            case EN_CAMINO:
+                return getContext().getString(R.string.taxi_hotel_en_camino, nombre);
+            case EN_TRASLADO:
+                return getContext().getString(R.string.taxi_hotel_en_traslado, servicio.getDestino());
+            case FINALIZADO:
+                return getContext().getString(R.string.taxi_hotel_finalizado);
         }
         return "";
     }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_taxi_reserva_titulo">Taxi de la reserva</string>
+    <string name="admin_taxi_reserva_cargando">Consultando el traslado del huésped…</string>
+    <string name="admin_taxi_reserva_vacio">Esta reserva no tiene solicitudes de taxi.</string>
+    <string name="admin_taxi_reserva_reintentar">Actualizar seguimiento</string>
+    <string name="admin_taxi_reserva_error">No se pudo actualizar el seguimiento: %1$s</string>
+    <plurals name="admin_taxi_reserva_sin_confirmar">
+        <item quantity="one">Hay %1$d solicitud sin confirmación del sistema de taxis. Todavía no representa un traslado operativo.</item>
+        <item quantity="other">Hay %1$d solicitudes sin confirmación del sistema de taxis. Todavía no representan traslados operativos.</item>
+    </plurals>
+    <plurals name="admin_taxi_reserva_rechazados">
+        <item quantity="one">El sistema de taxis rechazó %1$d solicitud.</item>
+        <item quantity="other">El sistema de taxis rechazó %1$d solicitudes.</item>
+    </plurals>
+    <string name="admin_taxi_reserva_selector">Traslado de la reserva</string>
+    <string name="admin_taxi_reserva_opcion">%1$s · %2$s</string>
+    <string name="admin_taxi_reserva_origen">Recojo</string>
+    <string name="admin_taxi_reserva_destino">Destino</string>
+    <string name="admin_taxi_reserva_programacion">Programación</string>
+    <string name="admin_taxi_reserva_fecha_hora">%1$s a las %2$s</string>
+    <string name="admin_taxi_reserva_sin_programacion">Sin programación disponible</string>
+    <string name="admin_taxi_reserva_conductor_asignado">Conductor asignado al traslado</string>
+    <string name="admin_taxi_reserva_conductor_espera">A la espera de que un conductor acepte la solicitud.</string>
+    <string name="admin_taxi_reserva_conductor_sin_datos">El sistema aún no proporcionó los datos del conductor.</string>
+    <string name="admin_taxi_reserva_conductor_finalizado">Conductor que realizó el traslado</string>
+    <string name="admin_taxi_reserva_ubicacion_recojo">Ubicación del taxi y punto de recojo</string>
+    <string name="admin_taxi_reserva_ubicacion_traslado">Última ubicación reportada durante el traslado</string>
+    <string name="admin_taxi_reserva_ubicacion_final">Traslado finalizado · última ubicación registrada</string>
+    <string name="admin_taxi_reserva_ubicacion_sin_reporte">Todavía no hay una ubicación del conductor disponible.</string>
+    <string name="admin_taxi_reserva_ubicacion_final_sin_reporte">El traslado finalizó sin un reporte de ubicación disponible.</string>
+    <string name="admin_taxi_reserva_ubicacion_actualizada">Último reporte: %1$s a las %2$s (%3$s).</string>
+    <string name="admin_taxi_reserva_ubicacion_historica">Registro del traslado finalizado: %1$s a las %2$s.</string>
+    <string name="admin_taxi_reserva_ubicacion_vieja">El reporte tiene más de 5 minutos. La posición actual puede ser distinta.</string>
+    <string name="admin_taxi_reserva_ubicacion_futura">La hora del reporte es posterior a la del dispositivo. Comprueba la hora del teléfono antes de interpretar su antigüedad.</string>
+</resources>

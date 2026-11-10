@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_canal_nombre">Chat de reservas</string>
+    <string name="chat_canal_descripcion">Mensajes entre clientes y administradores de hotel.</string>
+    <string name="chat_notificacion_publica_titulo">Nuevo mensaje</string>
+    <string name="chat_notificacion_publica_mensaje">Tienes un mensaje en el chat de una reserva.</string>
+    <string name="chat_notificaciones_permiso_denegado">Puedes activar las notificaciones de chat en los ajustes de Android.</string>
+    <string name="chat_notificaciones_ajustes">Ajustes</string>
+    <string name="chat_notificacion_otra_cuenta">Este aviso pertenece a otra cuenta. Inicia sesión con la cuenta que lo recibió.</string>
+</resources>

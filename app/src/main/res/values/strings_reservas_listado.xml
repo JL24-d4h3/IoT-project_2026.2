@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reservas_listado_buscar">Buscar por hotel o código de reserva</string>
+    <string name="reservas_listado_ordenar">Ordenar por</string>
+    <string name="reservas_listado_nombre">Nombre</string>
+    <string name="reservas_listado_salida">Fecha de salida</string>
+    <string name="reservas_listado_sentido">Sentido del orden</string>
+    <string name="reservas_listado_ascendente">Ascendente</string>
+    <string name="reservas_listado_descendente">Descendente</string>
+    <string name="reservas_listado_estado">Filtrar por estado</string>
+    <string name="reservas_listado_todos">Todos</string>
+    <string name="reservas_listado_pendiente">Pendiente</string>
+    <string name="reservas_listado_confirmada">Confirmada</string>
+    <string name="reservas_listado_activa">Activa</string>
+    <string name="reservas_listado_finalizada">Finalizada</string>
+    <string name="reservas_listado_cancelada">Cancelada</string>
+    <string name="reservas_listado_sin_resultados_titulo">No hay reservas que coincidan</string>
+    <string name="reservas_listado_sin_resultados">Prueba con otro hotel o código, o cambia el estado seleccionado.</string>
+    <string name="reservas_listado_limpiar">Limpiar búsqueda y filtros</string>
+</resources>

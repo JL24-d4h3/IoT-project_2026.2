@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="taxi_flujo_finalizado_titulo">Servicio finalizado</string>
+    <string name="taxi_flujo_ver_activo">Ver mi servicio en curso</string>
+    <string name="taxi_flujo_otro_titulo">Pedir otro traslado</string>
+    <string name="taxi_flujo_otro_mensaje">Puedes solicitar un taxi para otra reserva disponible. El detalle y el historial de tus viajes se conservan.</string>
+    <string name="taxi_flujo_ultima_posicion">Última posición registrada del taxista.</string>
+    <string name="taxi_flujo_mapa_finalizado">El servicio terminó. Se muestra el último reporte disponible; ya no es un seguimiento en tiempo real.</string>
+    <string name="taxi_flujo_finalizado_sin_posicion">El servicio terminó sin un reporte de ubicación disponible.</string>
+    <string name="taxi_hotel_solicitado">El cliente solicitó un traslado y espera la asignación de un taxista.</string>
+    <string name="taxi_hotel_asignado">%1$s aceptó la solicitud del cliente.</string>
+    <string name="taxi_hotel_en_camino">%1$s va en camino al punto de recojo del cliente.</string>
+    <string name="taxi_hotel_en_traslado">El pasajero se dirige a %1$s.</string>
+    <string name="taxi_hotel_finalizado">El servicio finalizó tras validar el QR del cliente.</string>
+</resources>

@@ -3,6 +3,17 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+def propiedadesLocales = new Properties()
+def archivoLocal = rootProject.file('local.properties')
+if (archivoLocal.exists()) archivoLocal.withInputStream { propiedadesLocales.load(it) }
+def secretosMapas = new Properties()
+def archivoSecretosMapas = rootProject.file('secrets.properties')
+if (archivoSecretosMapas.exists()) archivoSecretosMapas.withInputStream { secretosMapas.load(it) }
+def claveMapas = secretosMapas.getProperty('MAPS_API_KEY', propiedadesLocales.getProperty('MAPS_API_KEY', ''))
+def urlTaxistas = providers.gradleProperty('taxistasApiBaseUrl')
+        .orElse(providers.environmentVariable('TAXISTAS_API_BASE_URL'))
+        .getOrElse(propiedadesLocales.getProperty('taxistas.api.baseUrl', ''))
+
 android {
     namespace 'org.iot.project'
     compileSdk {
@@ -17,10 +28,16 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "org.iot.project.test.EmulatorTestRunner"
+        manifestPlaceholders = [MAPS_API_KEY: claveMapas]
     }
 
     buildTypes {
+        debug {
+            buildConfigField 'String', 'TAXISTAS_API_BASE_URL', groovy.json.JsonOutput.toJson(
+                    urlTaxistas ?: 'http://10.0.2.2:8080/')
+        }
         release {
+            buildConfigField 'String', 'TAXISTAS_API_BASE_URL', groovy.json.JsonOutput.toJson(urlTaxistas)
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -33,10 +50,16 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 }
 
 dependencies {
+    implementation libs.androidx.credentials
+    implementation libs.androidx.credentials.play.services.auth
+    implementation libs.google.id
+    implementation libs.google.maps
+    implementation libs.gson
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
@@ -56,10 +79,9 @@ dependencies {
     implementation libs.androidx.swiperefreshlayout
     implementation libs.glide
 
-    // Genera el QR del servicio de taxi (§39). Es la libreria de codificacion
-    // pura Java: no trae interfaz ni lector, solo el algoritmo. El lector vive
-    // en la pantalla del conductor, que usa la camara.
+    // Codificación del QR del cliente y lector de cámara del conductor.
     implementation libs.zxing
+    implementation libs.zxing.embedded
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

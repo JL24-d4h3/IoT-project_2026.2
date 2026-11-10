@@ -1,13 +1,20 @@
 package org.iot.project;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -16,11 +23,17 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import org.iot.project.core.Roles;
 import org.iot.project.core.AvisosClienteViewModel;
 import org.iot.project.core.SessionManager;
+import org.iot.project.core.notificaciones.AvisosChatViewModel;
+import org.iot.project.core.notificaciones.CanalChat;
+import org.iot.project.core.permisos.PreferenciasPermisos;
 import org.iot.project.databinding.ActivityMainBinding;
 import org.iot.project.models.Cuenta;
+import org.iot.project.models.Role;
 import org.iot.project.utils.InsetUtils;
 
 import java.util.Collections;
@@ -67,10 +80,30 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private NavController navController;
     private AvisosClienteViewModel avisosCliente;
+    private AvisosChatViewModel avisosChat;
+    private boolean reanudada;
+    private String usuarioChatPendiente;
+    private String reservaChatPendiente;
     private String identidadAplicada;
     private String hotelAplicado;
     private static final String CLAVE_UID = "sesionUid";
     private static final String CLAVE_HOTEL = "sesionHotelId";
+    private static final String CLAVE_AVISO_UID = "avisoChatUid";
+    private static final String CLAVE_AVISO_RESERVA = "avisoChatReserva";
+    private final ActivityResultLauncher<String> permisoNotificaciones = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), concedido -> {
+                PreferenciasPermisos.desde(this).registrarResultado(
+                        PreferenciasPermisos.Permiso.NOTIFICACIONES, concedido);
+                sincronizarPermisos();
+                if (!concedido && binding != null && !isFinishing()) {
+                    Snackbar.make(binding.getRoot(), R.string.chat_notificaciones_permiso_denegado,
+                                    Snackbar.LENGTH_LONG)
+                            .setAction(R.string.chat_notificaciones_ajustes, v -> startActivity(
+                                    new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                            .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())))
+                            .show();
+                }
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,6 +119,13 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         avisosCliente = new ViewModelProvider(this).get(AvisosClienteViewModel.class);
+        avisosChat = new ViewModelProvider(this).get(AvisosChatViewModel.class);
+        if (savedInstanceState != null) {
+            usuarioChatPendiente = savedInstanceState.getString(CLAVE_AVISO_UID);
+            reservaChatPendiente = savedInstanceState.getString(CLAVE_AVISO_RESERVA);
+        } else {
+            recibirAperturaChat(getIntent());
+        }
 
         NavHostFragment host = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host);
@@ -149,6 +189,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        reanudada = true;
+        sincronizarPermisos();
+        abrirChatPendiente();
+        actualizarChatVisible();
+        solicitarPermisoChat();
+    }
+
+    @Override
+    protected void onPause() {
+        reanudada = false;
+        if (avisosChat != null) avisosChat.chatVisible(null);
+        super.onPause();
+    }
+
+    @Override
+    protected void onNewIntent(@NonNull Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        recibirAperturaChat(intent);
+        binding.getRoot().post(this::abrirChatPendiente);
+    }
+
+    @Override
     protected void onStop() {
         if (avisosCliente != null) avisosCliente.detener();
         super.onStop();
@@ -159,6 +224,8 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putString(CLAVE_UID, identidadAplicada);
         outState.putString(CLAVE_HOTEL, hotelAplicado);
+        outState.putString(CLAVE_AVISO_UID, usuarioChatPendiente);
+        outState.putString(CLAVE_AVISO_RESERVA, reservaChatPendiente);
     }
 
     /**
@@ -190,6 +257,11 @@ public class MainActivity extends AppCompatActivity {
         if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
             avisosCliente.iniciar();
         }
+        binding.getRoot().post(() -> {
+            abrirChatPendiente();
+            actualizarChatVisible();
+            solicitarPermisoChat();
+        });
     }
 
     /**
@@ -211,6 +283,86 @@ public class MainActivity extends AppCompatActivity {
                                   @NonNull NavDestination destino,
                                   @Nullable Bundle argumentos) {
         actualizarBarra(destino);
+        actualizarChatVisible();
+    }
+
+    private void solicitarPermisoChat() {
+        Role rol = SessionManager.getRolActivo();
+        if (!reanudada || (rol != Role.CLIENTE && rol != Role.ADMIN_HOTEL)) return;
+        boolean concedido = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+        PreferenciasPermisos preferencias = PreferenciasPermisos.desde(this);
+        preferencias.sincronizar(PreferenciasPermisos.Permiso.NOTIFICACIONES, concedido);
+        if (concedido) return;
+        // El rechazo no bloquea el chat ni provoca solicitudes en cada pantalla.
+        if (preferencias.fueSolicitado(PreferenciasPermisos.Permiso.NOTIFICACIONES)) return;
+        preferencias.registrarSolicitud(PreferenciasPermisos.Permiso.NOTIFICACIONES);
+        permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS);
+    }
+
+    private void sincronizarPermisos() {
+        PreferenciasPermisos preferencias = PreferenciasPermisos.desde(this);
+        preferencias.sincronizar(PreferenciasPermisos.Permiso.NOTIFICACIONES,
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                        == PackageManager.PERMISSION_GRANTED);
+        preferencias.sincronizar(PreferenciasPermisos.Permiso.CAMARA,
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private void actualizarChatVisible() {
+        if (avisosChat == null || navController == null) return;
+        NavDestination destino = navController.getCurrentDestination();
+        boolean chat = destino != null && (destino.getId() == R.id.chatFragment
+                || destino.getId() == R.id.adminChatFragment);
+        Bundle argumentos = navController.getCurrentBackStackEntry() == null ? null
+                : navController.getCurrentBackStackEntry().getArguments();
+        avisosChat.chatVisible(reanudada && chat && argumentos != null
+                ? argumentos.getString("bookingId") : null);
+    }
+
+    private void recibirAperturaChat(@Nullable Intent intent) {
+        if (intent == null || !CanalChat.ACTION_VER_CHAT.equals(intent.getAction())) return;
+        String uid = intent.getStringExtra(CanalChat.EXTRA_USUARIO_ID);
+        String reserva = intent.getStringExtra(CanalChat.EXTRA_BOOKING_ID);
+        if (!idAvisoValido(uid) || !idAvisoValido(reserva)) return;
+        usuarioChatPendiente = uid;
+        reservaChatPendiente = reserva;
+    }
+
+    private void abrirChatPendiente() {
+        if (!reanudada || reservaChatPendiente == null || navController == null
+                || getSupportFragmentManager().isStateSaved()
+                || !SessionManager.haySesion()) return;
+        String uid = usuarioChatPendiente;
+        String reserva = reservaChatPendiente;
+        usuarioChatPendiente = null;
+        reservaChatPendiente = null;
+        Role rol = SessionManager.getRolActivo();
+        if (!Objects.equals(uid, SessionManager.getIdentidadId())
+                || (rol != Role.CLIENTE && rol != Role.ADMIN_HOTEL)) {
+            Toast.makeText(this, R.string.chat_notificacion_otra_cuenta, Toast.LENGTH_LONG).show();
+            return;
+        }
+        int destino = rol == Role.CLIENTE ? R.id.chatFragment : R.id.adminChatFragment;
+        NavDestination actual = navController.getCurrentDestination();
+        Bundle actuales = navController.getCurrentBackStackEntry() == null ? null
+                : navController.getCurrentBackStackEntry().getArguments();
+        if (actual != null && actual.getId() == destino && actuales != null
+                && reserva.equals(actuales.getString("bookingId"))) {
+            actualizarChatVisible();
+            return;
+        }
+        Bundle argumentos = new Bundle();
+        argumentos.putString("bookingId", reserva);
+        // El repositorio vuelve a validar reserva, destinatario y hotel en el servidor.
+        navController.navigate(destino, argumentos,
+                new NavOptions.Builder().setLaunchSingleTop(true).build());
+    }
+
+    private static boolean idAvisoValido(@Nullable String id) {
+        return id != null && !id.trim().isEmpty() && id.length() <= 300
+                && !id.contains("/") && !id.equals(".") && !id.equals("..");
     }
 
     private void actualizarBarra(@Nullable NavDestination destino) {

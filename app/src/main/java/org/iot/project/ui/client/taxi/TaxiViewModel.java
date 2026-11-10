@@ -33,14 +33,30 @@ public class TaxiViewModel extends ViewModel {
 
     public static final class Estado {
         @Nullable public final TaxiService activo;
+        /** Viaje que se muestra en detalle; puede estar finalizado sin ser un activo. */
+        @Nullable public final TaxiService principal;
         @NonNull public final List<TaxiService> anteriores;
+        @NonNull public final List<TaxiService> pendientesEnvio;
 
         Estado(@Nullable TaxiService activo, @NonNull List<TaxiService> anteriores) {
+            this(activo, anteriores, new ArrayList<>());
+        }
+
+        Estado(@Nullable TaxiService activo, @NonNull List<TaxiService> anteriores,
+               @NonNull List<TaxiService> pendientesEnvio) {
+            this(activo, anteriores, pendientesEnvio, activo);
+        }
+
+        Estado(@Nullable TaxiService activo, @NonNull List<TaxiService> anteriores,
+               @NonNull List<TaxiService> pendientesEnvio, @Nullable TaxiService principal) {
             this.activo = activo;
+            this.principal = principal;
             this.anteriores = anteriores;
+            this.pendientesEnvio = pendientesEnvio;
         }
 
         public boolean tieneActivo() { return activo != null; }
+        public boolean tienePrincipal() { return principal != null; }
     }
 
     private final SavedStateHandle guardado;
@@ -59,6 +75,7 @@ public class TaxiViewModel extends ViewModel {
     private long consultaReservas;
     private boolean visible;
     private boolean enviando;
+    @Nullable private String solicitudPendienteId;
     @Nullable private String servicioEnfocadoId;
     private final Set<String> valorando = new HashSet<>();
 
@@ -72,6 +89,7 @@ public class TaxiViewModel extends ViewModel {
     public LiveData<UiState<TaxiService>> getSolicitud() { return solicitud; }
     @Nullable public Booking getReservaElegida() { return reserva; }
     public boolean isEnviando() { return enviando; }
+    @Nullable public String getSolicitudPendienteId() { return solicitudPendienteId; }
 
     public void cargar() {
         String uid = SessionManager.getUsuarioId();
@@ -91,6 +109,7 @@ public class TaxiViewModel extends ViewModel {
             reserva = null;
             hotel = null;
             enviando = false;
+            solicitudPendienteId = null;
             valorando.clear();
             todasLasReservas.clear();
             reservasConTaxi.clear();
@@ -101,6 +120,7 @@ public class TaxiViewModel extends ViewModel {
                 limpiarBorrador();
                 guardado.set("taxiUid", uid);
             }
+            servicioEnfocadoId = guardado.get("taxiServicioEnfocado");
         }
         cargarReservas();
     }
@@ -182,7 +202,7 @@ public class TaxiViewModel extends ViewModel {
         if (elegidaId != null && reservasConTaxi.contains(elegidaId)
                 && (enviando || isFormularioAbierto())) {
             for (TaxiService taxi : datos) {
-                if (elegidaId.equals(taxi.getBookingId())) {
+                if (elegidaId.equals(taxi.getBookingId()) && taxi.getApiId() != null) {
                     enviando = false;
                     guardado.set("taxiFormulario", false);
                     solicitud.setValue(UiState.success(taxi));
@@ -217,25 +237,41 @@ public class TaxiViewModel extends ViewModel {
     }
 
     @NonNull private Estado separar(@NonNull List<TaxiService> datos) {
+        return separarServicios(datos, servicioEnfocadoId);
+    }
+
+    @NonNull static Estado separarServicios(@NonNull List<TaxiService> datos,
+                                            @Nullable String enfocadoId) {
         TaxiService activo = null;
+        TaxiService terminado = null;
+        TaxiService enfocado = null;
         for (TaxiService taxi : datos) {
-            if (!taxi.getEstado().isActive()) continue;
+            if (taxi.getApiId() == null) continue;
+            if (taxi.getEstado().isFinished()
+                    && (terminado == null || compararHorario(taxi, terminado) > 0)) terminado = taxi;
+            if (taxi.getId().equals(enfocadoId)) enfocado = taxi;
+            if (!taxi.getEstado().isActive() || taxi.getApiId() == null) continue;
             if (activo == null || taxi.getEstado().ordinal() > activo.getEstado().ordinal()
                     || (taxi.getEstado() == activo.getEstado()
-                    && taxi.getFecha().atTime(taxi.getHora()).isBefore(
-                    activo.getFecha().atTime(activo.getHora())))) activo = taxi;
+                    && compararHorario(taxi, activo) < 0)) activo = taxi;
         }
-        if (servicioEnfocadoId != null) {
-            for (TaxiService taxi : datos) {
-                if (servicioEnfocadoId.equals(taxi.getId()) && taxi.getEstado().isActive()) {
-                    activo = taxi;
-                    break;
-                }
-            }
-        }
+        if (enfocado != null && enfocado.getEstado().isActive()) activo = enfocado;
+        TaxiService principal = enfocado != null ? enfocado : activo != null ? activo : terminado;
         List<TaxiService> anteriores = new ArrayList<>();
-        for (TaxiService taxi : datos) if (taxi != activo) anteriores.add(taxi);
-        return new Estado(activo, anteriores);
+        List<TaxiService> pendientes = new ArrayList<>();
+        for (TaxiService taxi : datos) {
+            if (taxi.getApiId() == null && taxi.getEstado().isActive()) pendientes.add(taxi);
+            else if (taxi != activo) anteriores.add(taxi);
+        }
+        return new Estado(activo, anteriores, pendientes, principal);
+    }
+
+    /** Compara únicamente la programación conocida, sin inventar una hora de finalización. */
+    private static int compararHorario(TaxiService primero, TaxiService segundo) {
+        if (primero.getFecha() == null || segundo.getFecha() == null) return 0;
+        int fechas = primero.getFecha().compareTo(segundo.getFecha());
+        if (fechas != 0 || primero.getHora() == null || segundo.getHora() == null) return fechas;
+        return primero.getHora().compareTo(segundo.getHora());
     }
 
     public void elegirReserva(@NonNull Booking elegida) {
@@ -292,8 +328,8 @@ public class TaxiViewModel extends ViewModel {
             return;
         }
         if (origen.trim().isEmpty() || destino.trim().isEmpty()
-                || origen.trim().length() > 300 || destino.trim().length() > 300) {
-            solicitud.setValue(UiState.error("Indica el recojo y el aeropuerto de destino (máximo 300 caracteres)."));
+                || origen.trim().length() > 200 || destino.trim().length() > 200) {
+            solicitud.setValue(UiState.error("Indica el recojo y el aeropuerto de destino (máximo 200 caracteres)."));
             return;
         }
         if (fecha.isBefore(reserva.getFechaEntrada()) || fecha.isAfter(reserva.getFechaSalida())
@@ -318,6 +354,7 @@ public class TaxiViewModel extends ViewModel {
                 .withPrecio(esGratuito() ? 0d : TaxiService.TARIFA_AEROPUERTO);
         String uid = cuentaId;
         long version = generacion;
+        solicitudPendienteId = null;
         enviando = true;
         solicitud.setValue(UiState.loading());
         ServiceLocator.taxis().solicitar(borrador, new ResultCallback<TaxiService>() {
@@ -325,6 +362,7 @@ public class TaxiViewModel extends ViewModel {
                 if (!vigente(uid, version)) return;
                 enviando = false;
                 guardado.set("taxiFormulario", false);
+                fijarEnfoque(dato.getId());
                 publicarCon(dato);
                 solicitud.setValue(UiState.success(dato));
             }
@@ -332,6 +370,44 @@ public class TaxiViewModel extends ViewModel {
                 if (!vigente(uid, version)) return;
                 enviando = false;
                 solicitud.setValue(UiState.error(mensaje));
+                if (visible) reintentar();
+            }
+        });
+    }
+
+    /** Reutiliza el mismo documento; el repositorio decide si el POST es seguro. */
+    public void reintentarSolicitud(@NonNull String taxiId) {
+        if (enviando || cuentaId == null) return;
+        UiState<Estado> actual = contenido.getValue();
+        TaxiService pendiente = null;
+        if (actual != null && actual.getData() != null) {
+            for (TaxiService taxi : actual.getData().pendientesEnvio) {
+                if (taxiId.equals(taxi.getId())) pendiente = taxi;
+            }
+        }
+        if (pendiente == null || !cuentaId.equals(pendiente.getClienteId())) return;
+        solicitudPendienteId = taxiId;
+        if (!pendiente.puedeReintentarEnvioApi()) {
+            solicitud.setValue(UiState.error("El envío anterior no está confirmado. Revisa el servicio en la web antes de solicitar otro."));
+            return;
+        }
+        String uid = cuentaId;
+        long version = generacion;
+        enviando = true;
+        solicitud.setValue(UiState.loading());
+        ServiceLocator.taxis().solicitar(pendiente, new ResultCallback<TaxiService>() {
+            @Override public void onExito(@NonNull TaxiService dato) {
+                if (!vigente(uid, version)) return;
+                enviando = false;
+                fijarEnfoque(dato.getId());
+                publicarCon(dato);
+                solicitud.setValue(UiState.success(dato));
+            }
+            @Override public void onError(@NonNull String mensaje) {
+                if (!vigente(uid, version)) return;
+                enviando = false;
+                solicitud.setValue(UiState.error(mensaje));
+                if (visible) reintentar();
             }
         });
     }
@@ -372,6 +448,9 @@ public class TaxiViewModel extends ViewModel {
             for (TaxiService previo : datos.anteriores) {
                 if (!previo.getId().equals(nuevo.getId())) todos.add(previo);
             }
+            for (TaxiService previo : datos.pendientesEnvio) {
+                if (!previo.getId().equals(nuevo.getId())) todos.add(previo);
+            }
         }
         todos.add(nuevo);
         aplicarServicios(todos);
@@ -399,17 +478,34 @@ public class TaxiViewModel extends ViewModel {
     public void consumirSolicitud() { if (!enviando) solicitud.setValue(null); }
 
     public void enfocarServicio(@NonNull String taxiId) {
+        fijarEnfoque(taxiId);
+        actualizarEnfoque();
+    }
+
+    public void mostrarServicioActivo() {
+        servicioEnfocadoId = null;
+        guardado.remove("taxiServicioEnfocado");
+        actualizarEnfoque();
+    }
+
+    private void fijarEnfoque(@NonNull String taxiId) {
         servicioEnfocadoId = taxiId;
+        guardado.set("taxiServicioEnfocado", taxiId);
+    }
+
+    private void actualizarEnfoque() {
         UiState<Estado> actual = contenido.getValue();
         if (actual == null || actual.getData() == null) return;
         List<TaxiService> datos = new ArrayList<>(actual.getData().anteriores);
+        datos.addAll(actual.getData().pendientesEnvio);
         if (actual.getData().activo != null) datos.add(actual.getData().activo);
         contenido.setValue(UiState.success(separar(datos)));
     }
 
     private void limpiarBorrador() {
         for (String clave : new String[]{"taxiReservaId", "taxiBorradorId", "taxiOrigen", "taxiDestino",
-                "taxiFecha", "taxiHora", "taxiPasajeros", "taxiVuelta", "taxiFormulario"}) guardado.remove(clave);
+                "taxiFecha", "taxiHora", "taxiPasajeros", "taxiVuelta", "taxiFormulario",
+                "taxiServicioEnfocado"}) guardado.remove(clave);
     }
 
     public void reintentar() {

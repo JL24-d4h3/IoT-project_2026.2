@@ -13,96 +13,184 @@
         android:layout_height="wrap_content"
         android:background="@color/colorSurface" />
 
+    <!-- Los controles siguen disponibles con un listado vacío, un error o una carga. -->
+    <LinearLayout
+        android:id="@+id/reservas_controles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_margin"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingEnd="@dimen/screen_margin"
+        android:paddingBottom="@dimen/space_sm">
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.App.TextInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/reservas_listado_buscar"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@drawable/ic_search">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/reservas_buscar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:saveEnabled="false"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/reservas_listado_ordenar" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/reservas_orden"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/reservas_listado_ordenar"
+                    app:checkedChip="@id/reservas_orden_salida"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/reservas_orden_nombre"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reservas_listado_nombre" />
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/reservas_orden_salida"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/reservas_listado_salida" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/reservas_sentido"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:contentDescription="@string/reservas_listado_sentido"
+                    app:checkedChip="@id/reservas_sentido_descendente"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/reservas_sentido_ascendente"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reservas_listado_ascendente" />
+
+                    <org.iot.project.ui.components.FilterChipView
+                        android:id="@+id/reservas_sentido_descendente"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/reservas_listado_descendente" />
+                </com.google.android.material.chip.ChipGroup>
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            style="@style/TextAppearance.App.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/reservas_listado_estado" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/reservas_estados"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/reservas_listado_estado"
+                app:checkedChip="@id/reservas_estado_todos"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true">
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_todos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/reservas_listado_todos" />
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_pendiente"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reservas_listado_pendiente" />
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_confirmada"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reservas_listado_confirmada" />
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_activa"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reservas_listado_activa" />
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_finalizada"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reservas_listado_finalizada" />
+
+                <org.iot.project.ui.components.FilterChipView
+                    android:id="@+id/reservas_estado_cancelada"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reservas_listado_cancelada" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/reservas_contenido"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reservas_lista"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/screen_margin"
+            android:paddingTop="@dimen/space_sm"
+            android:paddingEnd="@dimen/screen_margin"
+            android:paddingBottom="@dimen/space_lg"
             android:visibility="gone"
-            tools:visibility="visible">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingStart="@dimen/screen_margin"
-                android:paddingTop="@dimen/space_md"
-                android:paddingEnd="@dimen/screen_margin"
-                android:paddingBottom="@dimen/space_lg">
-
-                <LinearLayout
-                    android:id="@+id/reservas_seccion_curso"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/TextAppearance.App.H2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/reservas_en_curso" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/reservas_en_curso"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:nestedScrollingEnabled="false"
-                        tools:itemCount="1"
-                        tools:listitem="@layout/item_booking_card" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/reservas_seccion_proximas"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="@dimen/space_lg">
-
-                    <TextView
-                        style="@style/TextAppearance.App.H2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/reservas_proximas" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/reservas_proximas"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:nestedScrollingEnabled="false"
-                        tools:itemCount="2"
-                        tools:listitem="@layout/item_booking_card" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/reservas_seccion_historial"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="@dimen/space_lg">
-
-                    <TextView
-                        style="@style/TextAppearance.App.H2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/reservas_historial" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/reservas_historial"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:nestedScrollingEnabled="false"
-                        tools:itemCount="2"
-                        tools:listitem="@layout/item_booking_card" />
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+            tools:itemCount="3"
+            tools:listitem="@layout/item_booking_card"
+            tools:visibility="visible" />
 
         <LinearLayout
             android:id="@+id/reservas_esqueleto"
@@ -110,17 +198,11 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingTop="@dimen/space_md"
-            android:visibility="gone"
-            tools:visibility="visible">
+            android:visibility="gone">
 
             <org.iot.project.ui.components.LoadingSkeletonView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
-
-            <org.iot.project.ui.components.LoadingSkeletonView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md" />
 
             <org.iot.project.ui.components.LoadingSkeletonView
                 android:layout_width="match_parent"
@@ -132,8 +214,7 @@
             android:id="@+id/reservas_vacio"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:visibility="gone" />
 
         <org.iot.project.ui.components.ErrorStateView
             android:id="@+id/reservas_error"
@@ -141,5 +222,4 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
     </FrameLayout>
-
 </LinearLayout>

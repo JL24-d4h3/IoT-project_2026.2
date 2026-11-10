@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="api_acceso_normal">Cliente / Hotel</string>
+    <string name="api_acceso_taxista">Taxista</string>
+    <string name="api_acceso_cuenta_web">Ingresa con tu cuenta del sistema web de taxistas. El registro y la recuperación de contraseña se realizan en la página web.</string>
+    <string name="api_driver_actualizar">Actualizar servicios</string>
+    <string name="api_driver_cargando">Consultando servicios…</string>
+    <string name="api_driver_sin_ofertas">No hay solicitudes disponibles.</string>
+    <string name="api_driver_sin_activo">Todavía no tienes un servicio en curso.</string>
+    <string name="api_driver_ocupado">Completa tu servicio en curso para aceptar otra solicitud.</string>
+    <string name="api_driver_horario">%1$s a las %2$s</string>
+    <string name="api_driver_ruta">Recojo: %1$s\nDestino: %2$s</string>
+    <string name="api_driver_horario_pendiente">Horario por confirmar</string>
+    <string name="api_driver_tarifa">Tarifa: %1$s</string>
+    <string name="api_driver_tarifa_pendiente">Tarifa por confirmar</string>
+    <string name="api_driver_perfil_inactivo">Tu cuenta no está habilitada para aceptar servicios.</string>
+    <string name="api_driver_vehiculo">Vehículo: %1$s · %2$s</string>
+    <string name="api_driver_sin_vehiculo">No tienes un vehículo asignado.</string>
+    <string name="api_driver_ubicacion_actualizar">Actualizar mi ubicación</string>
+    <string name="api_driver_ubicacion_ayuda">Actualiza tu ubicación para ver solicitudes cercanas. La posición debe tener menos de dos minutos.</string>
+    <string name="api_driver_ubicacion_buscando">Obteniendo tu ubicación…</string>
+    <string name="api_driver_ubicacion_guardando">Guardando tu ubicación…</string>
+    <string name="api_driver_ubicacion_lista">Ubicación actualizada. Estamos consultando las solicitudes cercanas.</string>
+    <string name="api_driver_ubicacion_permiso">Permite la ubicación precisa para consultar y aceptar solicitudes. Puedes cambiar el permiso en Ajustes; la ubicación aproximada no es suficiente.</string>
+    <string name="api_driver_ubicacion_apagada">Activa el GPS del celular y actualiza tu ubicación para consultar y aceptar solicitudes.</string>
+    <string name="api_driver_ubicacion_sin_senal">No pudimos obtener tu ubicación. Comprueba la señal GPS o la conexión y vuelve a intentarlo.</string>
+    <string name="api_driver_ubicacion_activar">Activar ubicación</string>
+    <string name="api_driver_ubicacion_ajustes">Abrir ajustes</string>
+    <string name="api_driver_ofertas_bloqueadas">Las solicitudes se mostrarán cuando tengas ubicación precisa, GPS activado y una posición reciente. Puedes gestionar tu viaje en curso.</string>
+    <string name="api_driver_seguimiento_pausado">La ubicación del viaje está pausada. Activa el permiso preciso y el GPS para compartirla; puedes seguir gestionando el servicio.</string>
+    <string name="api_driver_seguimiento_preparando">Preparando la ubicación del viaje…</string>
+</resources>

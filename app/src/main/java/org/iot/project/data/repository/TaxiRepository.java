@@ -39,6 +39,19 @@ public interface TaxiRepository {
 
     void historial(@NonNull String clienteId, @NonNull ResultCallback<List<TaxiService>> callback);
 
+    /** RF-100: consulta de lectura, limitada a una reserva del hotel administrado. */
+    default void serviciosDeReserva(@NonNull String hotelId, @NonNull String bookingId,
+                                     @NonNull ResultCallback<List<TaxiService>> callback) {
+        callback.onError("La consulta del traslado de esta reserva no está disponible.");
+    }
+
+    /** El seguimiento se mantiene exclusivamente mientras su pantalla conserva la suscripción. */
+    default Suscripcion escucharServiciosDeReserva(@NonNull String hotelId, @NonNull String bookingId,
+                                                    @NonNull ResultCallback<List<TaxiService>> callback) {
+        serviciosDeReserva(hotelId, bookingId, callback);
+        return () -> { };
+    }
+
     void solicitar(@NonNull TaxiService solicitud, @NonNull ResultCallback<TaxiService> callback);
 
     void obtener(@NonNull String taxiId, @NonNull ResultCallback<TaxiService> callback);
@@ -52,6 +65,12 @@ public interface TaxiRepository {
 
     /** RF-096: el perfil del conductor: su vehiculo, su nota y sus servicios. */
     void perfilDe(@NonNull String conductorId, @NonNull ResultCallback<Driver> callback);
+
+    /** Reporte manual de una posición obtenida del dispositivo, nunca simulada. */
+    default void actualizarUbicacion(@NonNull String conductorId, double latitud, double longitud,
+                                      @NonNull ResultCallback<Driver> callback) {
+        callback.onError("El reporte de ubicación no está disponible en este proveedor de taxis.");
+    }
 
     /** RF-088, RF-089: solicitudes que este conductor puede atender, por cercania. */
     void disponibles(@NonNull String conductorId,

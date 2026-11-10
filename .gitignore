@@ -5,6 +5,7 @@
 .DS_Store
 Thumbs.db
 local.properties
+secrets.properties
 
 # Archivos generados
 .gradle/
@@ -36,9 +37,19 @@ GoogleService-Info.plist
 *.p12
 *.pem
 *.key
+*.ppk
+*.pfx
+*.env
+*firebase-admin*.json
+credentials/
+uploads/
+target/
+*.patch
 
 # Notas y datos locales; no forman parte del codigo compartido
 /RECUPERACION.md
 /docs/memory/
 /docs/views_prompt.txt
+/docs/project_detail.txt
+/docs/plan/
 /tools/firebase/perfiles-iniciales.json

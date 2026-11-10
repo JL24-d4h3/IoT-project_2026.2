@@ -6,9 +6,14 @@
     puerta a FINALIZADO: RF-110 no deja cerrar el servicio de ninguna otra
     forma, asi que el conductor no tiene un boton de "terminar" en la portada.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+<LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -45,7 +50,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_xs"
-        android:text="@string/driver_codigo_instruccion" />
+        android:text="@string/qr_taxi_instruccion" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/validar_escanear"
+        style="@style/Widget.App.Button.Secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:minHeight="@dimen/button_height"
+        android:text="@string/qr_taxi_escanear" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/validar_camara_ajustes"
+        style="@style/Widget.App.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:minHeight="48dp"
+        android:text="@string/qr_taxi_abrir_ajustes"
+        android:visibility="gone" />
 
     <!-- El hint va solo aqui, nunca tambien en el TextInputEditText: Material
          dibujaria los dos en el mismo hueco y se solaparian. -->
@@ -62,8 +86,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autofillHints="none"
+            android:importantForAutofill="no"
             android:imeOptions="actionDone"
             android:inputType="textCapCharacters"
+            android:maxLength="40"
+            android:saveEnabled="false"
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -88,3 +115,4 @@
         android:text="@string/driver_codigo_confirmar" />
 
 </LinearLayout>
+</androidx.core.widget.NestedScrollView>

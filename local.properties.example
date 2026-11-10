@@ -1,0 +1,4 @@
+# Copiar a local.properties y ajustar a tu equipo; mantener valores reales fuera de Git.
+sdk.dir=C:/Users/TU_USUARIO/AppData/Local/Android/Sdk
+taxistas.api.baseUrl=https://api.example.com/
+MAPS_API_KEY=

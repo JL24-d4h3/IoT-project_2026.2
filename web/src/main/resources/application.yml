@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: gestion-taxistas
+
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: "${DB_URL:jdbc:mysql://localhost:3306/taxidb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima&characterEncoding=UTF-8}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # "update" crea las tablas que falten. El script database/schema.sql es la
+      # alternativa si prefieres crear el esquema a mano desde MySQL Workbench.
+      ddl-auto: ${DB_DDL_AUTO:none}
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  thymeleaf:
+    cache: false
+
+  servlet:
+    multipart:
+      # El limite funcional de 5 MB lo aplica ValidadorImagen con un mensaje claro;
+      # estos topes son mas altos para que el contenedor no corte antes el formulario.
+      max-file-size: 10MB
+      max-request-size: 25MB
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  admin:
+    usuario: superadmin
+    password: ${ADMIN_PASSWORD}
+  jwt:
+    secret: "${JWT_SECRET}"
+    expiracion-minutos: 720
+
+  # Donde se guardan las fotos: "local" (por defecto, carpeta ./uploads) o "cloudinary".
+  almacenamiento:
+    tipo: ${APP_ALMACENAMIENTO:local}
+    local:
+      directorio: ./uploads
+      # Direccion que ve la app movil; se antepone a /fotos/... (emulador Android: http://10.0.2.2:8080)
+      url-base: ${APP_URL_BASE:http://localhost:8080}
+    cloudinary:
+      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+      api-key: ${CLOUDINARY_API_KEY:}
+      api-secret: ${CLOUDINARY_API_SECRET:}
+      carpeta: gestion-taxistas

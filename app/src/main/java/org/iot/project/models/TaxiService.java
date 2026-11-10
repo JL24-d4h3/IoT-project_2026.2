@@ -23,6 +23,10 @@ public class TaxiService {
     private final String codigo;
     private final String bookingId;
     private final String clienteId;
+    /** ID numérico del servicio web; el ID local sigue siendo el de la reserva. */
+    private String apiId;
+    /** Resultado persistente del envío; no equivale al estado operativo del viaje. */
+    private String envioApi;
     private String origen;
     private String destino;
     private LocalDate fecha;
@@ -74,6 +78,42 @@ public class TaxiService {
 
     public String getClienteId() {
         return clienteId;
+    }
+
+    public String getApiId() {
+        return apiId;
+    }
+
+    public TaxiService withApiId(String apiId) {
+        if (apiId != null && !apiId.isEmpty()) {
+            if (!apiId.matches("[1-9][0-9]*")) {
+                throw new IllegalArgumentException("El identificador del servicio web no es válido.");
+            }
+            try {
+                Long.parseLong(apiId);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException("El identificador del servicio web no es válido.");
+            }
+        }
+        this.apiId = apiId == null || apiId.isEmpty() ? null : apiId;
+        return this;
+    }
+
+    public String getEnvioApi() { return envioApi; }
+
+    public TaxiService withEnvioApi(String estado) {
+        if (estado != null && !estado.isEmpty() && !"RECHAZADO".equals(estado)
+                && !"ENVIADO_SIN_CONFIRMAR".equals(estado) && !"CONFIRMADO".equals(estado)) {
+            throw new IllegalArgumentException("El estado de envío del traslado no es válido.");
+        }
+        envioApi = estado == null || estado.isEmpty() ? null : estado;
+        return this;
+    }
+
+    /** Solo un envío ausente o definitivamente rechazado admite un reintento explícito. */
+    public boolean puedeReintentarEnvioApi() {
+        return apiId == null && estado == TaxiStatus.SOLICITADO
+                && (envioApi == null || "RECHAZADO".equals(envioApi));
     }
 
     public String getOrigen() {

@@ -14,4 +14,9 @@
     <string name="taxi_real_guardando">Enviando solicitud…</string>
     <string name="taxi_real_solicitud_enviada">Solicitud registrada. Te avisaremos cuando se asigne un conductor.</string>
     <string name="taxi_real_valoracion_guardando">Guardando valoración…</string>
+    <string name="taxi_api_pendiente_titulo">Solicitud sin confirmar</string>
+    <string name="taxi_api_pendiente_viaje">%1$s → %2$s\n%3$s · %4$s</string>
+    <string name="taxi_api_pendiente_reintentable">El sistema web aún no confirmó este traslado. Puedes volver a enviar la misma solicitud.</string>
+    <string name="taxi_api_pendiente_incierto">El envío anterior no está confirmado. Revisa el servicio con el administrador en la web antes de solicitar otro para evitar duplicados.</string>
+    <string name="taxi_api_reintentar_solicitud">Reintentar solicitud</string>
 </resources>

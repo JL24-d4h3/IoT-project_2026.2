@@ -11,6 +11,35 @@ public final class FirebaseErrores {
     private FirebaseErrores() {
     }
 
+    /** Mensajes del intercambio de Google sin confundirlo con la contraseña de Firebase. */
+    public static String mensajeGoogle(Exception error) {
+        if (error instanceof FirebaseAuthException) {
+            switch (((FirebaseAuthException) error).getErrorCode()) {
+                case "ERROR_OPERATION_NOT_ALLOWED":
+                    return "El acceso con Google no está habilitado. Contacta al administrador.";
+                case "ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL":
+                case "ERROR_EMAIL_ALREADY_IN_USE":
+                case "ERROR_CREDENTIAL_ALREADY_IN_USE":
+                    return "Esta cuenta usa otro método de acceso. Inicia sesión con tu método habitual; no se cambiará la cuenta automáticamente.";
+                case "ERROR_INVALID_CREDENTIAL":
+                case "ERROR_INVALID_IDP_RESPONSE":
+                case "ERROR_REJECTED_CREDENTIAL":
+                    return "No pudimos validar el acceso con Google. Inténtalo de nuevo o usa tu método habitual.";
+                case "ERROR_USER_DISABLED":
+                case "ERROR_INVALID_API_KEY":
+                case "ERROR_APP_NOT_AUTHORIZED":
+                case "ERROR_PROJECT_NOT_FOUND":
+                    return mensaje(error);
+                default:
+                    return "No pudimos iniciar sesión con Google. Inténtalo de nuevo.";
+            }
+        }
+        if (error instanceof IllegalArgumentException) {
+            return "No pudimos validar el acceso con Google. Inténtalo de nuevo o usa tu método habitual.";
+        }
+        return mensaje(error);
+    }
+
     public static String mensaje(Exception error) {
         if (error instanceof FirebaseNetworkException) {
             return "No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.";

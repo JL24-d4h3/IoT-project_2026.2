@@ -12,8 +12,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.iot.project.databinding.ItemBookingCardBinding;
 import org.iot.project.models.Booking;
 
+import java.util.Objects;
+
 /**
- * Lista de reservas. La usan las tres secciones de "Mis reservas" (§30 a §32)
+ * Lista de reservas. La usan "Mis reservas" (§30 a §32)
  * y el historial del perfil.
  */
 public class BookingAdapter extends ListAdapter<Booking, BookingAdapter.BookingViewHolder> {
@@ -33,10 +35,17 @@ public class BookingAdapter extends ListAdapter<Booking, BookingAdapter.BookingV
                 @Override
                 public boolean areContentsTheSame(@NonNull Booking anterior,
                                                   @NonNull Booking nueva) {
-                    // El estado y el total son lo único que cambia en una reserva
-                    // ya creada; las fechas no se editan.
+                    // Una recarga puede actualizar también los datos que se buscan y ordenan.
                     return anterior.getEstado() == nueva.getEstado()
-                            && anterior.getTotal() == nueva.getTotal();
+                            && anterior.getTotal() == nueva.getTotal()
+                            && Objects.equals(anterior.getHotelId(), nueva.getHotelId())
+                            && Objects.equals(anterior.getHotelNombre(), nueva.getHotelNombre())
+                            && Objects.equals(anterior.getHotelCiudad(), nueva.getHotelCiudad())
+                            && Objects.equals(anterior.getHotelDistrito(), nueva.getHotelDistrito())
+                            && Objects.equals(anterior.getHotelFotoUrl(), nueva.getHotelFotoUrl())
+                            && Objects.equals(anterior.getCodigo(), nueva.getCodigo())
+                            && Objects.equals(anterior.getFechaEntrada(), nueva.getFechaEntrada())
+                            && Objects.equals(anterior.getFechaSalida(), nueva.getFechaSalida());
                 }
             };
 

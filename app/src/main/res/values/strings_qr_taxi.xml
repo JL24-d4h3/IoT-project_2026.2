@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_taxi_instruccion">Escanea el QR que muestra el cliente o escribe su código. Comprueba el dato y pulsa Cerrar servicio para confirmar.</string>
+    <string name="qr_taxi_escanear">Escanear QR del cliente</string>
+    <string name="qr_taxi_abrir_ajustes">Abrir ajustes de cámara</string>
+    <string name="qr_taxi_visor_instruccion">Apunta al QR del cliente. Después podrás revisar el código antes de cerrar el servicio.</string>
+    <string name="qr_taxi_permiso_denegado">La cámara necesita permiso para leer el QR. Puedes escribir el código manualmente o permitir la cámara en los ajustes de la aplicación.</string>
+    <string name="qr_taxi_camara_ausente">Este dispositivo no tiene cámara disponible. Escribe el código del cliente para continuar.</string>
+    <string name="qr_taxi_camara_no_disponible">No pudimos abrir la cámara. Puedes reintentar o escribir el código manualmente.</string>
+    <string name="qr_taxi_cancelado">Escaneo cancelado. Puedes reintentar o escribir el código del cliente.</string>
+    <string name="qr_taxi_leido_confirmar">Código leído. Compruébalo y pulsa Cerrar servicio para confirmar.</string>
+    <string name="qr_taxi_formato_invalido">Introduce el código del cliente: QR- seguido de 12 letras de A a F o números.</string>
+    <string name="qr_taxi_contexto_cambio">La sesión o el viaje cambió. Cierra esta ventana y vuelve a abrir el servicio desde el panel.</string>
+    <string name="qr_taxi_servicio_revisar">Solo puedes validar el código de tu servicio en traslado. Actualiza los viajes desde el panel.</string>
+    <string name="qr_taxi_validando">Validando código…</string>
+</resources>

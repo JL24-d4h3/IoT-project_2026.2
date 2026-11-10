@@ -44,6 +44,14 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:paddingBottom="@dimen/space_lg">
 
+                <!-- Una solicitud local sin vínculo REST no es un viaje confirmado. -->
+                <LinearLayout
+                    android:id="@+id/taxi_pendientes_envio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+
                 <!-- ============ Sin servicio en curso ============ -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/taxi_bloque_libre"
@@ -106,7 +114,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- ============ Servicio en curso ============ -->
+                <!-- Detalle del servicio en curso o de un viaje finalizado seleccionado. -->
                 <LinearLayout
                     android:id="@+id/taxi_bloque_activo"
                     android:layout_width="match_parent"
@@ -116,10 +124,21 @@
                     tools:visibility="visible">
 
                     <TextView
+                        android:id="@+id/taxi_servicio_titulo"
                         style="@style/TextAppearance.App.H2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/taxi_activo_titulo" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/taxi_ver_activo"
+                        style="@style/Widget.App.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:minHeight="48dp"
+                        android:text="@string/taxi_flujo_ver_activo"
+                        android:visibility="gone" />
 
                     <!-- Estado del servicio (§38): linea de tiempo, no un
                          texto suelto. Va en su propia tarjeta porque es lo
@@ -155,9 +174,8 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Seguimiento (RF-099). Se oculta entero cuando el viaje
-                         ya arranco: dentro del taxi, un plano con el coche
-                         encima del punto de recojo no informa de nada. -->
+                    <!-- El mapa continúa durante el traslado y conserva el
+                         último reporte disponible al consultar un finalizado. -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/taxi_tarjeta_mapa"
                         style="@style/Widget.App.Card"
@@ -404,7 +422,7 @@
                         android:layout_height="wrap_content"
                         android:imeOptions="actionNext"
                         android:inputType="textCapSentences"
-                        android:maxLength="300"
+                        android:maxLength="200"
                         android:maxLines="2"
                         tools:text="Av. Malecón Cisneros 1240, Miraflores" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -424,7 +442,7 @@
                         android:layout_height="wrap_content"
                         android:imeOptions="actionDone"
                         android:inputType="textCapSentences"
-                        android:maxLength="300"
+                        android:maxLength="200"
                         android:maxLines="2"
                         tools:text="Aeropuerto Jorge Chávez" />
                 </com.google.android.material.textfield.TextInputLayout>

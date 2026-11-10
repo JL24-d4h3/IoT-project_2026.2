@@ -1,10 +1,20 @@
 package org.iot.project.data.firebase;
 
-import androidx.annotation.NonNull;
+import android.content.Context;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.credentials.ClearCredentialStateRequest;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.exceptions.ClearCredentialException;
+
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -24,8 +34,8 @@ import java.util.Map;
 public final class FirebaseAccesoRepository implements AccesoRepository {
 
     // Los callbacks de una operacion anterior no pueden restaurar otra sesion.
-    private int operacion;
-    private boolean autenticando;
+    private volatile int operacion;
+    private volatile boolean autenticando;
 
     @Override
     public void iniciarSesion(@NonNull String email, @NonNull String contrasena,
@@ -48,6 +58,31 @@ public final class FirebaseAccesoRepository implements AccesoRepository {
                     }
                 })
                 .addOnFailureListener(error -> fallar(solicitud, error, callback));
+    }
+
+    @Override
+    public void iniciarSesionGoogle(@NonNull String idToken, @NonNull ResultCallback<Cuenta> callback) {
+        try {
+            exigirTokenGoogle(idToken);
+        } catch (IllegalArgumentException error) {
+            callback.onError(error.getMessage());
+            return;
+        }
+        int solicitud = comenzar(callback);
+        if (solicitud < 0) return;
+        try {
+            auth().setLanguageCode("es");
+            auth().signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))
+                    .addOnSuccessListener(resultado -> {
+                        FirebaseUser usuario = resultado.getUser();
+                        if (comprobar(solicitud, usuario, callback)) {
+                            cargarPerfil(solicitud, usuario, callback, true);
+                        }
+                    })
+                    .addOnFailureListener(error -> fallarGoogle(solicitud, error, callback));
+        } catch (RuntimeException error) {
+            fallarGoogle(solicitud, error, callback);
+        }
     }
 
     @Override
@@ -147,42 +182,79 @@ public final class FirebaseAccesoRepository implements AccesoRepository {
     @Override
     public void cerrarSesion() {
         operacion++;
+        autenticando = false;
+        limpiarEstadoGoogle();
         auth().signOut();
     }
 
+    private static void limpiarEstadoGoogle() {
+        FirebaseUser usuario = auth().getCurrentUser();
+        if (usuario == null) return;
+        boolean google = false;
+        for (UserInfo proveedor : usuario.getProviderData()) {
+            if (GoogleAuthProvider.PROVIDER_ID.equals(proveedor.getProviderId())) {
+                google = true;
+                break;
+            }
+        }
+        if (!google) return;
+        try {
+            Context app = FirebaseApp.getInstance().getApplicationContext();
+            CredentialManager.create(app).clearCredentialStateAsync(new ClearCredentialStateRequest(),
+                    null, ContextCompat.getMainExecutor(app),
+                    new CredentialManagerCallback<Void, ClearCredentialException>() {
+                        @Override public void onResult(Void resultado) { }
+                        @Override public void onError(@NonNull ClearCredentialException error) { }
+                    });
+        } catch (RuntimeException ignorado) {
+            // El cierre de Firebase no depende de que esté disponible el proveedor del dispositivo.
+        }
+    }
+
     private void cargarPerfil(int solicitud, FirebaseUser usuario, ResultCallback<Cuenta> callback) {
+        cargarPerfil(solicitud, usuario, callback, false);
+    }
+
+    private void cargarPerfil(int solicitud, FirebaseUser usuario, ResultCallback<Cuenta> callback,
+                              boolean accesoGoogle) {
         DocumentReference referencia = db().collection("usuarios").document(usuario.getUid());
         referencia.get(Source.SERVER).addOnSuccessListener(documento -> {
             if (!comprobar(solicitud, usuario, callback)) {
                 return;
             }
             if (documento.exists()) {
-                entregarPerfil(solicitud, usuario, documento.getData(), callback);
+                entregarPerfil(solicitud, usuario, documento.getData(), callback, accesoGoogle);
                 return;
             }
             // Usuarios creados previamente en Auth estrenan perfil CLIENTE.
             // Los privilegios se provisionan en consola/backend, nunca por correo en la app.
             Map<String, Object> inicial = perfilInicial(usuario);
             db().runTransaction(transaccion -> {
+                exigirVigencia(solicitud, usuario);
                 com.google.firebase.firestore.DocumentSnapshot actual = transaccion.get(referencia);
+                exigirVigencia(solicitud, usuario);
                 if (actual.exists()) {
                     return actual.getData();
                 }
+                exigirVigencia(solicitud, usuario);
                 transaccion.set(referencia, inicial);
                 return inicial;
-            }).addOnSuccessListener(datos -> entregarPerfil(solicitud, usuario, datos, callback))
+            }).addOnSuccessListener(datos -> entregarPerfil(solicitud, usuario, datos, callback, accesoGoogle))
                     .addOnFailureListener(error -> fallar(solicitud, error, callback));
         }).addOnFailureListener(error -> fallar(solicitud, error, callback));
     }
 
     private void entregarPerfil(int solicitud, FirebaseUser usuario, Map<String, Object> datos,
-                               ResultCallback<Cuenta> callback) {
+                               ResultCallback<Cuenta> callback, boolean accesoGoogle) {
         if (!comprobar(solicitud, usuario, callback)) {
             return;
         }
         final Cuenta cuenta;
         try {
             cuenta = PerfilFirebase.cuenta(usuario.getUid(), usuario.getEmail(), datos);
+            if (accesoGoogle && cuenta.getRol() == Role.CONDUCTOR) {
+                throw new IllegalArgumentException("Usa la opción Taxista con tu cuenta del sistema web.");
+            }
         } catch (IllegalArgumentException error) {
             fallar(solicitud, error, callback);
             return;
@@ -192,13 +264,25 @@ public final class FirebaseAccesoRepository implements AccesoRepository {
     }
 
     private void fallar(int solicitud, Exception error, ResultCallback<Cuenta> callback) {
+        terminarConError(solicitud, FirebaseErrores.mensaje(error), callback);
+    }
+
+    private void fallarGoogle(int solicitud, Exception error, ResultCallback<Cuenta> callback) {
+        terminarConError(solicitud, FirebaseErrores.mensajeGoogle(error), callback);
+    }
+
+    private void terminarConError(int solicitud, String mensaje, ResultCallback<Cuenta> callback) {
         if (solicitud != operacion) {
             cancelar(callback);
             return;
         }
         autenticando = false;
-        cerrarSesion();
-        callback.onError(FirebaseErrores.mensaje(error));
+        try {
+            cerrarSesion();
+        } catch (RuntimeException ignorado) {
+            // La limpieza del SDK tampoco debe dejar el formulario indefinidamente en carga.
+        }
+        callback.onError(mensaje);
     }
 
     private int comenzar(ResultCallback<Cuenta> callback) {
@@ -217,22 +301,46 @@ public final class FirebaseAccesoRepository implements AccesoRepository {
         }
         FirebaseUser actual = auth().getCurrentUser();
         if (usuario == null || actual == null || !actual.getUid().equals(usuario.getUid())) {
-            fallar(solicitud, new IllegalArgumentException("La sesión cambió. Inicia sesión de nuevo."), callback);
+            // Una sesión diferente no pertenece a esta respuesta y no debe cerrarse.
+            operacion++;
+            autenticando = false;
+            callback.onError("La sesión cambió. Inicia sesión de nuevo.");
             return false;
         }
         return true;
     }
 
     private void cancelar(ResultCallback<Cuenta> callback) {
-        autenticando = false;
-        auth().signOut();
+        // Una respuesta vieja no cambia el bloqueo ni las credenciales de una operación nueva.
         callback.onError("La solicitud fue cancelada. Inténtalo de nuevo.");
     }
 
+    private void exigirVigencia(int solicitud, FirebaseUser usuario) {
+        FirebaseUser actual = auth().getCurrentUser();
+        if (solicitud != operacion || actual == null || !usuario.getUid().equals(actual.getUid())) {
+            throw new IllegalArgumentException("La sesión cambió. Inicia sesión de nuevo.");
+        }
+    }
+
+    /** Validación de transporte; Firebase sigue verificando firma, emisor y vigencia. */
+    static void exigirTokenGoogle(String idToken) {
+        if (idToken == null || idToken.length() > 16384
+                || !idToken.matches("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+")) {
+            throw new IllegalArgumentException("No se recibió una credencial válida de Google. Inténtalo de nuevo.");
+        }
+    }
+
     private static Map<String, Object> perfilInicial(FirebaseUser usuario) {
+        Map<String, Object> datos = datosPerfilInicial(usuario.getDisplayName(), usuario.getEmail(),
+                usuario.getPhotoUrl() == null ? null : usuario.getPhotoUrl().toString());
+        datos.put("creadoEn", FieldValue.serverTimestamp());
+        datos.put("actualizadoEn", FieldValue.serverTimestamp());
+        return datos;
+    }
+
+    static Map<String, Object> datosPerfilInicial(String nombre, String correo, String foto) {
         Map<String, Object> datos = new HashMap<>();
-        String nombre = usuario.getDisplayName();
-        String email = usuario.getEmail() == null ? "" : usuario.getEmail();
+        String email = correo == null ? "" : correo.trim();
         if (nombre == null || nombre.trim().isEmpty()) {
             nombre = email.contains("@") ? email.substring(0, email.indexOf('@')) : "Usuario";
         }
@@ -241,11 +349,9 @@ public final class FirebaseAccesoRepository implements AccesoRepository {
         datos.put("email", email);
         datos.put("telefono", "");
         datos.put("direccion", "");
-        datos.put("fotoUrl", "");
+        datos.put("fotoUrl", foto == null ? "" : foto.trim());
         datos.put("rol", Role.CLIENTE.name());
         datos.put("activo", true);
-        datos.put("creadoEn", FieldValue.serverTimestamp());
-        datos.put("actualizadoEn", FieldValue.serverTimestamp());
         return datos;
     }
 

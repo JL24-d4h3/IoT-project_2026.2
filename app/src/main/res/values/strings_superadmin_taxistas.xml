@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_taxistas_directorio_nota">Taxistas del sistema web. La aprobación para trabajar y el acceso de la cuenta se administran por separado.</string>
+    <string name="sa_taxistas_actualizar">Actualizar estado</string>
+    <string name="sa_taxistas_actualizando">Actualizando…</string>
+    <string name="sa_taxistas_sin_nombre">Taxista sin nombre</string>
+    <string name="sa_taxistas_filtro_sin_aprobar">Sin aprobación</string>
+    <string name="sa_taxistas_aprobado">Aprobado</string>
+    <string name="sa_taxistas_sin_aprobar">Sin aprobación</string>
+    <string name="sa_taxistas_cuenta_activa">Cuenta activa</string>
+    <string name="sa_taxistas_cuenta_inactiva">Cuenta inactiva</string>
+    <string name="sa_taxistas_guardando">Guardando el cambio en el sistema de taxis…</string>
+    <string name="sa_taxistas_cuenta_inactiva_nota">La cuenta web está desactivada. Aprobar al taxista no reactiva su acceso.</string>
+    <string name="sa_taxistas_sin_aprobar_nota">La cuenta web está activa, pero falta la aprobación para prestar servicios.</string>
+    <string name="sa_taxistas_aprobar">Aprobar para trabajar</string>
+    <string name="sa_taxistas_retirar">Retirar habilitación</string>
+    <string name="sa_taxistas_desactivar">Desactivar cuenta web</string>
+    <string name="sa_taxistas_activar">Activar cuenta web</string>
+    <string name="sa_taxistas_retirar_titulo">¿Retirar la habilitación de %1$s?</string>
+    <string name="sa_taxistas_retirar_mensaje">No podrá prestar nuevos servicios. Su cuenta web conservará su estado actual y su historial se mantendrá.</string>
+    <string name="sa_taxistas_desactivar_titulo">¿Desactivar la cuenta web de %1$s?</string>
+    <string name="sa_taxistas_desactivar_mensaje">No podrá acceder con su cuenta del sistema de taxistas. Se conservarán su aprobación y su historial.</string>
+    <string name="sa_taxistas_aprobacion_hecha">Se aprobó a %1$s. El estado de su cuenta web no cambió.</string>
+    <string name="sa_taxistas_retiro_hecho">Se retiró la habilitación de %1$s. El estado de su cuenta web no cambió.</string>
+    <string name="sa_taxistas_activacion_hecha">Cuenta web de %1$s activada. Su aprobación para trabajar no cambió.</string>
+    <string name="sa_taxistas_desactivacion_hecha">Cuenta web de %1$s desactivada. Se conservó su aprobación para trabajar.</string>
+    <string name="sa_taxistas_error_cambio">%1$s Actualiza el estado antes de volver a intentarlo.</string>
+    <string name="sa_taxistas_sin_aprobar_titulo">No hay taxistas sin aprobación</string>
+    <string name="sa_taxistas_sin_aprobar_vacio">Todos los taxistas del directorio tienen la aprobación para trabajar. El estado de sus cuentas se consulta por separado.</string>
+</resources>

@@ -4,11 +4,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -25,6 +27,8 @@ import org.iot.project.models.Card;
 import org.iot.project.models.Charge;
 import org.iot.project.models.HotelService;
 import org.iot.project.models.ReservaDeHotel;
+import org.iot.project.models.TaxiService;
+import org.iot.project.models.TaxiStatus;
 import org.iot.project.ui.components.ChargeListView;
 import org.iot.project.ui.components.PriceBreakdownView;
 import org.iot.project.utils.DateFormatter;
@@ -36,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Detalle de una reserva, vista del administrador (§44).
@@ -53,6 +58,8 @@ public class ReservaAdminFragment extends Fragment {
 
     private FragmentAdminReservaBinding binding;
     private ReservaAdminViewModel viewModel;
+    private AdminTaxiReservaViewModel taxiViewModel;
+    private List<String> opcionesTaxi = new ArrayList<>();
     @Nullable private AlertDialog confirmacionIngreso;
 
     /** Identificador de la reserva abierta, tal como llegó en los argumentos. */
@@ -88,6 +95,19 @@ public class ReservaAdminFragment extends Fragment {
         viewModel.getOperacion().observe(getViewLifecycleOwner(), this::pintarOperacion);
         viewModel.getOcupado().observe(getViewLifecycleOwner(), this::pintarOcupado);
 
+        binding.adminReservaTaxiMapa.onCreate(savedInstanceState);
+        taxiViewModel = new ViewModelProvider(this).get(AdminTaxiReservaViewModel.class);
+        taxiViewModel.cargar(bookingId);
+        taxiViewModel.getContenido().observe(getViewLifecycleOwner(), this::pintarTaxi);
+        binding.adminReservaTaxiReintentar.setOnClickListener(v -> taxiViewModel.reintentar());
+        binding.adminReservaTaxiSelector.setOnItemClickListener((padre, fila, posicion, id) -> {
+            UiState<AdminTaxiReservaViewModel.Estado> actual = taxiViewModel.getContenido().getValue();
+            if (actual != null && actual.isSuccess()
+                    && posicion < actual.requireData().confirmados.size()) {
+                taxiViewModel.seleccionar(actual.requireData().confirmados.get(posicion).getId());
+            }
+        });
+
         binding.adminReservaCargo.setOnClickListener(v -> abrirHojaCargo());
         binding.adminReservaIniciar.setOnClickListener(v -> confirmarIngreso());
         binding.adminReservaCobrar.setOnClickListener(v -> confirmarCobro());
@@ -102,17 +122,31 @@ public class ReservaAdminFragment extends Fragment {
         }
     }
 
+    @Override public void onStart() {
+        super.onStart();
+        if (binding != null) binding.adminReservaTaxiMapa.onStart();
+        taxiViewModel.iniciarSeguimiento();
+    }
+
     @Override public void onResume() {
         super.onResume();
+        if (binding != null) binding.adminReservaTaxiMapa.onResume();
         if (bookingId != null) {
             viewModel.cargar(bookingId);
             viewModel.iniciarSeguimiento();
         }
     }
 
+    @Override public void onPause() {
+        if (binding != null) binding.adminReservaTaxiMapa.onPause();
+        super.onPause();
+    }
+
     @Override public void onStop() {
         cerrarConfirmacionIngreso();
         viewModel.detenerSeguimiento();
+        taxiViewModel.detenerSeguimiento();
+        if (binding != null) binding.adminReservaTaxiMapa.onStop();
         super.onStop();
     }
 
@@ -188,6 +222,142 @@ public class ReservaAdminFragment extends Fragment {
         // de qué es la cifra, y repetirlo la alarga sin añadir nada.
         binding.adminReservaFilaHuespedes.bind(R.string.admin_reserva_fila_huespedes,
                 String.valueOf(reserva.getNumHuespedes()), R.string.perfil_sin_dato);
+    }
+
+    private void pintarTaxi(@NonNull UiState<AdminTaxiReservaViewModel.Estado> estado) {
+        if (binding == null) return;
+        boolean exito = estado.isSuccess();
+        binding.adminReservaTaxiDetalle.setVisibility(View.GONE);
+        binding.adminReservaTaxiSelectorCampo.setVisibility(View.GONE);
+        binding.adminReservaTaxiSinConfirmar.setVisibility(View.GONE);
+        binding.adminReservaTaxiMensaje.setVisibility(View.VISIBLE);
+        binding.adminReservaTaxiReintentar.setVisibility(estado.isError() ? View.VISIBLE : View.GONE);
+        if (!exito) {
+            limpiarMapaTaxi();
+            if (estado.isLoading()) binding.adminReservaTaxiMensaje.setText(R.string.admin_taxi_reserva_cargando);
+            else if (estado.isEmpty()) binding.adminReservaTaxiMensaje.setText(R.string.admin_taxi_reserva_vacio);
+            else binding.adminReservaTaxiMensaje.setText(getString(R.string.admin_taxi_reserva_error,
+                    estado.getMessage() == null ? getString(R.string.estado_error_descripcion) : estado.getMessage()));
+            return;
+        }
+        AdminTaxiReservaViewModel.Estado datos = estado.requireData();
+        binding.adminReservaTaxiMensaje.setVisibility(datos.aviso == null ? View.GONE : View.VISIBLE);
+        binding.adminReservaTaxiReintentar.setVisibility(datos.aviso == null ? View.GONE : View.VISIBLE);
+        if (datos.aviso != null) {
+            binding.adminReservaTaxiMensaje.setText(getString(R.string.admin_taxi_reserva_error, datos.aviso));
+        }
+        pintarSolicitudesSinConfirmar(datos.sinConfirmar);
+        TaxiService servicio = datos.seleccionado;
+        if (servicio == null) { limpiarMapaTaxi(); return; }
+        binding.adminReservaTaxiDetalle.setVisibility(View.VISIBLE);
+        pintarSelectorTaxi(datos);
+        binding.adminReservaTaxiEstado.bindParaHotel(servicio);
+        binding.adminReservaTaxiOrigen.bind(R.string.admin_taxi_reserva_origen,
+                servicio.getOrigen(), R.string.perfil_sin_dato);
+        binding.adminReservaTaxiDestino.bind(R.string.admin_taxi_reserva_destino,
+                servicio.getDestino(), R.string.perfil_sin_dato);
+        binding.adminReservaTaxiProgramacion.bind(R.string.admin_taxi_reserva_programacion,
+                programacionTaxi(servicio), R.string.perfil_sin_dato);
+        boolean hayConductor = servicio.getDriver() != null;
+        binding.adminReservaTaxiConductor.setVisibility(hayConductor ? View.VISIBLE : View.GONE);
+        binding.adminReservaTaxiConductorNota.setText(hayConductor
+                ? servicio.getEstado().isFinished() ? R.string.admin_taxi_reserva_conductor_finalizado
+                : R.string.admin_taxi_reserva_conductor_asignado
+                : servicio.getEstado() == TaxiStatus.SOLICITADO ? R.string.admin_taxi_reserva_conductor_espera
+                : R.string.admin_taxi_reserva_conductor_sin_datos);
+        if (hayConductor) binding.adminReservaTaxiConductor.bind(servicio.getDriver());
+        pintarMapaTaxi(servicio);
+    }
+
+    private void pintarSolicitudesSinConfirmar(List<TaxiService> pendientes) {
+        binding.adminReservaTaxiSinConfirmar.setVisibility(pendientes.isEmpty() ? View.GONE : View.VISIBLE);
+        if (pendientes.isEmpty()) return;
+        int rechazadas = 0;
+        for (TaxiService servicio : pendientes) {
+            if ("RECHAZADO".equals(servicio.getEnvioApi())) rechazadas++;
+        }
+        List<String> avisos = new ArrayList<>();
+        if (rechazadas < pendientes.size()) {
+            int sinConfirmar = pendientes.size() - rechazadas;
+            avisos.add(getResources().getQuantityString(R.plurals.admin_taxi_reserva_sin_confirmar,
+                    sinConfirmar, sinConfirmar));
+        }
+        if (rechazadas > 0) avisos.add(getResources().getQuantityString(
+                R.plurals.admin_taxi_reserva_rechazados, rechazadas, rechazadas));
+        binding.adminReservaTaxiSinConfirmar.setText(String.join("\n", avisos));
+    }
+
+    private void pintarSelectorTaxi(AdminTaxiReservaViewModel.Estado datos) {
+        binding.adminReservaTaxiSelectorCampo.setVisibility(datos.confirmados.size() > 1 ? View.VISIBLE : View.GONE);
+        List<String> opciones = new ArrayList<>();
+        String seleccion = "";
+        for (TaxiService servicio : datos.confirmados) {
+            String etiqueta = getString(R.string.admin_taxi_reserva_opcion,
+                    programacionTaxi(servicio), servicio.getEstado().getDisplayName());
+            opciones.add(etiqueta);
+            if (datos.seleccionado != null && datos.seleccionado.getId().equals(servicio.getId())) seleccion = etiqueta;
+        }
+        if (!opciones.equals(opcionesTaxi) || binding.adminReservaTaxiSelector.getAdapter() == null) {
+            opcionesTaxi = opciones;
+            binding.adminReservaTaxiSelector.setAdapter(new ArrayAdapter<>(requireContext(),
+                    android.R.layout.simple_dropdown_item_1line, opciones));
+        }
+        if (!seleccion.contentEquals(binding.adminReservaTaxiSelector.getText())) {
+            binding.adminReservaTaxiSelector.setText(seleccion, false);
+        }
+    }
+
+    private String programacionTaxi(TaxiService servicio) {
+        if (servicio.getFecha() == null) return getString(R.string.admin_taxi_reserva_sin_programacion);
+        return servicio.getHora() == null ? DateFormatter.fechaConDia(servicio.getFecha())
+                : getString(R.string.admin_taxi_reserva_fecha_hora,
+                DateFormatter.fechaConDia(servicio.getFecha()), DateFormatter.hora(servicio.getHora()));
+    }
+
+    private void pintarMapaTaxi(TaxiService servicio) {
+        boolean finalizado = servicio.getEstado().isFinished();
+        LocalDateTime reporte = servicio.getUltimaActualizacionUbicacion();
+        boolean hayPosicion = reporte != null && coordenadasValidas(servicio.getLatConductor(), servicio.getLngConductor());
+        boolean hayRecojo = servicio.hasRecojo() && coordenadasValidas(servicio.getLatRecojo(), servicio.getLngRecojo());
+        // TrackingMapView conserva los marcadores si sus coordenadas no cambiaron.
+        binding.adminReservaTaxiMapa.setRecojo(hayRecojo ? servicio.getLatRecojo() : Double.NaN,
+                hayRecojo ? servicio.getLngRecojo() : Double.NaN);
+        if (hayPosicion) binding.adminReservaTaxiMapa.setConductor(servicio.getLatConductor(), servicio.getLngConductor());
+        else binding.adminReservaTaxiMapa.limpiarConductor();
+        binding.adminReservaTaxiMapa.setVisibility(hayPosicion || hayRecojo ? View.VISIBLE : View.GONE);
+        binding.adminReservaTaxiMapaTitulo.setText(finalizado ? R.string.admin_taxi_reserva_ubicacion_final
+                : servicio.getEstado() == TaxiStatus.EN_TRASLADO ? R.string.admin_taxi_reserva_ubicacion_traslado
+                : R.string.admin_taxi_reserva_ubicacion_recojo);
+        binding.adminReservaTaxiUbicacionAviso.setVisibility(View.GONE);
+        if (!hayPosicion) {
+            binding.adminReservaTaxiActualizado.setText(finalizado
+                    ? R.string.admin_taxi_reserva_ubicacion_final_sin_reporte : R.string.admin_taxi_reserva_ubicacion_sin_reporte);
+            return;
+        }
+        LocalDateTime ahora = LocalDateTime.now();
+        binding.adminReservaTaxiActualizado.setText(finalizado
+                ? getString(R.string.admin_taxi_reserva_ubicacion_historica,
+                DateFormatter.fechaCorta(reporte.toLocalDate()), DateFormatter.horaDe(reporte))
+                : getString(R.string.admin_taxi_reserva_ubicacion_actualizada,
+                DateFormatter.fechaCorta(reporte.toLocalDate()), DateFormatter.horaDe(reporte),
+                DateFormatter.relativo(reporte, ahora)));
+        if (!finalizado && reporte.isAfter(ahora.plusMinutes(1))) {
+            binding.adminReservaTaxiUbicacionAviso.setText(R.string.admin_taxi_reserva_ubicacion_futura);
+            binding.adminReservaTaxiUbicacionAviso.setVisibility(View.VISIBLE);
+        } else if (!finalizado && servicio.ubicacionDesactualizada(ahora, 300L)) {
+            binding.adminReservaTaxiUbicacionAviso.setText(R.string.admin_taxi_reserva_ubicacion_vieja);
+            binding.adminReservaTaxiUbicacionAviso.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private boolean coordenadasValidas(double lat, double lng) {
+        return Double.isFinite(lat) && Double.isFinite(lng) && lat >= -90d && lat <= 90d && lng >= -180d && lng <= 180d;
+    }
+
+    private void limpiarMapaTaxi() {
+        binding.adminReservaTaxiMapa.limpiarConductor();
+        binding.adminReservaTaxiMapa.setRecojo(Double.NaN, Double.NaN);
+        binding.adminReservaTaxiMapa.setVisibility(View.GONE);
     }
 
     /** "601 · Doble clásica"; solo el número si el tipo ya no se puede leer. */
@@ -475,7 +645,19 @@ public class ReservaAdminFragment extends Fragment {
     @Override
     public void onDestroyView() {
         cerrarConfirmacionIngreso();
+        if (binding != null) binding.adminReservaTaxiMapa.onDestroy();
+        opcionesTaxi = new ArrayList<>();
         super.onDestroyView();
         binding = null;
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle salida) {
+        if (binding != null) binding.adminReservaTaxiMapa.onSaveInstanceState(salida);
+        super.onSaveInstanceState(salida);
+    }
+
+    @Override public void onLowMemory() {
+        super.onLowMemory();
+        if (binding != null) binding.adminReservaTaxiMapa.onLowMemory();
     }
 }

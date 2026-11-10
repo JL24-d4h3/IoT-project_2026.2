@@ -134,6 +134,144 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- ============ Taxi de la reserva: seguimiento de lectura ============ -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.App.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_base">
+
+                        <TextView
+                            style="@style/TextAppearance.App.H3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/admin_taxi_reserva_titulo" />
+
+                        <TextView
+                            android:id="@+id/admin_reserva_taxi_mensaje"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:accessibilityLiveRegion="polite"
+                            android:text="@string/admin_taxi_reserva_cargando" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/admin_reserva_taxi_reintentar"
+                            style="@style/Widget.App.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/admin_taxi_reserva_reintentar"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/admin_reserva_taxi_sin_confirmar"
+                            style="@style/TextAppearance.App.Caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/admin_reserva_taxi_selector_campo"
+                            style="@style/Widget.App.TextInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:hint="@string/admin_taxi_reserva_selector"
+                            android:visibility="gone"
+                            app:endIconMode="dropdown_menu">
+
+                            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                android:id="@+id/admin_reserva_taxi_selector"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:id="@+id/admin_reserva_taxi_detalle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <org.iot.project.ui.components.TaxiStatusView
+                                android:id="@+id/admin_reserva_taxi_estado"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_reserva_taxi_origen"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_reserva_taxi_destino"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <org.iot.project.ui.components.DataRowView
+                                android:id="@+id/admin_reserva_taxi_programacion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <TextView
+                                android:id="@+id/admin_reserva_taxi_conductor_nota"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md" />
+
+                            <org.iot.project.ui.components.DriverCardView
+                                android:id="@+id/admin_reserva_taxi_conductor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/admin_reserva_taxi_mapa_titulo"
+                                style="@style/TextAppearance.App.Body"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_md" />
+
+                            <org.iot.project.ui.components.TrackingMapView
+                                android:id="@+id/admin_reserva_taxi_mapa"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/map_height"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <TextView
+                                android:id="@+id/admin_reserva_taxi_actualizado"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm" />
+
+                            <TextView
+                                android:id="@+id/admin_reserva_taxi_ubicacion_aviso"
+                                style="@style/TextAppearance.App.Caption"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_xs"
+                                android:text="@string/admin_taxi_reserva_ubicacion_vieja"
+                                android:textColor="@color/colorOnWarningContainer"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- ============ Consumos ============ -->
                 <com.google.android.material.card.MaterialCardView
                     style="@style/Widget.App.Card"

@@ -1,5 +1,10 @@
 package org.iot.project.ui.client.notifications;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
+import android.provider.Settings;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,6 +50,8 @@ public class NotificationsFragment extends Fragment {
 
         binding.header.setTitulo(R.string.titulo_notificaciones);
         binding.header.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
+        binding.header.mostrarAccion(R.drawable.ic_notifications,
+                R.string.permisos_notificaciones_ajustes, v -> abrirAjustesNotificaciones());
 
         adaptador = new NotificationAdapter(this::abrir);
         binding.notificacionesLista.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -69,6 +76,16 @@ public class NotificationsFragment extends Fragment {
     @Override public void onPause() {
         if (viewModel != null) viewModel.suspender();
         super.onPause();
+    }
+
+    private void abrirAjustesNotificaciones() {
+        try {
+            startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName()));
+        } catch (ActivityNotFoundException fallo) {
+            startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + requireContext().getPackageName())));
+        }
     }
 
     private void abrir(@NonNull AppNotification notificacion) {

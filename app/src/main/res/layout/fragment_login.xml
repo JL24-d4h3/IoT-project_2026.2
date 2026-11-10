@@ -46,12 +46,79 @@
             android:layout_marginTop="@dimen/space_xs"
             android:text="@string/acceso_mensaje" />
 
+        <RadioGroup
+            android:id="@+id/login_tipo_cuenta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:checkedButton="@id/login_modo_normal"
+            android:orientation="horizontal">
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/login_modo_normal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:text="@string/acceso_cuenta_reservas_opcion" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/login_modo_taxista"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:text="@string/api_acceso_taxista" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/login_cuenta_reservas"
+            style="@style/TextAppearance.App.BodySecondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/acceso_cuenta_reservas_ayuda" />
+
+        <TextView
+            android:id="@+id/login_cuenta_web"
+            style="@style/TextAppearance.App.BodySecondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/api_acceso_cuenta_web"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/login_google_acciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/login_google"
+                style="@style/Widget.App.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:text="@string/acceso_google_continuar"
+                app:icon="@drawable/ic_google"
+                app:iconTint="@null" />
+
+            <TextView
+                style="@style/TextAppearance.App.BodySecondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:text="@string/acceso_google_o_correo" />
+        </LinearLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/login_correo_campo"
             style="@style/Widget.App.TextInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xl"
+            android:layout_marginTop="@dimen/space_md"
             android:hint="@string/acceso_correo">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -132,6 +199,7 @@
             android:text="@string/acceso_olvide" />
 
         <LinearLayout
+            android:id="@+id/login_registro_acciones"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_xl"

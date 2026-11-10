@@ -1,6 +1,8 @@
 package org.iot.project.ui.client.bookings;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,141 +14,159 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.iot.project.R;
-import org.iot.project.core.UiState;
 import org.iot.project.core.SessionManager;
+import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentBookingsBinding;
 import org.iot.project.models.Booking;
+import org.iot.project.models.BookingStatus;
 import org.iot.project.models.Role;
 import org.iot.project.ui.common.BookingAdapter;
 import org.iot.project.utils.InsetUtils;
 
-/**
- * Mis reservas (§30 a §32). Prioridad 6 de §79.
- *
- * <p>Tres bloques —en curso, próximas e historial— porque son tres preguntas
- * distintas. Un bloque sin nada que mostrar desaparece, en vez de dejar un
- * título suelto.
- */
-public class BookingsFragment extends Fragment {
+import java.util.Collections;
+import java.util.List;
 
+/** Mis reservas: búsqueda, estado y orden sobre un único listado del cliente. */
+public class BookingsFragment extends Fragment {
     private FragmentBookingsBinding binding;
     private BookingsViewModel viewModel;
+    private BookingAdapter adaptador;
+    private boolean pintandoControles;
 
-    // Un adaptador por bloque: un RecyclerView acepta uno solo, así que
-    // compartir instancia entre las tres listas las llenaría con lo mismo.
-    private BookingAdapter adaptadorEnCurso;
-    private BookingAdapter adaptadorProximas;
-    private BookingAdapter adaptadorHistorial;
-
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflador, @Nullable ViewGroup contenedor,
-                             @Nullable Bundle savedInstanceState) {
+    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflador,
+            @Nullable ViewGroup contenedor, @Nullable Bundle savedInstanceState) {
         binding = FragmentBookingsBinding.inflate(inflador, contenedor, false);
         return binding.getRoot();
     }
 
-    @Override
-    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+    @Override public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
         InsetUtils.applyTopPadding(binding.header);
-
         binding.header.setTitulo(R.string.nav_reservas);
         binding.header.mostrarAccion(R.drawable.ic_notifications, R.string.cd_notificaciones,
                 v -> Navigation.findNavController(v).navigate(R.id.notificationsFragment));
 
-        adaptadorEnCurso = new BookingAdapter(this::abrirReserva, this::abrirChat);
-        adaptadorProximas = new BookingAdapter(this::abrirReserva);
-        adaptadorHistorial = new BookingAdapter(this::abrirReserva);
-        prepararLista(binding.reservasEnCurso, adaptadorEnCurso);
-        prepararLista(binding.reservasProximas, adaptadorProximas);
-        prepararLista(binding.reservasHistorial, adaptadorHistorial);
-
+        adaptador = new BookingAdapter(this::abrirReserva, this::abrirChat);
+        binding.reservasLista.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.reservasLista.setAdapter(adaptador);
         viewModel = new ViewModelProvider(this).get(BookingsViewModel.class);
-        viewModel.getSecciones().observe(getViewLifecycleOwner(), this::pintar);
+
+        // SavedStateHandle conserva los valores por cuenta; la restauración del árbol
+        // de vistas no debe recuperar filtros de una sesión anterior sobre ese estado.
+        binding.reservasControles.setSaveFromParentEnabled(false);
+        sincronizarControles();
+        binding.reservasBuscar.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable texto) {
+                if (pintandoControles) return;
+                viewModel.buscar(texto.toString());
+                volverAlInicio();
+            }
+        });
+        binding.reservasOrden.setOnCheckedStateChangeListener((grupo, ids) -> {
+            if (pintandoControles || ids.isEmpty()) return;
+            viewModel.ordenarPor(ids.get(0) == R.id.reservas_orden_nombre
+                    ? ConsultaReservasCliente.Orden.NOMBRE : ConsultaReservasCliente.Orden.FECHA_SALIDA);
+            volverAlInicio();
+        });
+        binding.reservasSentido.setOnCheckedStateChangeListener((grupo, ids) -> {
+            if (pintandoControles || ids.isEmpty()) return;
+            viewModel.cambiarSentido(ids.get(0) == R.id.reservas_sentido_ascendente);
+            volverAlInicio();
+        });
+        binding.reservasEstados.setOnCheckedStateChangeListener((grupo, ids) -> {
+            if (pintandoControles || ids.isEmpty()) return;
+            viewModel.filtrarEstado(estadoDelChip(ids.get(0)));
+            volverAlInicio();
+        });
+        viewModel.getReservas().observe(getViewLifecycleOwner(), this::pintar);
         viewModel.cargar();
     }
 
-    @Override
-    public void onResume() {
+    @Override public void onResume() {
         super.onResume();
-        // Al volver de crear una reserva la lista tiene que reflejarla. Se
-        // refresca sin esqueleto, porque la pantalla ya está pintada.
-        if (viewModel != null) {
-            viewModel.refrescarEnSilencio();
-        }
+        if (viewModel != null) viewModel.refrescarEnSilencio();
     }
 
-    private void prepararLista(@NonNull RecyclerView lista, @NonNull BookingAdapter adaptador) {
-        lista.setLayoutManager(new LinearLayoutManager(getContext()));
-        lista.setAdapter(adaptador);
-    }
-
-    @Override
-    public void onPause() {
+    @Override public void onPause() {
         if (viewModel != null) viewModel.suspender();
         super.onPause();
     }
 
-    private void pintar(@NonNull UiState<BookingsViewModel.Secciones> estado) {
-        switch (estado.getStatus()) {
-            case LOADING:
-                binding.reservasEsqueleto.setVisibility(View.VISIBLE);
-                binding.reservasContenido.setVisibility(View.GONE);
-                binding.reservasVacio.setVisibility(View.GONE);
-                binding.reservasError.setVisibility(View.GONE);
-                break;
-            case SUCCESS:
-                binding.reservasEsqueleto.setVisibility(View.GONE);
-                binding.reservasVacio.setVisibility(View.GONE);
-                binding.reservasError.setVisibility(View.GONE);
-                binding.reservasContenido.setVisibility(View.VISIBLE);
-                mostrar(estado.requireData());
-                break;
-            case EMPTY:
-                binding.reservasEsqueleto.setVisibility(View.GONE);
-                binding.reservasContenido.setVisibility(View.GONE);
-                binding.reservasError.setVisibility(View.GONE);
-                binding.reservasVacio.setVisibility(View.VISIBLE);
-                binding.reservasVacio.conIcono(R.drawable.ic_calendar);
-                binding.reservasVacio.conTitulo(R.string.reservas_vacio_titulo);
-                binding.reservasVacio.conMensaje(R.string.reservas_vacio);
-                break;
-            case ERROR:
-            default:
-                binding.reservasEsqueleto.setVisibility(View.GONE);
-                binding.reservasContenido.setVisibility(View.GONE);
-                binding.reservasVacio.setVisibility(View.GONE);
-                binding.reservasError.setVisibility(View.VISIBLE);
-                binding.reservasError.conReintento(estado.getMessage(),
-                        v -> viewModel.recargar());
-                break;
+    private void sincronizarControles() {
+        pintandoControles = true;
+        try {
+            String busqueda = viewModel.getBusqueda();
+            if (!busqueda.contentEquals(binding.reservasBuscar.getText())) {
+                binding.reservasBuscar.setText(busqueda);
+                binding.reservasBuscar.setSelection(busqueda.length());
+            }
+            binding.reservasOrden.check(viewModel.getOrden() == ConsultaReservasCliente.Orden.NOMBRE
+                    ? R.id.reservas_orden_nombre : R.id.reservas_orden_salida);
+            binding.reservasSentido.check(viewModel.isAscendente()
+                    ? R.id.reservas_sentido_ascendente : R.id.reservas_sentido_descendente);
+            binding.reservasEstados.check(chipDelEstado(viewModel.getEstadoFiltrado()));
+        } finally {
+            pintandoControles = false;
         }
     }
 
-    private void mostrar(@NonNull BookingsViewModel.Secciones secciones) {
-        adaptadorEnCurso.submitList(secciones.enCurso);
-        adaptadorProximas.submitList(secciones.proximas);
-        adaptadorHistorial.submitList(secciones.historial);
-
-        binding.reservasSeccionCurso.setVisibility(
-                secciones.enCurso.isEmpty() ? View.GONE : View.VISIBLE);
-        binding.reservasSeccionProximas.setVisibility(
-                secciones.proximas.isEmpty() ? View.GONE : View.VISIBLE);
-        binding.reservasSeccionHistorial.setVisibility(
-                secciones.historial.isEmpty() ? View.GONE : View.VISIBLE);
+    private void pintar(@NonNull UiState<List<Booking>> estado) {
+        if (binding == null) return;
+        sincronizarControles();
+        binding.reservasEsqueleto.setVisibility(estado.isLoading() ? View.VISIBLE : View.GONE);
+        binding.reservasLista.setVisibility(estado.isSuccess() ? View.VISIBLE : View.GONE);
+        binding.reservasVacio.setVisibility(estado.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.reservasError.setVisibility(estado.isError() ? View.VISIBLE : View.GONE);
+        if (estado.isSuccess()) adaptador.submitList(estado.requireData());
+        else if (estado.isEmpty()) {
+            adaptador.submitList(Collections.emptyList());
+            boolean hayReservas = viewModel.tieneReservas();
+            binding.reservasVacio.conIcono(hayReservas ? R.drawable.ic_search_off : R.drawable.ic_calendar);
+            binding.reservasVacio.conTitulo(hayReservas
+                    ? R.string.reservas_listado_sin_resultados_titulo : R.string.reservas_vacio_titulo);
+            binding.reservasVacio.conMensaje(hayReservas
+                    ? R.string.reservas_listado_sin_resultados : R.string.reservas_vacio);
+            binding.reservasVacio.conAccion(R.string.reservas_listado_limpiar,
+                    hayReservas ? v -> { viewModel.limpiarFiltros(); volverAlInicio(); } : null);
+        } else if (estado.isError()) {
+            adaptador.submitList(Collections.emptyList());
+            binding.reservasError.conReintento(estado.getMessage(), v -> viewModel.recargar());
+        } else adaptador.submitList(Collections.emptyList());
     }
 
-    private void abrirReserva(@NonNull Booking reserva) {
-        abrir(reserva, R.id.bookingDetailFragment);
+    private void volverAlInicio() {
+        if (binding != null) binding.reservasLista.scrollToPosition(0);
     }
+
+    @Nullable private BookingStatus estadoDelChip(int id) {
+        if (id == R.id.reservas_estado_pendiente) return BookingStatus.PENDIENTE;
+        if (id == R.id.reservas_estado_confirmada) return BookingStatus.CONFIRMADA;
+        if (id == R.id.reservas_estado_activa) return BookingStatus.ACTIVA;
+        if (id == R.id.reservas_estado_finalizada) return BookingStatus.FINALIZADA;
+        if (id == R.id.reservas_estado_cancelada) return BookingStatus.CANCELADA;
+        return null;
+    }
+
+    private int chipDelEstado(@Nullable BookingStatus estado) {
+        if (estado == null) return R.id.reservas_estado_todos;
+        switch (estado) {
+            case PENDIENTE: return R.id.reservas_estado_pendiente;
+            case CONFIRMADA: return R.id.reservas_estado_confirmada;
+            case ACTIVA: return R.id.reservas_estado_activa;
+            case FINALIZADA: return R.id.reservas_estado_finalizada;
+            case CANCELADA: return R.id.reservas_estado_cancelada;
+            default: return R.id.reservas_estado_todos;
+        }
+    }
+
+    private void abrirReserva(@NonNull Booking reserva) { abrir(reserva, R.id.bookingDetailFragment); }
 
     private void abrirChat(@NonNull Booking reserva) {
-        if (!reserva.permiteChat()) return;
-        abrir(reserva, R.id.chatFragment);
+        if (reserva.permiteChat()) abrir(reserva, R.id.chatFragment);
     }
 
     private void abrir(@NonNull Booking reserva, int destino) {
@@ -160,12 +180,10 @@ public class BookingsFragment extends Fragment {
         navegador.navigate(destino, argumentos);
     }
 
-    @Override
-    public void onDestroyView() {
+    @Override public void onDestroyView() {
+        binding.reservasLista.setAdapter(null);
+        adaptador = null;
         super.onDestroyView();
-        binding.reservasEnCurso.setAdapter(null);
-        binding.reservasProximas.setAdapter(null);
-        binding.reservasHistorial.setAdapter(null);
         binding = null;
     }
 }

@@ -15,29 +15,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Contrato de los traslados solicitados por la app; no utiliza datos de demostración. */
 public final class TaxiFirebase {
-    private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sin I, O, 0 ni 1
-    private static final SecureRandom ALEATORIO = new SecureRandom();
-
     private TaxiFirebase() { }
-
-    /**
-     * Codigo secreto del traslado: lo muestra el cliente como QR y el taxista lo valida para cerrar el
-     * servicio (RF-102, RF-110). Se genera al pedir el taxi y viaja a la API junto con la solicitud, con
-     * el mismo formato que usa ella ("QR-" y 12 caracteres), para poder reintentar sin perderlo.
-     */
-    static String generarCodigo() {
-        StringBuilder codigo = new StringBuilder("QR-");
-        for (int i = 0; i < 12; i++) {
-            codigo.append(ALFABETO_CODIGO.charAt(ALEATORIO.nextInt(ALFABETO_CODIGO.length())));
-        }
-        return codigo.toString();
-    }
 
     /** Copia el pedido para que un cambio de formulario no altere un reintento de transacción. */
     public static TaxiService pedido(TaxiService solicitud, String uid) {
@@ -88,7 +71,7 @@ public final class TaxiFirebase {
             throw new IllegalArgumentException("La tarifa del traslado cambió. Vuelve a elegir tu reserva para revisar el precio.");
         }
         // Un traslado por reserva. El ID también permite recuperar una escritura cuyo resultado se perdió.
-        return new TaxiService(reserva.getId(), generarCodigo(), reserva.getId(), uid)
+        return new TaxiService(reserva.getId(), "TAX-" + reserva.getId(), reserva.getId(), uid)
                 .withRuta(pedido.getOrigen(), pedido.getDestino())
                 .withRecojo(hotel.getLatitud(), hotel.getLongitud())
                 .withProgramacion(pedido.getFecha(), pedido.getHora(), pedido.isIdaYVuelta())
@@ -109,6 +92,8 @@ public final class TaxiFirebase {
     public static Map<String, Object> documento(TaxiService taxi, String hotelId) {
         Map<String, Object> datos = new HashMap<>();
         datos.put("codigo", taxi.getCodigo());
+        if (taxi.getApiId() != null) datos.put("apiId", taxi.getApiId());
+        if (taxi.getEnvioApi() != null) datos.put("apiEnvio", taxi.getEnvioApi());
         datos.put("bookingId", taxi.getBookingId());
         datos.put("clienteId", taxi.getClienteId());
         datos.put("hotelId", hotelId);
@@ -137,11 +122,11 @@ public final class TaxiFirebase {
         BookingFirebase.exigirId(clienteId);
         final LocalDate fecha;
         final LocalTime hora;
-        TaxiStatus estadoGuardado;
+        final TaxiStatus estado;
         try {
             fecha = LocalDate.parse(texto(datos, "fecha", true));
             hora = LocalTime.parse(texto(datos, "hora", true));
-            estadoGuardado = TaxiStatus.valueOf(texto(datos, "estado", true));
+            estado = TaxiStatus.valueOf(texto(datos, "estado", true));
         } catch (DateTimeParseException | IllegalArgumentException error) {
             throw new IllegalArgumentException("El traslado tiene fecha, hora o estado inválidos.");
         }
@@ -152,9 +137,6 @@ public final class TaxiFirebase {
                 || rating < 0 || rating > 10 || (rating > 0 && rating < 1)) {
             throw new IllegalArgumentException("El traslado tiene pasajeros, importe o valoración inválidos.");
         }
-        // El estado real lo lleva el sistema de taxistas; el de Firestore es solo una copia que puede ir atrasada.
-        // Un traslado con nota del cliente ya termino, aunque la copia no lo diga.
-        final TaxiStatus estado = rating > 0 && !estadoGuardado.isFinished() ? TaxiStatus.FINALIZADO : estadoGuardado;
         double latitud = numero(datos, "latRecojo");
         double longitud = numero(datos, "lngRecojo");
         coordenadas(latitud, longitud);
@@ -165,6 +147,8 @@ public final class TaxiFirebase {
                 .withRuta(texto(datos, "origen", true), texto(datos, "destino", true))
                 .withRecojo(latitud, longitud).withProgramacion(fecha, hora, (Boolean) idaYVuelta)
                 .withPasajeros((int) pasajeros).withPrecio(precio)
+                .withApiId(texto(datos, "apiId", false))
+                .withEnvioApi(texto(datos, "apiEnvio", false))
                 .withEstadoPersistido(estado, conductor, (float) rating);
         if (datos.get("ubicacionConductor") != null) {
             Map<String, Object> ubicacion = mapa(datos.get("ubicacionConductor"));
@@ -182,7 +166,7 @@ public final class TaxiFirebase {
     private static Driver conductor(Map<String, Object> datos) {
         String id = texto(datos, "id", true);
         BookingFirebase.exigirId(id);
-        Driver conductor = new Driver(id, texto(datos, "nombres", true), texto(datos, "apellidos", true))
+        Driver conductor = new Driver(id, texto(datos, "nombres", true), texto(datos, "apellidos", false))
                 .withContacto(texto(datos, "email", false), texto(datos, "telefono", false), "")
                 .withFoto(texto(datos, "fotoUrl", false));
         if (datos.get("rating") != null) {

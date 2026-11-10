@@ -26,6 +26,7 @@ import com.google.android.material.timepicker.TimeFormat;
 import org.iot.project.R;
 import org.iot.project.core.UiState;
 import org.iot.project.databinding.FragmentTaxiBinding;
+import org.iot.project.databinding.ItemTaxiPendienteEnvioBinding;
 import org.iot.project.models.Booking;
 import org.iot.project.models.Hotel;
 import org.iot.project.models.TaxiService;
@@ -94,6 +95,7 @@ public class TaxiFragment extends Fragment {
     private int pasajeros = 1;
     private boolean pintandoBorrador;
     @Nullable private String enfoquePendiente;
+    private boolean argumentoEnfocado;
 
     @Nullable
     @Override
@@ -106,6 +108,7 @@ public class TaxiFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
+        binding.taxiMapa.onCreate(savedInstanceState);
         InsetUtils.applyTopPadding(binding.header);
 
         binding.header.setTitulo(R.string.taxi_titulo);
@@ -114,15 +117,20 @@ public class TaxiFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(TaxiViewModel.class);
         viewModel.cargar();
         enfoquePendiente = getArguments() == null ? null : getArguments().getString("taxiId");
-        if (enfoquePendiente != null && !enfoquePendiente.isEmpty()) {
+        if (savedInstanceState != null) {
+            argumentoEnfocado = savedInstanceState.getBoolean("taxiArgumentoEnfocado", argumentoEnfocado);
+        }
+        if (!argumentoEnfocado && enfoquePendiente != null && !enfoquePendiente.isEmpty()) {
+            argumentoEnfocado = true;
             viewModel.enfocarServicio(enfoquePendiente);
             viewModel.setFormularioAbierto(false);
-        }
+        } else enfoquePendiente = null;
 
         binding.taxiPedir.setOnClickListener(v -> abrirFormulario());
         binding.taxiIrReservas.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.bookingsFragment));
         binding.taxiQr.setOnClickListener(v -> mostrarQr());
+        binding.taxiVerActivo.setOnClickListener(v -> viewModel.mostrarServicioActivo());
         binding.taxiConfirmar.setOnClickListener(v -> confirmar());
         binding.taxiCancelar.setOnClickListener(v -> cerrarFormulario());
         binding.taxiFormReintentar.setOnClickListener(v -> viewModel.refrescarEnSilencio());
@@ -154,12 +162,24 @@ public class TaxiFragment extends Fragment {
 
     @Override public void onStart() {
         super.onStart();
+        if (binding != null) binding.taxiMapa.onStart();
         if (viewModel != null) viewModel.iniciarSeguimiento();
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        if (binding != null) binding.taxiMapa.onResume();
+    }
+
+    @Override public void onPause() {
+        if (binding != null) binding.taxiMapa.onPause();
+        super.onPause();
     }
 
     @Override public void onStop() {
         guardarBorrador();
         if (viewModel != null) viewModel.detenerSeguimiento();
+        if (binding != null) binding.taxiMapa.onStop();
         super.onStop();
     }
 
@@ -195,22 +215,64 @@ public class TaxiFragment extends Fragment {
 
     private void pintarBloques(@NonNull TaxiViewModel.Estado estado) {
         boolean hayActivo = estado.tieneActivo();
-        binding.taxiBloqueActivo.setVisibility(hayActivo ? View.VISIBLE : View.GONE);
-        binding.taxiBloqueLibre.setVisibility(!hayActivo || !reservasDisponibles().isEmpty()
+        binding.taxiBloqueActivo.setVisibility(estado.tienePrincipal() ? View.VISIBLE : View.GONE);
+        binding.taxiBloqueLibre.setVisibility((!hayActivo && estado.pendientesEnvio.isEmpty())
+                || !reservasDisponibles().isEmpty()
                 ? View.VISIBLE : View.GONE);
+        pintarPendientes(estado.pendientesEnvio);
 
-        if (hayActivo) {
-            pintarActivo(estado.activo);
-            if (estado.activo.getId().equals(enfoquePendiente)) {
+        if (estado.tienePrincipal()) {
+            TaxiService principal = estado.principal;
+            binding.taxiServicioTitulo.setText(principal.getEstado().isFinished()
+                    ? R.string.taxi_flujo_finalizado_titulo : R.string.taxi_activo_titulo);
+            binding.taxiVerActivo.setVisibility(hayActivo && !estado.activo.getId().equals(principal.getId())
+                    ? View.VISIBLE : View.GONE);
+            pintarActivo(principal);
+            if (principal.getId().equals(enfoquePendiente)) {
                 binding.taxiContenido.post(() -> {
                     if (binding != null) binding.taxiContenido.smoothScrollTo(0, 0);
                 });
                 enfoquePendiente = null;
             }
+        } else {
+            binding.taxiMapa.limpiarConductor();
         }
         ajustarBloqueLibre();
 
         pintarHistorial(estado.anteriores);
+    }
+
+    private void pintarPendientes(@NonNull List<TaxiService> pendientes) {
+        binding.taxiPendientesEnvio.removeAllViews();
+        binding.taxiPendientesEnvio.setVisibility(pendientes.isEmpty() ? View.GONE : View.VISIBLE);
+        for (TaxiService servicio : pendientes) {
+            ItemTaxiPendienteEnvioBinding tarjeta = ItemTaxiPendienteEnvioBinding.inflate(
+                    LayoutInflater.from(requireContext()), binding.taxiPendientesEnvio, false);
+            tarjeta.pendienteViaje.setText(getString(R.string.taxi_api_pendiente_viaje,
+                    servicio.getOrigen(), servicio.getDestino(), DateFormatter.fechaCorta(servicio.getFecha()),
+                    DateFormatter.hora(servicio.getHora())));
+            boolean reintentable = servicio.puedeReintentarEnvioApi();
+            UiState<TaxiService> solicitud = viewModel.getSolicitud().getValue();
+            boolean esSolicitud = servicio.getId().equals(viewModel.getSolicitudPendienteId());
+            if (esSolicitud && solicitud != null && solicitud.isError()) {
+                tarjeta.pendienteEstado.setText(solicitud.getMessage());
+            } else {
+                tarjeta.pendienteEstado.setText(reintentable ? R.string.taxi_api_pendiente_reintentable
+                        : R.string.taxi_api_pendiente_incierto);
+            }
+            tarjeta.pendienteReintentar.setVisibility(reintentable ? View.VISIBLE : View.GONE);
+            tarjeta.pendienteReintentar.setEnabled(!viewModel.isEnviando());
+            tarjeta.pendienteReintentar.setText(esSolicitud && viewModel.isEnviando()
+                    ? R.string.taxi_real_guardando : R.string.taxi_api_reintentar_solicitud);
+            tarjeta.pendienteReintentar.setOnClickListener(v -> viewModel.reintentarSolicitud(servicio.getId()));
+            binding.taxiPendientesEnvio.addView(tarjeta.getRoot());
+            if (servicio.getId().equals(enfoquePendiente)) {
+                enfoquePendiente = null;
+                tarjeta.getRoot().post(() -> {
+                    if (binding != null) binding.taxiContenido.smoothScrollTo(0, tarjeta.getRoot().getTop());
+                });
+            }
+        }
     }
 
     /**
@@ -237,14 +299,22 @@ public class TaxiFragment extends Fragment {
         UiState<TaxiViewModel.Estado> actual = viewModel.getContenido().getValue();
         boolean hayActivo = actual != null && actual.getData() != null
                 && actual.getData().tieneActivo();
-        binding.taxiBloqueLibre.setVisibility(!hayActivo || hayReservas ? View.VISIBLE : View.GONE);
+        boolean hayPendientes = actual != null && actual.getData() != null
+                && !actual.getData().pendientesEnvio.isEmpty();
+        boolean hayDetalle = actual != null && actual.getData() != null
+                && actual.getData().tienePrincipal();
+        if (hayReservas && hayDetalle) {
+            binding.taxiLibreTitulo.setText(R.string.taxi_flujo_otro_titulo);
+            binding.taxiLibreMensaje.setText(R.string.taxi_flujo_otro_mensaje);
+        }
+        binding.taxiBloqueLibre.setVisibility((!hayActivo && !hayPendientes) || hayReservas ? View.VISIBLE : View.GONE);
     }
 
     private void pintarActivo(@NonNull TaxiService servicio) {
         binding.taxiEstado.bind(servicio);
 
         // RF-101: el QR solo cuando el conductor ya llego a recoger.
-        binding.taxiQr.setVisibility(servicio.debeMostrarQr() ? View.VISIBLE : View.GONE);
+        binding.taxiQr.setVisibility(servicio.getApiId() != null && servicio.debeMostrarQr() ? View.VISIBLE : View.GONE);
 
         pintarConductor(servicio);
         pintarMapa(servicio);
@@ -261,31 +331,25 @@ public class TaxiFragment extends Fragment {
         }
     }
 
-    /**
-     * Seguimiento del conductor (RF-099).
-     *
-     * <p>Se apaga a partir de EN TRASLADO: una vez dentro del taxi, un plano
-     * que enfrenta al coche con el punto de recojo ya no dice nada util. Y sin
-     * punto de recojo no se enciende nunca, porque el plano se construye desde
-     * ahi y quedaria vacio.
-     */
+    /** El cliente sigue el reporte real durante la recogida y el traslado. */
     private void pintarMapa(@NonNull TaxiService servicio) {
         TaxiStatus estado = servicio.getEstado();
-        boolean yaArranco = estado == TaxiStatus.EN_TRASLADO || estado.isFinished();
-        boolean mostrar = servicio.hasRecojo() && !yaArranco;
+        boolean mostrar = servicio.hasRecojo();
         binding.taxiTarjetaMapa.setVisibility(mostrar ? View.VISIBLE : View.GONE);
         if (!mostrar) {
+            binding.taxiMapa.limpiarConductor();
             return;
         }
 
-        binding.taxiMapa.limpiarConductor();
         binding.taxiMapa.setRecojo(servicio.getLatRecojo(), servicio.getLngRecojo());
 
         LocalDateTime reporte = servicio.getUltimaActualizacionUbicacion();
-        if (reporte == null) {
+        if (reporte == null || !servicio.tieneConductorAsignado()) {
             // Todavia nadie reporto posicion: se enseña el punto de recojo y se
             // dice que falta, en vez de inventar un coche en el mapa.
-            binding.taxiMapaDistancia.setText(R.string.taxi_ubicacion_esperando);
+            binding.taxiMapa.limpiarConductor();
+            binding.taxiMapaDistancia.setText(estado.isFinished()
+                    ? R.string.taxi_flujo_finalizado_sin_posicion : R.string.taxi_ubicacion_esperando);
             binding.taxiMapaActualizado.setVisibility(View.GONE);
             binding.taxiMapaAviso.setVisibility(View.GONE);
             return;
@@ -293,10 +357,15 @@ public class TaxiFragment extends Fragment {
 
         binding.taxiMapa.setConductor(servicio.getLatConductor(), servicio.getLngConductor());
 
-        double metros = binding.taxiMapa.getDistanciaM();
-        binding.taxiMapaDistancia.setText(metros < 120d
-                ? getString(R.string.taxi_distancia_cerca)
-                : getString(R.string.taxi_distancia, distanciaLegible(metros)));
+        if (estado.isFinished()) {
+            binding.taxiMapaDistancia.setText(R.string.taxi_flujo_ultima_posicion);
+        } else if (estado == TaxiStatus.EN_TRASLADO) {
+            // La distancia al hotel deja de indicar progreso una vez iniciado el traslado.
+            binding.taxiMapaDistancia.setText(R.string.mapa_google_traslado);
+        } else {
+            binding.taxiMapaDistancia.setText(getString(R.string.mapa_google_distancia_recojo,
+                    distanciaLegible(binding.taxiMapa.getDistanciaM())));
+        }
 
         binding.taxiMapaActualizado.setVisibility(View.VISIBLE);
         binding.taxiMapaActualizado.setText(getString(R.string.taxi_ubicacion_actualizada,
@@ -306,7 +375,9 @@ public class TaxiFragment extends Fragment {
         // fuera de ahora mismo.
         boolean vieja = servicio.ubicacionDesactualizada(LocalDateTime.now(),
                 SEGUNDOS_UBICACION_FRESCA);
-        binding.taxiMapaAviso.setVisibility(vieja ? View.VISIBLE : View.GONE);
+        binding.taxiMapaAviso.setText(estado.isFinished()
+                ? R.string.taxi_flujo_mapa_finalizado : R.string.taxi_ubicacion_vieja);
+        binding.taxiMapaAviso.setVisibility(estado.isFinished() || vieja ? View.VISIBLE : View.GONE);
     }
 
     /** Metros o kilometros, segun lo que se lea mejor: "850 m", "1,2 km". */
@@ -362,9 +433,9 @@ public class TaxiFragment extends Fragment {
             tarjeta.setOnValorar(v -> abrirValoracion(servicio.getId()));
             tarjeta.setOnAceptar(null);
             tarjeta.setOnClickListener(v -> {
-                if (servicio.getEstado().isActive()) {
+                if (servicio.getApiId() != null) {
                     viewModel.enfocarServicio(servicio.getId());
-                    binding.taxiContenido.smoothScrollTo(0, 0);
+                    if (binding != null) binding.taxiContenido.smoothScrollTo(0, 0);
                 }
             });
             binding.taxiHistorial.addView(tarjeta);
@@ -621,12 +692,18 @@ public class TaxiFragment extends Fragment {
         binding.taxiDestino.setEnabled(!cargando);
         binding.taxiIdaVueltaSwitch.setEnabled(!cargando);
         binding.taxiConfirmar.setText(cargando ? R.string.taxi_real_guardando : R.string.taxi_confirmar);
+        UiState<TaxiViewModel.Estado> contenido = viewModel.getContenido().getValue();
+        if (contenido != null && contenido.getData() != null) pintarPendientes(contenido.getData().pendientesEnvio);
         if (estado == null) return;
-        if (estado.isError()) avisar(estado.getMessage() != null ? estado.getMessage() : "No se pudo guardar el traslado.");
+        if (estado.isError()) {
+            String mensaje = estado.getMessage() != null ? estado.getMessage() : "No se pudo guardar el traslado.";
+            if (binding.taxiFormulario.getVisibility() == View.VISIBLE) avisar(mensaje);
+            else Snackbar.make(binding.getRoot(), mensaje, Snackbar.LENGTH_LONG).show();
+        }
         if (estado.isSuccess()) {
             boolean estabaAbierto = binding.taxiFormulario.getVisibility() == View.VISIBLE;
             binding.taxiFormulario.setVisibility(View.GONE);
-            if (estabaAbierto) Snackbar.make(binding.getRoot(), R.string.taxi_real_solicitud_enviada,
+            if (estabaAbierto || viewModel.getSolicitudPendienteId() != null) Snackbar.make(binding.getRoot(), R.string.taxi_real_solicitud_enviada,
                     Snackbar.LENGTH_LONG).show();
             viewModel.consumirSolicitud();
         }
@@ -640,10 +717,12 @@ public class TaxiFragment extends Fragment {
     private void mostrarQr() {
         if (getChildFragmentManager().findFragmentByTag(QrSheet.TAG) != null) return;
         UiState<TaxiViewModel.Estado> estado = viewModel.getContenido().getValue();
-        if (estado == null || estado.getData() == null || estado.getData().activo == null) {
+        if (estado == null || estado.getData() == null || estado.getData().principal == null) {
             return;
         }
-        QrSheet.newInstance(estado.getData().activo.getId())
+        TaxiService mostrado = estado.getData().principal;
+        if (mostrado.getApiId() == null || !mostrado.debeMostrarQr()) return;
+        QrSheet.newInstance(mostrado.getId())
                 .show(getChildFragmentManager(), QrSheet.TAG);
     }
 
@@ -654,6 +733,8 @@ public class TaxiFragment extends Fragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle salida) {
         guardarBorrador();
+        salida.putBoolean("taxiArgumentoEnfocado", argumentoEnfocado);
+        if (binding != null) binding.taxiMapa.onSaveInstanceState(salida);
         super.onSaveInstanceState(salida);
     }
 
@@ -697,8 +778,15 @@ public class TaxiFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null) binding.taxiMapa.onDestroy();
         super.onDestroyView();
         tarjetasReserva.clear();
         binding = null;
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (binding != null) binding.taxiMapa.onLowMemory();
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="acceso_cuenta_reservas_opcion">Cliente / Admin</string>
+    <string name="acceso_cuenta_reservas_ayuda">Acceso para clientes y administradores. Tu cuenta determina qué panel se abre.</string>
+    <string name="acceso_google_continuar">Continuar con Google</string>
+    <string name="acceso_google_eligiendo">Eligiendo cuenta…</string>
+    <string name="acceso_google_o_correo">o ingresa con tu correo</string>
+    <string name="acceso_google_configuracion">El acceso con Google todavía no está disponible. Ingresa con tu correo o contacta al administrador.</string>
+    <string name="acceso_google_sin_cuenta">Añade o verifica una cuenta de Google en este dispositivo y vuelve a intentarlo.</string>
+    <string name="acceso_google_no_disponible">El acceso con Google no está disponible en este dispositivo. Comprueba Google Play Services o ingresa con tu correo.</string>
+    <string name="acceso_google_respuesta_invalida">No pudimos verificar la respuesta de Google. Inténtalo de nuevo.</string>
+    <string name="acceso_google_error">No pudimos conectar con Google. Revisa tu conexión e inténtalo de nuevo.</string>
+</resources>

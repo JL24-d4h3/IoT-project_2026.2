@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Portada del taxista: su servicio en curso o las solicitudes que puede
-    aceptar. Los datos vienen de la API del sistema de taxistas.
--->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -38,11 +34,24 @@
                 android:paddingEnd="@dimen/screen_margin"
                 android:paddingBottom="@dimen/space_lg">
 
-                <!-- Quien es el taxista -->
+                <TextView
+                    style="@style/TextAppearance.App.H2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/driver_auth_bienvenida" />
+
+                <TextView
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/driver_auth_acceso_listo" />
+
                 <com.google.android.material.card.MaterialCardView
                     style="@style/Widget.App.Card"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -56,8 +65,6 @@
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
-                            <!-- La foto y el círculo de iniciales ocupan el mismo hueco:
-                                 si la foto carga se ve encima; si no, quedan las iniciales. -->
                             <FrameLayout
                                 android:layout_width="@dimen/avatar_lg"
                                 android:layout_height="@dimen/avatar_lg">
@@ -77,7 +84,7 @@
                                     android:id="@+id/driver_foto"
                                     android:layout_width="match_parent"
                                     android:layout_height="match_parent"
-                                    android:contentDescription="@string/cd_foto_conductor"
+                                    android:importantForAccessibility="no"
                                     android:scaleType="centerCrop"
                                     android:visibility="gone" />
                             </FrameLayout>
@@ -102,16 +109,6 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="@dimen/space_xs"
                                     android:text="@string/driver_auth_rol" />
-
-                                <TextView
-                                    android:id="@+id/driver_placa"
-                                    style="@style/TextAppearance.App.Caption"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_xs"
-                                    android:visibility="gone"
-                                    tools:text="Placa ABC-123"
-                                    tools:visibility="visible" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -120,107 +117,121 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/space_lg" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Servicio en curso: reemplaza a la lista de solicitudes -->
-                <LinearLayout
-                    android:id="@+id/driver_activo_seccion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_lg"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <TextView
-                        style="@style/TextAppearance.App.H3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/space_sm"
-                        android:text="@string/driver_servicio_activo" />
-
-                    <org.iot.project.ui.components.TaxiRequestCardView
-                        android:id="@+id/driver_activo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/driver_avanzar"
-                        style="@style/Widget.App.Button.Primary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_base"
-                        android:minHeight="@dimen/button_height"
-                        android:text="@string/driver_voy_en_camino"
-                        android:visibility="gone" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/driver_validar"
-                        style="@style/Widget.App.Button.Primary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_base"
-                        android:minHeight="@dimen/button_height"
-                        android:text="@string/driver_validar_codigo"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <!-- Solicitudes disponibles: solo cuando no hay servicio en curso -->
-                <LinearLayout
-                    android:id="@+id/driver_ofertas_seccion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_lg"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/TextAppearance.App.H3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/space_sm"
-                        android:text="@string/driver_home_disponibles" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/driver_solicitudes"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-
-                    <LinearLayout
-                        android:id="@+id/driver_vacio"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        tools:visibility="visible">
 
                         <TextView
-                            style="@style/TextAppearance.App.Body"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/driver_sin_servicio_titulo" />
-
-                        <TextView
+                            android:id="@+id/driver_vehiculo"
                             style="@style/TextAppearance.App.BodySecondary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/space_xs"
-                            android:text="@string/driver_sin_servicio" />
+                            android:layout_marginTop="@dimen/space_sm" />
+
+                        <TextView
+                            android:id="@+id/driver_perfil_aviso"
+                            style="@style/TextAppearance.App.BodySecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:accessibilityLiveRegion="polite"
+                            android:visibility="gone" />
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <LinearLayout
+                    android:id="@+id/driver_panel_servicios"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/driver_actualizar_ubicacion"
+                    style="@style/Widget.App.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:text="@string/api_driver_ubicacion_actualizar" />
+
+                <TextView
+                    android:id="@+id/driver_ubicacion_estado"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/api_driver_ubicacion_ayuda" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/driver_ubicacion_ajustes"
+                    style="@style/Widget.App.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:minHeight="48dp"
+                    android:text="@string/api_driver_ubicacion_ajustes"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/driver_seguimiento_estado"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:accessibilityLiveRegion="polite"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/driver_refrescar"
+                    style="@style/Widget.App.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_base"
+                    android:text="@string/api_driver_actualizar" />
+
+                <TextView
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:text="@string/driver_servicio_activo" />
+
+                <TextView
+                    android:id="@+id/driver_activos_aviso"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/api_driver_cargando" />
+
+                <LinearLayout
+                    android:id="@+id/driver_servicios_lista"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    style="@style/TextAppearance.App.H3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_lg"
+                    android:text="@string/driver_home_disponibles" />
+
+                <TextView
+                    android:id="@+id/driver_ofertas_aviso"
+                    style="@style/TextAppearance.App.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/api_driver_cargando" />
+
+                <LinearLayout
+                    android:id="@+id/driver_ofertas_lista"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
-
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:id="@+id/driver_cargando"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminate="true"
-            android:visibility="gone" />
 
         <org.iot.project.ui.components.ErrorStateView
             android:id="@+id/driver_error"

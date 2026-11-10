@@ -5,7 +5,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import org.iot.project.data.api.ApiSesion;
 import org.iot.project.models.Cuenta;
 import org.iot.project.models.Role;
 
@@ -18,6 +17,8 @@ import com.google.firebase.firestore.MetadataChanges;
 
 import org.iot.project.data.firebase.FirebaseErrores;
 import org.iot.project.data.firebase.PerfilFirebase;
+import org.iot.project.data.rest.SesionTaxistaRest;
+import org.iot.project.core.ubicacion.SeguimientoTaxista;
 
 /**
  * Sesion activa: con que cuenta se entro y, por tanto, que rol esta en uso.
@@ -34,11 +35,9 @@ import org.iot.project.data.firebase.PerfilFirebase;
  * de cada rol necesitan saber a quien estan atendiendo, y volver a preguntarlo
  * al repositorio en cada una seria pedir cuatro veces el mismo dato.
  *
- * <p>Todos los roles autentican su UID con Firebase y cargan su perfil de acceso
- * desde usuarios/{uid}. El perfil operativo del conductor ({@link
- * org.iot.project.models.Driver}) se gestionará por separado con el sistema de
- * taxistas. Su identidad se expone mediante {@link #getConductorId()} para que
- * no se use como cliente o administrador en los repositorios de usuarios.
+ * <p>Los perfiles de hoteles y clientes usan Firebase. El acceso web de taxista
+ * usa un JWT independiente en memoria y una identidad con prefijo taxista:.
+ * Nunca se interpreta un ID numérico de la API como un UID de Firebase.
  */
 public final class SessionManager {
 
@@ -67,10 +66,9 @@ public final class SessionManager {
         FirebaseAuth.getInstance().addAuthStateListener(auth -> {
             FirebaseUser usuario = auth.getCurrentUser();
             Cuenta cuenta = SESION.getValue();
-            // El taxista entra por la API y no tiene usuario de Firebase: su sesion no depende de este listener.
-            if (cuenta != null && cuenta.getRol() == Role.CONDUCTOR) {
-                return;
-            }
+            Cuenta taxista = SesionTaxistaRest.getCuenta();
+            if (cuenta != null && taxista != null
+                    && cuenta.getIdentidadId().equals(taxista.getIdentidadId())) return;
             if (usuario == null || (cuenta != null
                     && !cuenta.getIdentidadId().equals(usuario.getUid()))) {
                 quitarPerfilListener();
@@ -125,15 +123,14 @@ public final class SessionManager {
      * <p>Se llama desde el hilo principal tras cargar el perfil autorizado.
      */
     public static void iniciarSesion(@NonNull Cuenta cuenta) {
-        if (cuenta.getRol() == Role.CONDUCTOR) {
-            iniciarSesionConductor(cuenta);
-            return;
-        }
         FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
         if (usuario == null || !usuario.getUid().equals(cuenta.getIdentidadId())) {
             return;
         }
         version++;
+        SeguimientoTaxista.detenerActual();
+        SesionTaxistaRest.cerrar();
+        ServiceLocator.accesoTaxistaRest().cancelar();
         quitarPerfilListener();
         AVISO.setValue(null);
         SESION.setValue(cuenta);
@@ -141,24 +138,25 @@ public final class SessionManager {
         observarPerfil(usuario.getUid(), version);
     }
 
-    /**
-     * Sesion del taxista: se autentica contra la API (JWT en {@link ApiSesion}),
-     * no con Firebase, asi que no hay UID ni perfil de Firestore que observar.
-     */
-    private static void iniciarSesionConductor(@NonNull Cuenta cuenta) {
-        if (!ApiSesion.activa() || !cuenta.getIdentidadId().equals(ApiSesion.taxistaId())) {
-            return;
-        }
+    /** Se publica solo después del login JWT y la validación del perfil del backend. */
+    public static void iniciarSesionTaxistaRest(@NonNull Cuenta cuenta) {
+        Cuenta validada = SesionTaxistaRest.getCuenta();
+        if (validada == null || cuenta.getRol() != Role.CONDUCTOR
+                || !validada.getIdentidadId().equals(cuenta.getIdentidadId())) return;
         version++;
+        SeguimientoTaxista.detenerActual();
         quitarPerfilListener();
+        ServiceLocator.acceso().cerrarSesion();
         AVISO.setValue(null);
-        SESION.setValue(cuenta);
+        SESION.setValue(validada);
         RESTAURANDO.setValue(false);
     }
 
     public static void cerrarSesion() {
-        ApiSesion.cerrar();
         version++;
+        SeguimientoTaxista.detenerActual();
+        SesionTaxistaRest.cerrar();
+        ServiceLocator.accesoTaxistaRest().cancelar();
         quitarPerfilListener();
         SESION.setValue(null);
         RESTAURANDO.setValue(false);
@@ -243,7 +241,10 @@ public final class SessionManager {
      */
     @Nullable
     public static String getConductorId() {
-        return getRolActivo() == Role.CONDUCTOR ? getIdentidadId() : null;
+        if (getRolActivo() != Role.CONDUCTOR) return null;
+        String identidad = getIdentidadId();
+        return identidad != null && identidad.startsWith("taxista:")
+                ? SesionTaxistaRest.getId() : identidad;
     }
 
     /**

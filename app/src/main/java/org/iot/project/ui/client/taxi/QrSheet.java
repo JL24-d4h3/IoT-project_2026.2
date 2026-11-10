@@ -75,7 +75,7 @@ public class QrSheet extends BottomSheetDialogFragment {
                 dismiss();
                 return;
             }
-            if (servicio.getEstado().isFinished()) {
+            if (servicio.getApiId() == null || !servicio.debeMostrarQr() || servicio.getEstado().isFinished()) {
                 // El conductor acaba de escanear. La hoja ya no sirve y dejarla
                 // abierta invitaria a escanear un codigo que ya se consumio.
                 dismiss();
@@ -104,7 +104,7 @@ public class QrSheet extends BottomSheetDialogFragment {
     }
 
     private void pintar(@NonNull TaxiService servicio) {
-        // El contenido del codigo es el identificador del servicio y nada mas.
+        // El contenido es el token aleatorio de cierre generado por el backend.
         // El nombre del cliente o su telefono no hacen falta para cerrar el
         // traslado, y un QR se lee a distancia y se fotografía.
         boolean dibujado = binding.qrCodigo.setContenido(servicio.getCodigo());

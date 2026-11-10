@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mapa_google_descripcion">Mapa del punto de recojo y de la última ubicación reportada por el taxista.</string>
+    <string name="mapa_google_cargando">Cargando mapa…</string>
+    <string name="mapa_google_sin_configurar">El mapa todavía no está disponible. Falta completar la configuración de Google Maps.</string>
+    <string name="mapa_google_no_disponible">No pudimos abrir Google Maps en este dispositivo. Revisa los servicios de Google Play.</string>
+    <string name="mapa_google_error_carga">No pudimos cargar el mapa. Revisa la conexión y la configuración de Google Maps.</string>
+    <string name="mapa_google_recojo">Punto de recojo</string>
+    <string name="mapa_google_taxista">Última ubicación del taxista</string>
+    <string name="mapa_google_traslado">Traslado en curso · ubicación del taxista</string>
+    <string name="mapa_google_distancia_recojo">A %1$s del punto de recojo, en línea recta</string>
+</resources>
