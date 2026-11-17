@@ -111,7 +111,7 @@ public class ReservaAdminAdapter
         @NonNull
         private String describirHabitacion(@NonNull ReservaDeHotel detalle) {
             String base = itemView.getContext().getString(R.string.admin_reserva_linea,
-                    detalle.getReserva().getCodigo(), detalle.getHabitacionNumero());
+                    detalle.getReserva().getCodigoCorto(), detalle.getHabitacionNumero());
             return detalle.getHabitacionTipo().isEmpty()
                     ? base
                     : itemView.getContext().getString(R.string.admin_reserva_linea_tipo,

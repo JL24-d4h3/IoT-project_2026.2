@@ -82,6 +82,8 @@ public class BookingFlowViewModel extends ViewModel {
             estado.remove("reservaEntrada");
             estado.remove("reservaSalida");
             estado.remove("reservaHuespedes");
+            estado.remove("reservaAdultos");
+            estado.remove("reservaNinos");
             estado.remove("reservaIntentada");
             estado.remove("reservaIntentoFirma");
         }
@@ -103,8 +105,7 @@ public class BookingFlowViewModel extends ViewModel {
         LocalDate hasta = diaSalida != null ? LocalDate.ofEpochDay(diaSalida)
                 : fechasInicialesValidas ? salidaInicial : desde.plusDays(2);
         guardarFechas(desde, hasta);
-        Integer cantidad = estado.get("reservaHuespedes");
-        huespedes.setValue(cantidad != null ? cantidad : 1);
+        huespedes.setValue(getAdultosActuales() + getNinosActuales());
         long solicitud = ++generacion;
         cargando = true;
         habitacion.setValue(null);
@@ -120,7 +121,7 @@ public class BookingFlowViewModel extends ViewModel {
                     return;
                 }
                 habitacion.setValue(elegida);
-                setHuespedes(getHuespedesActuales());
+                ajustarHuespedes();
                 hotel.setValue(UiState.success(datos));
                 consultarDisponibilidad();
             }
@@ -278,13 +279,45 @@ public class BookingFlowViewModel extends ViewModel {
         salida.setValue(hasta);
     }
 
-    public void setHuespedes(int cantidad) {
+    /** Adultos: de 1 hasta la capacidad de adultos de la habitación. */
+    public void setAdultos(int cantidad) {
         if (estaConfirmando() || reservaCreada()) return;
+        estado.set("reservaAdultos", Math.max(1, Math.min(cantidad, maxAdultos())));
+        huespedes.setValue(getAdultosActuales() + getNinosActuales());
+    }
+
+    /** Niños: de 0 hasta la capacidad de niños de la habitación. */
+    public void setNinos(int cantidad) {
+        if (estaConfirmando() || reservaCreada()) return;
+        estado.set("reservaNinos", Math.max(0, Math.min(cantidad, maxNinos())));
+        huespedes.setValue(getAdultosActuales() + getNinosActuales());
+    }
+
+    public int getAdultosActuales() {
+        Integer cantidad = estado.get("reservaAdultos");
+        return cantidad != null ? cantidad : 1;
+    }
+
+    public int getNinosActuales() {
+        Integer cantidad = estado.get("reservaNinos");
+        return cantidad != null ? cantidad : 0;
+    }
+
+    public int maxAdultos() {
         Room cuarto = habitacion.getValue();
-        int maximo = cuarto != null ? cuarto.getCapacidadTotal() : 1;
-        int numero = Math.max(1, Math.min(cantidad, maximo));
-        estado.set("reservaHuespedes", numero);
-        huespedes.setValue(numero);
+        return cuarto != null ? Math.max(1, cuarto.getCapacidadAdultos()) : 1;
+    }
+
+    public int maxNinos() {
+        Room cuarto = habitacion.getValue();
+        return cuarto != null ? Math.max(0, cuarto.getCapacidadNinos()) : 0;
+    }
+
+    /** Al conocer la habitación, recorta lo ya elegido a lo que el cuarto admite. */
+    private void ajustarHuespedes() {
+        estado.set("reservaAdultos", Math.max(1, Math.min(getAdultosActuales(), maxAdultos())));
+        estado.set("reservaNinos", Math.max(0, Math.min(getNinosActuales(), maxNinos())));
+        huespedes.setValue(getAdultosActuales() + getNinosActuales());
     }
 
     public int getHuespedesActuales() {
@@ -324,8 +357,10 @@ public class BookingFlowViewModel extends ViewModel {
                 && cuarto != null && cuarto.isDisponible()
                 && ((calendario != null && calendario.isSuccess() && calendario.requireData())
                 || esReintentoMismoBorrador())
-                && getHuespedesActuales() >= 1
-                && getHuespedesActuales() <= cuarto.getCapacidadTotal()
+                && getAdultosActuales() >= 1
+                && getAdultosActuales() <= maxAdultos()
+                && getNinosActuales() >= 0
+                && getNinosActuales() <= maxNinos()
                 && errorFechas(entrada.getValue(), salida.getValue()) == null;
     }
 

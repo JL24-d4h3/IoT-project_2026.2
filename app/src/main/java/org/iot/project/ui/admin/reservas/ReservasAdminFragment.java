@@ -1,6 +1,8 @@
 package org.iot.project.ui.admin.reservas;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,6 +67,15 @@ public class ReservasAdminFragment extends Fragment {
         prepararLista(binding.adminReservasHistorial, adaptadorHistorial);
 
         viewModel = new ViewModelProvider(this).get(ReservasAdminViewModel.class);
+        // El texto vive en el ViewModel: al girar la pantalla se conserva la búsqueda.
+        binding.adminReservasBuscar.setText(viewModel.getConsulta());
+        binding.adminReservasBuscar.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable e) {
+                viewModel.buscar(e.toString());
+            }
+        });
         viewModel.getSecciones().observe(getViewLifecycleOwner(), this::pintar);
     }
 
@@ -124,6 +135,8 @@ public class ReservasAdminFragment extends Fragment {
     }
 
     private void mostrar(@NonNull ReservasAdminViewModel.Secciones secciones) {
+        binding.adminReservasSinResultados.setVisibility(
+                secciones.estaVacio() ? View.VISIBLE : View.GONE);
         adaptadorEnCurso.submitList(secciones.enCurso);
         adaptadorProximas.submitList(secciones.proximas);
         adaptadorHistorial.submitList(secciones.historial);

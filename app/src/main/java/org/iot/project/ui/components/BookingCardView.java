@@ -92,7 +92,7 @@ public class BookingCardView extends MaterialCardView {
                 .into(imagen);
 
         estado.setEstado(reserva.getEstado());
-        codigo.setText(reserva.getCodigo());
+        codigo.setText(reserva.getCodigoCorto());
         fechas.setText(DateFormatter.rango(reserva.getFechaEntrada(), reserva.getFechaSalida()));
         total.setText(PriceFormatter.format(reserva.getTotal()));
     }

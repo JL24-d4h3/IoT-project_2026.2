@@ -72,7 +72,7 @@ public class BookingSummaryView extends MaterialCardView {
         hotel.setText(nombre.isEmpty()
                 ? getContext().getString(R.string.reserva_hotel_desconocido) : nombre);
 
-        codigo.setText(reserva.getCodigo());
+        codigo.setText(reserva.getCodigoCorto());
 
         String rango = DateFormatter.rangoConNoches(
                 reserva.getFechaEntrada(), reserva.getFechaSalida(), reserva.getNumNoches());

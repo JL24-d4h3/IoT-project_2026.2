@@ -186,7 +186,7 @@ public class ReservaAdminFragment extends Fragment {
 
         // El código en el subtítulo del encabezado: es lo que el huésped dice
         // por teléfono y lo que el administrador busca en la lista.
-        binding.adminReservaHeader.setSubtitulo(reserva.getCodigo());
+        binding.adminReservaHeader.setSubtitulo(reserva.getCodigoCorto());
         binding.adminReservaHuesped.setText(detalle.getClienteNombre(
                 getString(R.string.reserva_huesped_no_disponible)));
         binding.adminReservaEstado.setEstado(reserva.getEstado());
@@ -634,7 +634,7 @@ public class ReservaAdminFragment extends Fragment {
         }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.admin_reserva_cancelar_titulo,
-                        detalle.getReserva().getCodigo()))
+                        detalle.getReserva().getCodigoCorto()))
                 .setMessage(R.string.admin_reserva_cancelar_mensaje)
                 .setNegativeButton(R.string.accion_volver, null)
                 .setPositiveButton(R.string.admin_reserva_cancelar_confirmar,

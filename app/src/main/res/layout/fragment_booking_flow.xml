@@ -189,6 +189,11 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
                             android:paddingStart="@dimen/space_md"
@@ -245,6 +250,69 @@
                                 android:padding="@dimen/space_sm"
                                 android:src="@drawable/ic_add"
                                 app:tint="@color/colorPrimary" />
+                        </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/reserva_fila_ninos"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="@dimen/space_md"
+                                android:paddingTop="@dimen/space_sm"
+                                android:paddingEnd="@dimen/space_sm"
+                                android:paddingBottom="@dimen/space_sm">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/TextAppearance.App.Body"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/reserva_ninos" />
+
+                                    <TextView
+                                        android:id="@+id/reserva_ninos_capacidad"
+                                        style="@style/TextAppearance.App.Caption"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="@dimen/space_xs"
+                                        tools:text="Máximo 1 niño" />
+                                </LinearLayout>
+
+                                <ImageButton
+                                    android:id="@+id/reserva_nino_menos"
+                                    android:layout_width="@dimen/touch_target_min"
+                                    android:layout_height="@dimen/touch_target_min"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="@string/cd_quitar_nino"
+                                    android:padding="@dimen/space_sm"
+                                    android:src="@drawable/ic_remove"
+                                    app:tint="@color/colorPrimary" />
+
+                                <TextView
+                                    android:id="@+id/reserva_num_ninos"
+                                    style="@style/TextAppearance.App.H3"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:minWidth="@dimen/touch_target_min"
+                                    android:gravity="center"
+                                    tools:text="0" />
+
+                                <ImageButton
+                                    android:id="@+id/reserva_nino_mas"
+                                    android:layout_width="@dimen/touch_target_min"
+                                    android:layout_height="@dimen/touch_target_min"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="@string/cd_agregar_nino"
+                                    android:padding="@dimen/space_sm"
+                                    android:src="@drawable/ic_add"
+                                    app:tint="@color/colorPrimary" />
+                            </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 

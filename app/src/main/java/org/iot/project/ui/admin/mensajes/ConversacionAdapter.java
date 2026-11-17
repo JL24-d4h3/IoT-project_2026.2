@@ -116,7 +116,7 @@ public class ConversacionAdapter
             // reserva: es la misma estadía descrita en los dos sitios.
             binding.conversacionEstadia.setText(itemView.getContext().getString(
                     R.string.admin_reserva_linea,
-                    conversacion.getEstadia().getReserva().getCodigo(),
+                    conversacion.getEstadia().getReserva().getCodigoCorto(),
                     conversacion.getEstadia().getHabitacionNumero()));
 
             binding.conversacionPrevia.setText(previa(conversacion));

@@ -47,9 +47,33 @@ public class ReservasAdminViewModel extends ViewModel {
     @Nullable private String hotelId;
     private long generacion;
     private boolean visible;
+    // Última lista recibida y texto de búsqueda: al escribir se vuelve a filtrar sin consultar.
+    private List<ReservaDeHotel> reservas = new ArrayList<>();
+    private boolean cargado;
+    private String consulta = "";
 
     public ReservasAdminViewModel() { SessionManager.sesion().observeForever(sesion); }
     public LiveData<UiState<Secciones>> getSecciones() { return secciones; }
+    public String getConsulta() { return consulta; }
+
+    /** Filtra por nombre del cliente, DNI o código. Vacío muestra todo. */
+    public void buscar(@Nullable String texto) {
+        String nueva = texto == null ? "" : texto;
+        if (nueva.equals(consulta)) return;
+        consulta = nueva;
+        if (cargado) publicar();
+    }
+
+    private void publicar() {
+        if (reservas.isEmpty()) {
+            secciones.setValue(UiState.empty());
+            return;
+        }
+        // Con filtro puede no coincidir ninguna: sigue siendo éxito y la pantalla
+        // lo explica, en vez de confundirlo con "este hotel no tiene reservas".
+        secciones.setValue(UiState.success(
+                agrupar(ConsultaReservasAdmin.aplicar(reservas, consulta))));
+    }
 
     private void revisarSesion() {
         String nuevaUid = SessionManager.getRolActivo() == Role.ADMIN_HOTEL
@@ -59,6 +83,10 @@ public class ReservasAdminViewModel extends ViewModel {
         cerrarEscucha();
         uid = nuevaUid;
         hotelId = nuevoHotel;
+        // Otra cuenta u otro hotel: ni la lista ni la búsqueda anteriores valen.
+        reservas = new ArrayList<>();
+        cargado = false;
+        consulta = "";
         secciones.setValue(UiState.loading());
         if (visible) conectar();
     }
@@ -93,9 +121,9 @@ public class ReservasAdminViewModel extends ViewModel {
                 new ResultCallback<List<ReservaDeHotel>>() {
                     @Override public void onExito(@NonNull List<ReservaDeHotel> datos) {
                         if (!vigente(cuenta, hotel, version)) return;
-                        Secciones agrupadas = agrupar(datos);
-                        secciones.setValue(agrupadas.estaVacio()
-                                ? UiState.empty() : UiState.success(agrupadas));
+                        reservas = new ArrayList<>(datos);
+                        cargado = true;
+                        publicar();
                     }
                     @Override public void onError(@NonNull String mensaje) {
                         if (vigente(cuenta, hotel, version)) {

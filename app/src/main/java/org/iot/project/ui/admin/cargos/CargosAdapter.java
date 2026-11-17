@@ -110,7 +110,7 @@ public class CargosAdapter extends ListAdapter<CargosDeReserva, CargosAdapter.Fi
         @NonNull
         private String describirHabitacion(@NonNull CargosDeReserva grupo) {
             String base = itemView.getContext().getString(R.string.admin_reserva_linea,
-                    grupo.getEstadia().getReserva().getCodigo(),
+                    grupo.getEstadia().getReserva().getCodigoCorto(),
                     grupo.getEstadia().getHabitacionNumero());
             return grupo.getEstadia().getHabitacionTipo().isEmpty()
                     ? base

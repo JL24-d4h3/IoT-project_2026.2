@@ -144,7 +144,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
             transaccion.set(referencia, datos);
             NotificacionFirebase.registrar(transaccion, uid, "reserva_" + reserva.getId() + "_creada",
                     AppNotification.Tipo.RESERVA, "Reserva creada",
-                    "Tu reserva " + reserva.getCodigo() + " en " + reserva.getHotelNombre()
+                    "Tu reserva " + reserva.getCodigoCorto() + " en " + reserva.getHotelNombre()
                             + " está guardada. Puedes consultar sus detalles en Mis reservas.",
                     reserva.getId(), null);
             return reserva;
@@ -175,7 +175,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
                     "actualizadoEn", FieldValue.serverTimestamp());
             NotificacionFirebase.registrar(transaccion, reserva.getClienteId(), "reserva_" + bookingId + "_cancelada",
                     AppNotification.Tipo.RESERVA, "Reserva cancelada",
-                    "Tu reserva " + reserva.getCodigo() + " fue cancelada.", bookingId, null);
+                    "Tu reserva " + reserva.getCodigoCorto() + " fue cancelada.", bookingId, null);
             reserva.setEstado(BookingStatus.CANCELADA);
             return reserva;
         }).addOnSuccessListener(reserva -> {
@@ -224,7 +224,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
                     "actualizadoEn", FieldValue.serverTimestamp());
             NotificacionFirebase.registrar(transaccion, uid, "reserva_" + bookingId + "_pago",
                     AppNotification.Tipo.PAGO, "Reserva confirmada",
-                    "Tu reserva " + reserva.getCodigo()
+                    "Tu reserva " + reserva.getCodigoCorto()
                             + " está confirmada. La confirmación de pago es simulada.", bookingId, null);
             reserva.setEstado(BookingStatus.CONFIRMADA);
             return reserva;
@@ -457,7 +457,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
                     "actualizadoEn", FieldValue.serverTimestamp());
             NotificacionFirebase.registrar(transaccion, reserva.getClienteId(), "reserva_" + bookingId + "_llegada",
                     AppNotification.Tipo.RESERVA, "Estadía iniciada",
-                    "El hotel registró tu llegada para la reserva " + reserva.getCodigo()
+                    "El hotel registró tu llegada para la reserva " + reserva.getCodigoCorto()
                             + ". Puedes consultar tu estadía y realizar el checkout desde la app.", bookingId, null);
             reserva.setEstado(BookingStatus.ACTIVA);
             return reserva;
@@ -485,7 +485,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
                     "finalizadaEn", FieldValue.serverTimestamp(), "actualizadoEn", FieldValue.serverTimestamp());
             NotificacionFirebase.registrar(transaccion, uid, "reserva_" + bookingId + "_checkout",
                     AppNotification.Tipo.CHECKOUT, "Checkout realizado",
-                    "Finalizaste la estadía de tu reserva " + reserva.getCodigo()
+                    "Finalizaste la estadía de tu reserva " + reserva.getCodigoCorto()
                             + ". Ya puedes valorar tu experiencia.", bookingId, null);
             reserva.setEstado(BookingStatus.FINALIZADA);
             return reserva;
@@ -531,7 +531,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
                     "actualizadoEn", FieldValue.serverTimestamp());
             NotificacionFirebase.registrar(transaccion, reserva.getClienteId(), "reserva_" + bookingId + "_cobro",
                     AppNotification.Tipo.PAGO, "Cobro simulado registrado",
-                    "El hotel registró en recepción el cobro simulado de tu reserva " + reserva.getCodigo()
+                    "El hotel registró en recepción el cobro simulado de tu reserva " + reserva.getCodigoCorto()
                             + ". Esta operación no realiza ningún cargo bancario.", bookingId, null);
             reserva.marcarCobrado();
             return reserva;
@@ -602,7 +602,7 @@ public final class FirebaseBookingRepository implements BookingRepository {
             String eventoId = "cargo_" + UUID.nameUUIDFromBytes(operacion.getPath().getBytes(StandardCharsets.UTF_8));
             NotificacionFirebase.registrar(transaccion, reserva.getClienteId(), eventoId,
                     AppNotification.Tipo.CARGO_ADICIONAL, "Cargo adicional registrado",
-                    "El hotel añadió un cargo por " + pedido.getMotivo() + " a tu reserva " + reserva.getCodigo()
+                    "El hotel añadió un cargo por " + pedido.getMotivo() + " a tu reserva " + reserva.getCodigoCorto()
                             + ". Consulta el detalle y el nuevo total en Mis reservas.", bookingId, null);
             return reserva;
         }).addOnSuccessListener(reserva -> {

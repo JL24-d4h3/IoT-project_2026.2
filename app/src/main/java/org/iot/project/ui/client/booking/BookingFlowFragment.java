@@ -72,9 +72,13 @@ public class BookingFlowFragment extends Fragment {
         binding.reservaCampoEntrada.setOnClickListener(v -> elegirFechas());
         binding.reservaCampoSalida.setOnClickListener(v -> elegirFechas());
         binding.reservaMenos.setOnClickListener(v ->
-                viewModel.setHuespedes(viewModel.getHuespedesActuales() - 1));
+                viewModel.setAdultos(viewModel.getAdultosActuales() - 1));
         binding.reservaMas.setOnClickListener(v ->
-                viewModel.setHuespedes(viewModel.getHuespedesActuales() + 1));
+                viewModel.setAdultos(viewModel.getAdultosActuales() + 1));
+        binding.reservaNinoMenos.setOnClickListener(v ->
+                viewModel.setNinos(viewModel.getNinosActuales() - 1));
+        binding.reservaNinoMas.setOnClickListener(v ->
+                viewModel.setNinos(viewModel.getNinosActuales() + 1));
         binding.reservaConfirmar.setOnClickListener(v -> confirmar());
         binding.reservaVerLista.setOnClickListener(v ->
                 Navigation.findNavController(v).navigate(R.id.bookingsFragment));
@@ -141,8 +145,14 @@ public class BookingFlowFragment extends Fragment {
         }
         binding.reservaHabitacion.setText(getString(R.string.reserva_habitacion,
                 room.getTipo(), room.getResumenCapacidad()));
-        binding.reservaCapacidad.setText(
-                getString(R.string.reserva_capacidad_max, room.getCapacidadTotal()));
+        int maxAdultos = viewModel.maxAdultos();
+        int maxNinos = viewModel.maxNinos();
+        binding.reservaCapacidad.setText(getResources().getQuantityString(
+                R.plurals.reserva_adultos_max, maxAdultos, maxAdultos));
+        binding.reservaNinosCapacidad.setText(getResources().getQuantityString(
+                R.plurals.reserva_ninos_max, maxNinos, maxNinos));
+        // Sin capacidad de niños no se ofrece el selector: no hay nada que elegir.
+        binding.reservaFilaNinos.setVisibility(maxNinos > 0 ? View.VISIBLE : View.GONE);
         Glide.with(this)
                 .load(room.getFotos().isEmpty() ? null : room.getFotos().get(0))
                 .placeholder(R.drawable.bg_skeleton)
@@ -164,13 +174,10 @@ public class BookingFlowFragment extends Fragment {
     }
 
     private void pintarHuespedes() {
-        binding.reservaNumHuespedes.setText(String.valueOf(viewModel.getHuespedesActuales()));
-        Room room = viewModel.getHabitacion().getValue();
-        // El contador se detiene en la capacidad de la habitación: ofrecer un
-        // huésped de más sería prometer algo que el cuarto no admite.
-        binding.reservaMas.setEnabled(room == null
-                || viewModel.getHuespedesActuales() < room.getCapacidadTotal());
-        binding.reservaMenos.setEnabled(viewModel.getHuespedesActuales() > 1);
+        binding.reservaNumHuespedes.setText(String.valueOf(viewModel.getAdultosActuales()));
+        binding.reservaNumNinos.setText(String.valueOf(viewModel.getNinosActuales()));
+        // Los botones se habilitan en actualizarBoton(): cada contador se
+        // detiene en lo que la habitación admite de ese tipo de huésped.
         pintarDesglose();
         pintarDisponibilidad(viewModel.getDisponibilidad().getValue());
     }
@@ -207,8 +214,11 @@ public class BookingFlowFragment extends Fragment {
         binding.reservaCampoSalida.setEnabled(!cargando);
         Room room = viewModel.getHabitacion().getValue();
         binding.reservaMas.setEnabled(!cargando && room != null
-                && viewModel.getHuespedesActuales() < room.getCapacidadTotal());
-        binding.reservaMenos.setEnabled(!cargando && viewModel.getHuespedesActuales() > 1);
+                && viewModel.getAdultosActuales() < viewModel.maxAdultos());
+        binding.reservaMenos.setEnabled(!cargando && viewModel.getAdultosActuales() > 1);
+        binding.reservaNinoMas.setEnabled(!cargando && room != null
+                && viewModel.getNinosActuales() < viewModel.maxNinos());
+        binding.reservaNinoMenos.setEnabled(!cargando && viewModel.getNinosActuales() > 0);
     }
 
     private void pintarDisponibilidad(@Nullable UiState<Boolean> estado) {
@@ -302,7 +312,7 @@ public class BookingFlowFragment extends Fragment {
                 ? viewModel.getHotel().getValue().getData() : null;
 
         binding.reservaExitoMensaje.setText(getString(R.string.reserva_creada_mensaje,
-                reserva.getCodigo(),
+                reserva.getCodigoCorto(),
                 hotel != null ? hotel.getNombre() : reserva.getHotelNombre(),
                 DateFormatter.rangoConNoches(reserva.getFechaEntrada(),
                         reserva.getFechaSalida(), reserva.getNumNoches())));

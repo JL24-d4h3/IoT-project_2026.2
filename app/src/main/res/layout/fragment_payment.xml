@@ -88,12 +88,84 @@
                             android:paddingBottom="@dimen/space_xs" />
                     </com.google.android.material.card.MaterialCardView>
 
-                    <TextView
-                        style="@style/TextAppearance.App.Caption"
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/pago_tarjeta_nueva"
+                        style="@style/Widget.App.Card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_sm"
-                        android:text="@string/pago_simulado_aviso" />
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_md">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/pago_tarjeta_numero_layout"
+                                style="@style/Widget.App.TextInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/pago_tarjeta_numero">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/pago_tarjeta_numero"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:digits="0123456789 "
+                                    android:importantForAutofill="no"
+                                    android:inputType="number"
+                                    android:maxLength="23"
+                                    android:saveEnabled="false" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_sm"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/pago_tarjeta_vencimiento_layout"
+                                    style="@style/Widget.App.TextInput"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="@dimen/space_sm"
+                                    android:layout_weight="1"
+                                    android:hint="@string/pago_tarjeta_vencimiento">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/pago_tarjeta_vencimiento"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:digits="0123456789/"
+                                        android:importantForAutofill="no"
+                                        android:inputType="number"
+                                        android:maxLength="5"
+                                        android:saveEnabled="false" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/pago_tarjeta_cvv_layout"
+                                    style="@style/Widget.App.TextInput"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/pago_tarjeta_cvv">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/pago_tarjeta_cvv"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:importantForAutofill="no"
+                                        android:inputType="numberPassword"
+                                        android:maxLength="4"
+                                        android:saveEnabled="false" />
+                                </com.google.android.material.textfield.TextInputLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
 

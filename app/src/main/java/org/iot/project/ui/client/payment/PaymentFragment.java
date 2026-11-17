@@ -1,6 +1,8 @@
 package org.iot.project.ui.client.payment;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,19 +31,23 @@ import org.iot.project.utils.DateFormatter;
 import org.iot.project.utils.InsetUtils;
 import org.iot.project.utils.PriceFormatter;
 
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Pago de una reserva (RF-045).
  *
- * <p>El cobro es simulado y la pantalla no pide ningún dato de tarjeta: solo
- * elige entre las que el usuario ya tiene guardadas —de las que se conoce la
- * marca y los últimos cuatro dígitos (RC-011)— o pagar en recepción. Pedir el
- * número completo para luego no guardarlo sería un riesgo sin ninguna
- * contrapartida.
+ * <p>El cobro es simulado. El usuario elige una tarjeta guardada, escribe los
+ * datos de una tarjeta nueva o paga en recepción. Los datos de la tarjeta
+ * nueva solo se validan en pantalla (formato, Luhn, vencimiento y CVV) y se
+ * descartan: del número únicamente se conserva la marca y los últimos cuatro
+ * dígitos (RC-011), y el CVV nunca se guarda.
  */
 public class PaymentFragment extends Fragment {
+
+    /** Etiqueta interna de la opción "tarjeta nueva"; no se muestra ni se guarda como método. */
+    private static final String TAG_TARJETA_NUEVA = "__tarjeta_nueva__";
 
     private FragmentPaymentBinding binding;
     private PaymentViewModel viewModel;
@@ -63,6 +69,7 @@ public class PaymentFragment extends Fragment {
         binding.header.mostrarVolver(v -> Navigation.findNavController(v).navigateUp());
         binding.pagoConfirmar.setOnClickListener(v -> pagar());
         binding.pagoVerReserva.setOnClickListener(v -> abrirDetalle());
+        prepararCamposTarjeta();
 
         viewModel = new ViewModelProvider(this).get(PaymentViewModel.class);
         viewModel.getDatos().observe(getViewLifecycleOwner(), this::pintar);
@@ -159,6 +166,13 @@ public class PaymentFragment extends Fragment {
             grupo.addView(opcion);
         }
 
+        MaterialRadioButton nueva = (MaterialRadioButton) inflador.inflate(
+                R.layout.item_payment_method, grupo, false);
+        nueva.setId(View.generateViewId());
+        nueva.setText(R.string.pago_metodo_tarjeta_nueva);
+        nueva.setTag(TAG_TARJETA_NUEVA);
+        grupo.addView(nueva);
+
         MaterialRadioButton recepcion = (MaterialRadioButton) inflador.inflate(
                 R.layout.item_payment_method, grupo, false);
         recepcion.setId(View.generateViewId());
@@ -167,14 +181,26 @@ public class PaymentFragment extends Fragment {
         grupo.addView(recepcion);
 
         int seleccion = recepcion.getId();
+        boolean encontrado = false;
         for (int i = 0; i < grupo.getChildCount(); i++) {
             View opcion = grupo.getChildAt(i);
-            if (guardado != null && guardado.equals(opcion.getTag())) seleccion = opcion.getId();
+            if (guardado != null && guardado.equals(opcion.getTag())) {
+                seleccion = opcion.getId();
+                encontrado = true;
+            }
+        }
+        // Tras un intento con tarjeta nueva el método guardado es "Visa ****4242",
+        // que no coincide con ninguna opción: se vuelve a la tarjeta nueva y no a recepción.
+        if (!encontrado && guardado != null && guardado.contains("****")) {
+            seleccion = nueva.getId();
         }
         grupo.setOnCheckedChangeListener((g, id) -> {
             View elegida = g.findViewById(id);
             if (elegida != null && elegida.getTag() instanceof String) {
-                viewModel.setMetodoElegido((String) elegida.getTag());
+                String etiqueta = (String) elegida.getTag();
+                viewModel.setMetodoElegido(etiqueta);
+                binding.pagoTarjetaNueva.setVisibility(
+                        TAG_TARJETA_NUEVA.equals(etiqueta) ? View.VISIBLE : View.GONE);
             }
         });
         grupo.check(seleccion);
@@ -191,7 +217,84 @@ public class PaymentFragment extends Fragment {
         if (!(etiqueta instanceof String)) {
             return;
         }
-        viewModel.pagar((String) etiqueta);
+        String metodo = (String) etiqueta;
+        if (TAG_TARJETA_NUEVA.equals(metodo)) {
+            metodo = validarTarjetaNueva();
+            if (metodo == null) return;
+        }
+        viewModel.pagar(metodo);
+    }
+
+    /**
+     * Valida lo tecleado y devuelve el nombre del método ("Visa ****4242"), o
+     * null si hay errores, que quedan marcados en cada campo.
+     */
+    @Nullable
+    private String validarTarjetaNueva() {
+        String numero = String.valueOf(binding.pagoTarjetaNumero.getText());
+        String vence = String.valueOf(binding.pagoTarjetaVencimiento.getText());
+        String cvv = String.valueOf(binding.pagoTarjetaCvv.getText());
+
+        boolean numeroOk = TarjetaSimulada.numeroValido(numero);
+        boolean venceOk = TarjetaSimulada.vencimientoValido(vence, YearMonth.now());
+        boolean cvvOk = TarjetaSimulada.cvvValido(cvv, numero);
+
+        binding.pagoTarjetaNumeroLayout.setError(
+                numeroOk ? null : getString(R.string.pago_tarjeta_error_numero));
+        binding.pagoTarjetaVencimientoLayout.setError(
+                venceOk ? null : getString(R.string.pago_tarjeta_error_vencimiento));
+        binding.pagoTarjetaCvvLayout.setError(
+                cvvOk ? null : getString(R.string.pago_tarjeta_error_cvv));
+        if (!(numeroOk && venceOk && cvvOk)) return null;
+        return TarjetaSimulada.metodo(numero);
+    }
+
+    private void prepararCamposTarjeta() {
+        binding.pagoTarjetaNumero.addTextChangedListener(new TextWatcher() {
+            private boolean editando;
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable e) {
+                if (editando) return;
+                editando = true;
+                String digitos = TarjetaSimulada.soloDigitos(e.toString());
+                if (digitos.length() > 19) digitos = digitos.substring(0, 19);
+                String formato = digitos.replaceAll("(.{4})(?=.)", "$1 ");
+                if (!formato.equals(e.toString())) e.replace(0, e.length(), formato);
+                binding.pagoTarjetaNumeroLayout.setError(null);
+                editando = false;
+            }
+        });
+        binding.pagoTarjetaVencimiento.addTextChangedListener(new TextWatcher() {
+            private boolean editando;
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable e) {
+                if (editando) return;
+                editando = true;
+                String digitos = TarjetaSimulada.soloDigitos(e.toString());
+                if (digitos.length() > 4) digitos = digitos.substring(0, 4);
+                String formato = digitos.length() > 2
+                        ? digitos.substring(0, 2) + "/" + digitos.substring(2) : digitos;
+                if (!formato.equals(e.toString())) e.replace(0, e.length(), formato);
+                binding.pagoTarjetaVencimientoLayout.setError(null);
+                editando = false;
+            }
+        });
+        binding.pagoTarjetaCvv.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable e) {
+                binding.pagoTarjetaCvvLayout.setError(null);
+            }
+        });
+    }
+
+    /** RC-011: tras pagar no se conserva nada de lo tecleado. */
+    private void limpiarTarjeta() {
+        binding.pagoTarjetaNumero.setText("");
+        binding.pagoTarjetaVencimiento.setText("");
+        binding.pagoTarjetaCvv.setText("");
     }
 
     private void pintarPago(@Nullable UiState<Booking> estado) {
@@ -208,8 +311,9 @@ public class PaymentFragment extends Fragment {
 
         Booking reserva = estado.requireData();
         binding.pagoExitoMensaje.setText(getString(R.string.pago_firebase_confirmado_mensaje,
-                reserva.getCodigo(),
+                reserva.getCodigoCorto(),
                 DateFormatter.fechaLarga(reserva.getFechaEntrada())));
+        limpiarTarjeta();
         binding.pagoFormulario.setVisibility(View.GONE);
         binding.pagoError.setVisibility(View.GONE);
         binding.pagoExito.setVisibility(View.VISIBLE);

@@ -175,6 +175,15 @@
     <string name="reserva_habitacion">%1$s · %2$s</string>
     <string name="reserva_huespedes_titulo">Huéspedes</string>
     <string name="reserva_adultos">Adultos</string>
+    <string name="reserva_ninos">Niños</string>
+    <plurals name="reserva_adultos_max">
+        <item quantity="one">Máximo %1$d adulto</item>
+        <item quantity="other">Máximo %1$d adultos</item>
+    </plurals>
+    <plurals name="reserva_ninos_max">
+        <item quantity="one">Máximo %1$d niño</item>
+        <item quantity="other">Máximo %1$d niños</item>
+    </plurals>
     <string name="reserva_capacidad_max">Máximo %1$d personas</string>
     <string name="reserva_desglose_titulo">Resumen de pago</string>
     <string name="reserva_linea_noches">%1$d noches × %2$s</string>
@@ -189,6 +198,8 @@
     <string name="accion_ver_reservas">Ver mis reservas</string>
     <string name="cd_agregar_huesped">Agregar un huésped</string>
     <string name="cd_quitar_huesped">Quitar un huésped</string>
+    <string name="cd_agregar_nino">Agregar un niño</string>
+    <string name="cd_quitar_nino">Quitar un niño</string>
 
 
     <string name="avisos_canal_nombre">Avisos de la app</string>
@@ -234,7 +245,15 @@
     <string name="pago_metodo_titulo">¿Cómo quieres pagar?</string>
     <string name="pago_metodo_tarjeta">%1$s · vence %2$s</string>
     <string name="pago_metodo_recepcion">Pagar en recepción</string>
-    <string name="pago_simulado_aviso">El cobro es simulado: no se pide ningún dato de tarjeta y no se guarda ninguno.</string>
+    <string name="pago_metodo_tarjeta_nueva">Tarjeta de crédito o débito</string>
+    <string name="pago_tarjeta_numero">Número de tarjeta</string>
+    <string name="pago_tarjeta_vencimiento">Vence (MM/AA)</string>
+    <string name="pago_tarjeta_cvv">CVV</string>
+    <string name="admin_reservas_buscar">Buscar por nombre o DNI</string>
+    <string name="admin_reservas_sin_resultados">No encontramos reservas con esa búsqueda.</string>
+    <string name="pago_tarjeta_error_numero">Revisa el número de tarjeta</string>
+    <string name="pago_tarjeta_error_vencimiento">Fecha inválida o vencida</string>
+    <string name="pago_tarjeta_error_cvv">CVV inválido</string>
     <string name="pago_confirmar">Pagar %1$s</string>
     <string name="pago_confirmado_titulo">Pago registrado</string>
     <string name="pago_confirmado_mensaje">%1$s quedó confirmada. Te esperamos el %2$s.</string>

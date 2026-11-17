@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Reserva de alojamiento (RF-034 a RF-044).
@@ -73,6 +74,25 @@ public class Booking {
     /** Codigo corto que se muestra en la pantalla de confirmacion (§29). */
     public String getCodigo() {
         return codigo;
+    }
+
+    /**
+     * Codigo legible para el usuario, p. ej. "RES-8A1EDCB9".
+     *
+     * <p>El id y el codigo guardados no cambian: esto solo recorta lo que se
+     * muestra. Es un prefijo del codigo completo, asi que sigue sirviendo para
+     * buscar y funciona tambien con reservas ya creadas.
+     */
+    public String getCodigoCorto() {
+        final String prefijo = "RES-";
+        String base = codigo == null ? "" : codigo.trim();
+        if (base.isEmpty() && id != null) base = prefijo + id;
+        if (base.regionMatches(true, 0, prefijo, 0, prefijo.length())) {
+            String resto = base.substring(prefijo.length());
+            if (resto.length() > 8) resto = resto.substring(0, 8);
+            return prefijo + resto.toUpperCase(Locale.ROOT);
+        }
+        return base.length() > 12 ? base.substring(0, 12).toUpperCase(Locale.ROOT) : base;
     }
 
     public String getHotelId() {
