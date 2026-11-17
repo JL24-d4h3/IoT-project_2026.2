@@ -190,6 +190,11 @@
     <string name="cd_agregar_huesped">Agregar un huésped</string>
     <string name="cd_quitar_huesped">Quitar un huésped</string>
 
+
+    <string name="avisos_canal_nombre">Avisos de la app</string>
+    <string name="avisos_canal_descripcion">Reservas, pagos, checkout y traslados de taxi.</string>
+    <string name="avisos_notificacion_publica_mensaje">Tienes un aviso nuevo.</string>
+
     <!-- Mis reservas -->
     <string name="reserva_codigo">Código</string>
     <string name="reserva_estadia">Estadía</string>

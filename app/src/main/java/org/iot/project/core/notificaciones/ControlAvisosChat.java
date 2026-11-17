@@ -35,9 +35,10 @@ public final class ControlAvisosChat {
         for (AppNotification aviso : lote) {
             if (aviso == null || !idValido(aviso.getId())
                     || !procesados.add(aviso.getId())) continue;
-            if (absorber || aviso.getTipo() != AppNotification.Tipo.MENSAJE
-                    || aviso.isLeida() || !idValido(aviso.getBookingId())
-                    || aviso.getBookingId().equals(chatVisible)) continue;
+            if (absorber || aviso.isLeida()) continue;
+            if (aviso.getTipo() == AppNotification.Tipo.MENSAJE
+                    && (!idValido(aviso.getBookingId())
+                    || aviso.getBookingId().equals(chatVisible))) continue;
             nuevas.add(aviso);
         }
         return nuevas;

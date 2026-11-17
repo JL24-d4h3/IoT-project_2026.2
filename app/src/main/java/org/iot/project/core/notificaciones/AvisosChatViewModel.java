@@ -30,7 +30,7 @@ import java.util.Objects;
  * La escucha vive mientras exista este ViewModel, también con la Activity pausada.
  * No sustituye un transporte push cuando Android termina el proceso.
  */
-public final class AvisosChatViewModel extends AndroidViewModel {
+public final class      AvisosChatViewModel extends AndroidViewModel {
     private final ControlAvisosChat control = new ControlAvisosChat();
     private final Observer<Cuenta> sesion = cuenta -> actualizarSesion();
     private final FirebaseAuth.AuthStateListener autenticacion = auth -> actualizarSesion();
@@ -57,8 +57,8 @@ public final class AvisosChatViewModel extends AndroidViewModel {
         Role rol = SessionManager.getRolActivo();
         String hotel = SessionManager.getHotelAdministrado();
         boolean permitido = auth != null && auth.getUid().equals(uid)
-                && (rol == Role.CLIENTE || (rol == Role.ADMIN_HOTEL && hotel != null
-                && !hotel.trim().isEmpty()));
+                && (rol == Role.CLIENTE || rol == Role.CONDUCTOR
+                || (rol == Role.ADMIN_HOTEL && hotel != null && !hotel.trim().isEmpty()));
         String siguiente = permitido ? uid + "|" + rol + "|" + hotel : null;
         if (Objects.equals(identidad, siguiente)) return;
         detener();
@@ -68,8 +68,14 @@ public final class AvisosChatViewModel extends AndroidViewModel {
         if (!permitido) return;
         long solicitud = generacion;
         registro = FirebaseFirestore.getInstance().collection("usuarios").document(uid)
-                .collection("notificaciones").whereEqualTo("tipo", AppNotification.Tipo.MENSAJE.name())
+                .collection("notificaciones")
                 .addSnapshotListener(MetadataChanges.INCLUDE, (documentos, error) -> {
+                    if (!vigente(uid, siguiente, solicitud)) return;
+                    if (error != null) {
+                        android.util.Log.w("AvisosChat", "No se pudo escuchar notificaciones: " + error.getMessage());
+                        return;
+                    }
+                    if (documentos == null) return;
                     if (!vigente(uid, siguiente, solicitud) || error != null || documentos == null) return;
                     List<AppNotification> avisos = new ArrayList<>();
                     for (DocumentSnapshot documento : documentos) {
@@ -79,6 +85,7 @@ public final class AvisosChatViewModel extends AndroidViewModel {
                             // Un documento antiguo incompleto no bloquea otros mensajes.
                         }
                     }
+
                     avisos.sort(Comparator.comparing(AppNotification::getTimestamp)
                             .thenComparing(AppNotification::getId));
                     boolean inicial = !servidorRecibido;

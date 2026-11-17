@@ -288,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void solicitarPermisoChat() {
         Role rol = SessionManager.getRolActivo();
-        if (!reanudada || (rol != Role.CLIENTE && rol != Role.ADMIN_HOTEL)) return;
+        if (!reanudada || (rol != Role.CLIENTE && rol != Role.ADMIN_HOTEL && rol != Role.CONDUCTOR)) return;
         boolean concedido = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED;
         PreferenciasPermisos preferencias = PreferenciasPermisos.desde(this);

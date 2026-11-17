@@ -24,6 +24,7 @@ import org.iot.project.models.AppNotification;
 /** Canal y avisos del sistema para los mensajes de una reserva. */
 public final class CanalChat {
     public static final String ID = "chat_cliente_hotel";
+    public static final String ID_AVISOS = "avisos_app";
     public static final String ACTION_VER_CHAT = "org.iot.project.action.VER_CHAT";
     public static final String EXTRA_USUARIO_ID = "org.iot.project.extra.USUARIO_ID";
     public static final String EXTRA_BOOKING_ID = "org.iot.project.extra.BOOKING_ID";
@@ -35,15 +36,21 @@ public final class CanalChat {
     public static void crear(@NonNull Context context) {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null) return;
-        NotificationChannel canal = new NotificationChannel(ID,
+        NotificationChannel chat = new NotificationChannel(ID,
                 context.getString(R.string.chat_canal_nombre), NotificationManager.IMPORTANCE_HIGH);
-        canal.setDescription(context.getString(R.string.chat_canal_descripcion));
-        canal.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-        manager.createNotificationChannel(canal);
+        chat.setDescription(context.getString(R.string.chat_canal_descripcion));
+        chat.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        manager.createNotificationChannel(chat);
+
+        NotificationChannel avisos = new NotificationChannel(ID_AVISOS,
+                context.getString(R.string.avisos_canal_nombre), NotificationManager.IMPORTANCE_HIGH);
+        avisos.setDescription(context.getString(R.string.avisos_canal_descripcion));
+        avisos.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        manager.createNotificationChannel(avisos);
     }
 
     /** Devuelve false si el aviso no corresponde a chat o Android no permite mostrarlo. */
-    public static boolean mostrar(@NonNull Context context, @NonNull String usuarioId,
+    private static boolean mostrarChat(@NonNull Context context, @NonNull String usuarioId,
                                   @NonNull AppNotification aviso) {
         if (usuarioId.isBlank() || aviso.getTipo() != AppNotification.Tipo.MENSAJE
                 || aviso.isLeida() || vacio(aviso.getId()) || vacio(aviso.getBookingId())) return false;
@@ -108,7 +115,7 @@ public final class CanalChat {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null) return;
         for (StatusBarNotification activa : manager.getActiveNotifications()) {
-            if (ID.equals(activa.getNotification().getChannelId())) {
+            if (propio(activa.getNotification().getChannelId())) {
                 manager.cancel(activa.getTag(), activa.getId());
             }
         }
@@ -122,7 +129,7 @@ public final class CanalChat {
         for (StatusBarNotification activa : manager.getActiveNotifications()) {
             Notification notificacion = activa.getNotification();
             Bundle extras = notificacion.extras;
-            if (ID.equals(notificacion.getChannelId()) && extras != null
+            if (propio(notificacion.getChannelId()) && extras != null
                     && usuarioId.equals(extras.getString(EXTRA_USUARIO_ID))
                     && eventoId.equals(extras.getString(EXTRA_EVENTO_ID))) {
                 manager.cancel(activa.getTag(), activa.getId());
@@ -149,4 +156,70 @@ public final class CanalChat {
     private static boolean vacio(String valor) {
         return valor == null || valor.isBlank();
     }
+
+/** Devuelve false si Android no permite mostrar el aviso. */
+public static boolean mostrar(@NonNull Context context, @NonNull String usuarioId,
+                              @NonNull AppNotification aviso) {
+    return aviso.getTipo() == AppNotification.Tipo.MENSAJE
+            ? mostrarChat(context, usuarioId, aviso)
+            : mostrarAviso(context, usuarioId, aviso);
+}
+
+private static boolean mostrarAviso(Context context, String usuarioId, AppNotification aviso) {
+    if (usuarioId.isBlank() || aviso.isLeida() || vacio(aviso.getId())) return false;
+    crear(context);
+    NotificationManager manager = context.getSystemService(NotificationManager.class);
+    if (manager == null || ContextCompat.checkSelfPermission(context,
+            Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            || !NotificationManagerCompat.from(context).areNotificationsEnabled()) return false;
+    NotificationChannel canal = manager.getNotificationChannel(ID_AVISOS);
+    if (canal == null || canal.getImportance() == NotificationManager.IMPORTANCE_NONE) return false;
+
+    Uri identificador = new Uri.Builder().scheme("iotaviso").authority(context.getPackageName())
+            .appendPath(usuarioId).appendPath(aviso.getId()).build();
+    Intent abrir = new Intent(context, MainActivity.class).setData(identificador)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+    PendingIntent pendiente = PendingIntent.getActivity(context, 0, abrir,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    Bundle datos = new Bundle();
+    datos.putString(EXTRA_USUARIO_ID, usuarioId);
+    datos.putString(EXTRA_EVENTO_ID, aviso.getId());
+
+    int icono = aviso.getTipo() == AppNotification.Tipo.TAXI
+            ? R.drawable.ic_taxi : R.drawable.ic_notifications;
+    Notification publica = new NotificationCompat.Builder(context, ID_AVISOS)
+            .setSmallIcon(icono)
+            .setContentTitle(context.getString(R.string.app_name))
+            .setContentText(context.getString(R.string.avisos_notificacion_publica_mensaje))
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .build();
+    String titulo = vacio(aviso.getTitulo()) ? context.getString(R.string.app_name) : aviso.getTitulo();
+    String mensaje = aviso.getMensaje() == null ? "" : aviso.getMensaje();
+    Notification notificacion = new NotificationCompat.Builder(context, ID_AVISOS)
+            .setSmallIcon(icono)
+            .setContentTitle(titulo)
+            .setContentText(mensaje)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(mensaje))
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publica)
+            .setContentIntent(pendiente)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .addExtras(datos)
+            .build();
+    try {
+        String tag = identificador.toString();
+        manager.notify(tag, tag.hashCode() & Integer.MAX_VALUE, notificacion);
+        return true;
+    } catch (SecurityException permisoRevocado) {
+        return false;
+    }
+}
+
+private static boolean propio(String canalId) {
+    return ID.equals(canalId) || ID_AVISOS.equals(canalId);
+}
 }

@@ -80,12 +80,13 @@ public class ControlAvisosChatTest {
     }
 
     @Test
-    public void noConvierteOtrosEventosDeLaBandejaEnAvisosDeChat() {
+    public void otrosEventosDeLaBandejaTambienSePublican() {
         establecerBase();
         for (AppNotification.Tipo tipo : AppNotification.Tipo.values()) {
             if (tipo == AppNotification.Tipo.MENSAJE) continue;
-            AppNotification otro = aviso(tipo.name(), tipo, "reserva");
-            assertTrue(control.recibir(Collections.singletonList(otro), false, null).isEmpty());
+            AppNotification otro = aviso("evento_" + tipo, tipo, null);
+            assertEquals(Collections.singletonList(otro),
+                    control.recibir(Collections.singletonList(otro), false, null));
         }
     }
 
